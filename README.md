@@ -1,6 +1,6 @@
 # 2025W2-QualAI <br>
 
-Team Member Names:
+Team Member Names: <br>
 Remy - remydidelis@gmail.com <br>
 Mohid - mohidkhanzada@gmail.com <br>
 Emily - emilysalievski@gmail.com <br>
