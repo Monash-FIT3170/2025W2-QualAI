@@ -3,3 +3,4 @@
 Team Member Names:
 Remy - remydidelis@gmail.com
 Mohid - mohidkhanzada@gmail.com
+Emily - emilysalievski@gmail.com
