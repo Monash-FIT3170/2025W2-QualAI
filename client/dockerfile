@@ -1,0 +1,17 @@
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy rest of the project
+COPY . .
+
+# Expose port Vite dev server uses
+EXPOSE 5173
+
+# Run Vite development server
+CMD ["npm", "run", "dev"]
