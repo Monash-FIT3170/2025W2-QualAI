@@ -13,8 +13,9 @@ class Project:
         """
         Project constructor. Creates the projects table if the table does not yet exist, otherwise does nothing.
         """
-        self._create_table()
         self.db_name = database_name
+        self._create_table()
+        
 
     def _create_table(self) -> None:
         """
@@ -84,7 +85,7 @@ class Project:
 
                 cur.execute(f"""
                     DELETE FROM {PROJECT_TABLE_NAME}
-                    WHERE project_id = ?
+                    WHERE project_id = ? 
                 """, (project_id,))
 
             return True
@@ -179,8 +180,9 @@ class Transcription:
         """
         Transcription constructor. Creates the transcription table if the table does not yet exist, otherwise does nothing.
         """
-        self._create_table()
         self.db_name = database_name
+        self._create_table()
+        
 
     def _create_table(self) -> None:
         """
@@ -337,4 +339,4 @@ class Transcription:
         except sqlite3.Error as e:
             print(f"There was an error getting the projects: {e}")
             return None
-
+        
