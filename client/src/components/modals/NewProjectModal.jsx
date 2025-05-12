@@ -56,21 +56,6 @@ const NewProjectModal = ({ onClose }) => {
             ></textarea>
           </div>
           
-          <div className="form-group">
-            <label htmlFor="researchMethod">Research Method</label>
-            <select
-              id="researchMethod"
-              name="researchMethod"
-              value={formData.researchMethod}
-              onChange={handleChange}
-            >
-              <option value="thematic">Thematic Analysis</option>
-              <option value="grounded">Grounded Theory</option>
-              <option value="phenomenological">Phenomenological Analysis</option>
-              <option value="content">Content Analysis</option>
-            </select>
-          </div>
-          
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
