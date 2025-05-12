@@ -82,3 +82,7 @@
     gap: 0.75rem;
     margin-top: 1.5rem;
   }
+
+  .modal-content, .modal-form, .form-group input, .form-group textarea, .form-group select {
+    box-sizing: border-box; 
+  }
