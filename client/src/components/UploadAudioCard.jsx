@@ -1,5 +1,5 @@
 import React from 'react';
-import '../assets/styles/UploadAudioCard.css';
+// Remove this import: import '../assets/styles/UploadAudioCard.css';
 
 const UploadAudioCard = () => {
   const handleUpload = () => {
@@ -22,14 +22,17 @@ const UploadAudioCard = () => {
   };
 
   return (
-    <div className="upload-audio-card">
-      <div className="upload-content">
-        <div className="upload-icon">
+    <div className="bg-slate-800 rounded-xl shadow-md p-4 mb-4">
+      <div className="flex flex-col items-center justify-center py-8 px-4">
+        <div className="text-2xl text-slate-400 mb-2">
           <i className="icon-cloud-upload"></i>
         </div>
-        <h3 className="upload-title">Upload Audio</h3>
-        <p className="upload-description">Drag and drop or click to select</p>
-        <button className="btn btn-primary btn-sm" onClick={handleUpload}>
+        <h3 className="text-sm font-medium text-slate-200 mb-1">Upload Audio</h3>
+        <p className="text-xs text-slate-500 mb-3">Drag and drop or click to select</p>
+        <button 
+          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2" 
+          onClick={handleUpload}
+        >
           <i className="icon-upload"></i> Upload
         </button>
       </div>
