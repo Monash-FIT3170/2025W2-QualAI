@@ -1,89 +1,110 @@
-import subprocess, sys, os, json
-import pprint
-from datetime import datetime, timedelta
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import subprocess
+import os
+import json
+from datetime import datetime, timedelta
 
 from vosk import Model, KaldiRecognizer
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
+
 app = FastAPI()
 
-app.get("/")
+@app.get("/")
 async def root():
-    return {"message" : "Qual-AI"}
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Audio Transcription API</title>
+    </head>
+    <body>
+        <h1>Welcome to the Audio Transcription API</h1>
+        <p>Use the <code>/transcribe/</code> endpoint to upload an audio file for transcription.</p>
+        <p>Supported formats: mp3, wav, ogg, flac.</p>
+        <p>Example using curl:</p>
+        <pre><code>
+        Go to http://127.0.0.1:8000/transcribe/
+        </code></pre>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
 
-app.get("/transcribe")
 
-class Transcriber():
-    def __init__(self, model_path):
+class Transcriber:
+    def __init__(self, model_path, recording_path):
+        if not os.path.exists(model_path):
+            raise ValueError(f"Model path not found: {model_path}")
         self.model = Model(model_path)
+        self.recording_path = recording_path
 
-    def fmt(self, data):
+    async def fmt(self, data):
         data = json.loads(data)
-
-        start = min(r["start"] for r in data.get("result", [{ "start": 0 }]))
-        end = max(r["end"] for r in data.get("result", [{ "end": 0 }]))
+        result = data.get("result", [{"start": 0, "end": 0}])
+        start = min(r["start"] for r in result) if result else 0
+        end = max(r["end"] for r in result) if result else 0
 
         return {
-            "start": str(timedelta(seconds=start)), 
-            "end": str(timedelta(seconds=end)), 
-            "text": data["text"]
+            "start": str(timedelta(seconds=start)),
+            "end": str(timedelta(seconds=end)),
+            "text": data.get("text", "")
         }
 
-    def transcribe(self, filename):
+    async def transcribe(self, model_path: str):
         rec = KaldiRecognizer(self.model, SAMPLE_RATE)
         rec.SetWords(True)
 
-        if not os.path.exists(filename):
-            raise FileNotFoundError(filename)
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"File not found: {model_path}")
 
         transcription = []
+        start_time = datetime.now()
 
         ffmpeg_command = [
-                "ffmpeg",
-                "-nostdin",
-                "-loglevel",
-                "quiet",
-                "-i",
-                filename,
-                "-ar",
-                str(SAMPLE_RATE),
-                "-ac",
-                "1",
-                "-f",
-                "s16le",
-                "-",
-            ]
+            "ffmpeg",
+            "-nostdin",
+            "-loglevel",
+            "quiet",
+            "-i",
+            model_path,
+            "-ar",
+            str(SAMPLE_RATE),
+            "-ac",
+            "1",
+            "-f",
+            "s16le",
+            "-"
+        ]
 
-        with subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE) as process:
+        process = await subprocess.create_subprocess_exec(
+            *ffmpeg_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE  # Capture stderr for potential errors
+        )
 
-            start_time = datetime.now() 
-            while True:
-                data = process.stdout.read(4000)
-                if len(data) == 0:
-                    break
-                
-                if rec.AcceptWaveform(data):
-                    transcription.append(self.fmt(rec.Result()))
+        while True:
+            if process.stdout is None:
+                break
+            data = await process.stdout.read(CHUNK_SIZE)
+            if not data:
+                break
+            if rec.AcceptWaveform(data):
+                transcription.append(self.fmt(rec.Result()))
 
-            transcription.append(self.fmt(rec.FinalResult()))
-            end_time = datetime.now()
+        transcription.append(self.fmt(rec.FinalResult()))
 
-            time_elapsed = end_time - start_time
-            print(f"Time elapsed  {time_elapsed}")
+        return{"transcription" : transcription}
 
-        return {
-            "start_time": start_time.isoformat(),
-            "end_time": end_time.isoformat(),
-            "elapsed_time": time_elapsed,
-            "transcription": transcription,
-        }
 
-filename = "bruh.mp3"
-model_path = "vosk-model-en-us-daanzu-20200905"
+model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
+recording_path = "/app/app/bruh.mp3"
+transcriber = Transcriber(model_path, recording_path)
 
-transcriber = Transcriber(model_path)
-transcription = transcriber.transcribe(filename)
 
-pprint.pprint(transcription)
+@app.post("/transcribe/")
+async def transcribe_audio():
+    transcription_result = await transcriber.transcribe(transcriber.recording_path)
+    return transcription_result
