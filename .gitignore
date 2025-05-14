@@ -26,6 +26,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+server/app/vosk-model-en-us-daanzu-20200905
 
 # Python cache
 __pycache__
