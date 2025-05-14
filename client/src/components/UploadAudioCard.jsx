@@ -30,10 +30,10 @@ const UploadAudioCard = () => {
         <h3 className="text-sm font-medium text-slate-200 mb-1">Upload Audio</h3>
         <p className="text-xs text-slate-500 mb-3">Drag and drop or click to select</p>
         <button 
-          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2" 
+          className="bg-blue-500 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2" 
           onClick={handleUpload}
         >
-          <i className="icon-upload"></i> Upload
+          Upload
         </button>
       </div>
     </div>
