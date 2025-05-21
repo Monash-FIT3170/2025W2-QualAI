@@ -129,14 +129,21 @@ async def transcribe_audio(
     try:
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
+        os.makedirs(f"{uploads_path}")
+
+        file_path = uploads_path / file.filename
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+    except FileExistsError:
+        base_path = Path(__file__).resolve().parent
+        uploads_path = base_path / "Interview Uploads"
         file_path = uploads_path / file.filename
 
         with open(file_path, "wb") as f:
             f.write(file.file.read())
-
     except Exception as e:
-        os.makedirs(f"{base_path} / Interview Uploads")
-        return {"message": e.args}
+        print (f"an error has occurred")
+    
 
     model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
     transcriber = Transcriber(model_path, file_path)
