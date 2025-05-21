@@ -15,6 +15,19 @@ services:
     volumes:
       - ./server/app:/app/app  # Optional: dev hot reload
 
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
