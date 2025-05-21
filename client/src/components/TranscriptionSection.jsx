@@ -1,5 +1,3 @@
-import React from 'react';
-
 const TranscriptionSection = () => {
   return (
     <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col">
