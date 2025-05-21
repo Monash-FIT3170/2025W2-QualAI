@@ -35,11 +35,11 @@ async def root():
 
 
 class Transcriber:
-    def __init__(self, model_path, recording_path):
+    def __init__(self, model_path):
         if not os.path.exists(model_path):
             raise ValueError(f"Model path not found: {model_path}")
+        self.model_path = model_path
         self.model = Model(model_path)
-        self.recording_path = recording_path
 
     async def fmt(self, data):
         data = json.loads(data)
@@ -53,23 +53,21 @@ class Transcriber:
             "text": data.get("text", ""),
         }
 
-    async def transcribe(self, model_path: str):
+    async def transcribe(self, recording_path: str):
         rec = KaldiRecognizer(self.model, SAMPLE_RATE)
         rec.SetWords(True)
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"File not found: {model_path}")
+        if not os.path.exists(self.model_path):
+            raise FileNotFoundError(f"File not found: {self.model_path}")
 
         transcription = []
-        start_time = datetime.now()
-
         ffmpeg_command = [
             "ffmpeg",
             "-nostdin",
             "-loglevel",
             "quiet",
             "-i",
-            self.recording_path,
+            recording_path,
             "-ar",
             str(SAMPLE_RATE),
             "-ac",
@@ -142,13 +140,13 @@ async def transcribe_audio(
         with open(file_path, "wb") as f:
             f.write(file.file.read())
     except Exception as e:
-        print (f"an error has occurred")
+        print (f"Invalid file format provided")
     
 
     model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
-    transcriber = Transcriber(model_path, file_path)
+    transcriber = Transcriber(model_path)
 
-    transcription_raw = await transcriber.transcribe(model_path)
+    transcription_raw = await transcriber.transcribe(file_path)
     text_output = " ".join(
         segment["text"]
         for segment in transcription_raw["transcription"]
