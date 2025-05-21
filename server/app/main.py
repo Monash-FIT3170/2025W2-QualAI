@@ -12,6 +12,7 @@ CHUNK_SIZE = 4000
 
 app = FastAPI()
 
+
 @app.get("/")
 async def root():
     html_content = """
@@ -49,7 +50,7 @@ class Transcriber:
         return {
             "start": str(timedelta(seconds=start)),
             "end": str(timedelta(seconds=end)),
-            "text": data.get("text", "")
+            "text": data.get("text", ""),
         }
 
     async def transcribe(self, model_path: str):
@@ -75,13 +76,13 @@ class Transcriber:
             "1",
             "-f",
             "s16le",
-            "-"
+            "-",
         ]
 
         process = await asyncio.create_subprocess_exec(
             *ffmpeg_command,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE  # Capture stderr for potential errors
+            stderr=asyncio.subprocess.PIPE,  # Capture stderr for potential errors
         )
 
         while True:
@@ -96,7 +97,8 @@ class Transcriber:
 
         transcription.append(await self.fmt(rec.FinalResult()))
 
-        return{"transcription" : transcription}
+        return {"transcription": transcription}
+
 
 @app.get("/transcribe/")
 async def transcribe_form():
@@ -119,22 +121,30 @@ async def transcribe_form():
 
 
 @app.post("/transcribe/")
-async def transcribe_audio(file: UploadFile = File(..., description="Upload an interview for transcription here")): 
+async def transcribe_audio(
+    file: UploadFile = File(
+        ..., description="Upload an interview for transcription here"
+    )
+):
     try:
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
         file_path = uploads_path / file.filename
-        
-        with open (file_path, "wb") as f:
+
+        with open(file_path, "wb") as f:
             f.write(file.file.read())
-        
+
     except Exception as e:
+        os.makedirs(f"{base_path} / Interview Uploads")
         return {"message": e.args}
-    
+
     model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
     transcriber = Transcriber(model_path, file_path)
 
     transcription_raw = await transcriber.transcribe(model_path)
-    text_output = " ".join(segment["text"] for segment in transcription_raw["transcription"] if segment["text"].strip())
+    text_output = " ".join(
+        segment["text"]
+        for segment in transcription_raw["transcription"]
+        if segment["text"].strip()
+    )
     return text_output
-
