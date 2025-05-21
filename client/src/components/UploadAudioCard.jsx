@@ -2,39 +2,29 @@ import React from 'react';
 // Remove this import: import '../assets/styles/UploadAudioCard.css';
 
 const UploadAudioCard = () => {
-  const handleUpload = () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'audio/*';
-    fileInput.style.display = 'none';
-    
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        const file = e.target.files[0];
-        console.log('Selected audio file:', file.name);
-        // Handle the selected audio file
-      }
-    });
-    
-    document.body.appendChild(fileInput);
-    fileInput.click();
-    document.body.removeChild(fileInput);
-  };
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-md p-4 mb-4">
-      <div className="flex flex-col items-center justify-center py-8 px-4">
+      <div className="flex flex-col items-center justify-center py-2 px-4 gap-2">
         <div className="text-2xl text-slate-400 mb-2">
           <i className="icon-cloud-upload"></i>
         </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="white" className="text-white mb-2" viewBox="0 0 16 16">
+          <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z"/>
+          <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1"/>
+        </svg>
         <h3 className="text-sm font-medium text-slate-200 mb-1">Upload Audio</h3>
         <p className="text-xs text-slate-500 mb-3">Drag and drop or click to select</p>
-        <button 
-          className="bg-blue-500 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2" 
-          onClick={handleUpload}
+        <label 
+          className="bg-indigo-700 text-white text-sm px-4 py-2 rounded-md hover:bg-indigo-600 flex items-center gap-2" 
         >
-          Upload
-        </button>
+          <input type="file" className="hidden"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
+            </svg>
+            Upload
+        </label>
       </div>
     </div>
   );
