@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../assets/styles/AIAssistant.css';
 
 const AIAssistant = () => {
@@ -14,6 +14,11 @@ const AIAssistant = () => {
   ]);
   
   const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef(null);
+
+  // scroll to bottom of chat when there is a new message 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth'});}, [messages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -80,6 +85,7 @@ const AIAssistant = () => {
               </div>
             </div>
           ))}
+           <div ref={messagesEndRef} />
         </div>
         
         <form className="chat-input" onSubmit={handleSendMessage}>
