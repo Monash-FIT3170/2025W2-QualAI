@@ -21,7 +21,7 @@ class PromptRequest(BaseModel):
     prompt: str
 
 OLLAMA_URL = "http://host.docker.internal:11434/api/generate"
-OLLAMA_MODEL = "deepseek-r1:1.5b"
+OLLAMA_MODEL = "deepseek-r1:7b"
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
