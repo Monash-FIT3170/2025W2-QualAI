@@ -66,6 +66,11 @@ const AIAssistant = () => {
     }
   };
 
+  const removeThinkingText = (text) => {
+    const split = text.split('</think>')
+    return split.length > 1 ? split[1].trim() : text;
+  };
+
 
   return (
     <div className="ai-assistant-card">
@@ -81,7 +86,7 @@ const AIAssistant = () => {
                 <i className={message.sender === 'ai' ? 'icon-robot' : 'icon-user'}></i>
               </div>
               <div className="message-text">
-                <p>{message.text}</p>
+                <p>{message.sender === 'ai' ? removeThinkingText(message.text) : message.text}</p>
               </div>
             </div>
           ))}
