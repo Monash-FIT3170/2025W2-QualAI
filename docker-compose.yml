@@ -1,10 +1,10 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   backend:
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: qualai-backend
     ports:
       - "8000:8000"
@@ -12,10 +12,16 @@ services:
       - .env
     depends_on:
       - qdrant
+      - ollama
+    # environment:
+    #   - OLLAMA_URL=http://ollama:11434
     volumes:
       - ./server/app:/app/app  # Optional: dev hot reload
 
   ollama:
+    build:
+      context: .
+      dockerfile: dockerfile.ollama
     image: ollama/ollama
     container_name: ollama
     ports:
@@ -27,6 +33,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    volumes:
+      - ollama_data:/root/.ollama
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -40,7 +48,7 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: qualai-client
     ports:
       - "5173:5173"
@@ -54,4 +62,4 @@ services:
 
 volumes:
   qdrant_data:
-  
+  ollama_data:
