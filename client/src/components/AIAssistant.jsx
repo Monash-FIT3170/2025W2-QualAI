@@ -15,29 +15,52 @@ const AIAssistant = () => {
   
   const [newMessage, setNewMessage] = useState('');
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (newMessage.trim() === '') return;
-    
-    setMessages([
-      ...messages,
+
+    // Add the user's message to the chat
+    setMessages(prevMessages => [
+      ...prevMessages,
       { sender: 'user', text: newMessage }
     ]);
-    
-    // Mock AI response - in a real app, this would be an API call
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { 
-          sender: 'ai', 
-          text: "I've analyzed the interviews and found several recurring themes related to user experience. The main themes include navigation difficulties, appreciation for the interface design, and requests for additional features. Would you like me to elaborate on any specific theme?"
-        }
-      ]);
-    }, 1000);
-    
+
+    const userPrompt = newMessage;
     setNewMessage('');
+
+    try {
+      // Make POST request to FastAPI /generate endpoint
+      const response = await fetch("http://localhost:8000/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prompt: userPrompt })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Error fetching response from AI');
+      }
+
+      const data = await response.json();
+
+      const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
+
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { sender: 'ai', text: aiResponse }
+      ]);
+
+    } catch (error) {
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { sender: 'ai', text: `Error: ${error.message}` }
+      ]);
+    }
   };
+
 
   return (
     <div className="ai-assistant-card">
