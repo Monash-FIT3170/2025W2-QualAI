@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import '../assets/styles/AIAssistant.css';
 
 const AIAssistant = () => {
   const [messages, setMessages] = useState([
@@ -40,38 +39,42 @@ const AIAssistant = () => {
   };
 
   return (
-    <div className="ai-assistant-card">
-      <h2 className="card-title">AI Assistant</h2>
-      <div className="chat-container">
-        <div className="chat-messages">
-          {messages.map((message, index) => (
-            <div 
-              key={index} 
-              className={`chat-message ${message.sender === 'ai' ? 'ai-message' : 'user-message'}`}
-            >
-              <div className="message-icon">
-                <i className={message.sender === 'ai' ? 'icon-robot' : 'icon-user'}></i>
-              </div>
-              <div className="message-text">
-                <p>{message.text}</p>
-              </div>
+  <div className="bg-slate-800 rounded-xl shadow-sm p-4 h-full flex flex-col">
+    <h2 className="text-lg font-semibold text-white mb-4">AI Assistant</h2>
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex-1 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4 min-h-0">
+        {messages.map((message, index) => (
+          <div 
+            key={index} 
+            className={`flex mb-4 ${message.sender === 'ai' ? 'items-start' : 'items-start flex-row-reverse text-right'}`}
+          >
+            <div className="flex-shrink-0 mx-3">
+              <i className={`${message.sender === 'ai' ? 'bi bi-robot' : 'bi bi-person'}`}></i>
             </div>
-          ))}
-        </div>
-        
-        <form className="chat-input" onSubmit={handleSendMessage}>
-          <input
-            type="text"
-            placeholder="Type your question here..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary">
-            <i className="icon-paper-plane"></i> Send
-          </button>
-        </form>
+            <div className={`p-3 rounded-lg max-w-[80%] ${message.sender === 'ai' ? 'bg-slate-800' : 'bg-slate-700'}`}>
+              <p className="text-sm text-slate-200 m-0 leading-6">{message.text}</p>
+            </div>
+          </div>
+        ))}
       </div>
+      
+      <form className="flex gap-3" onSubmit={handleSendMessage}>
+        <input
+          type="text"
+          className="flex-1 px-3 py-3 border border-slate-700 bg-slate-900 text-white rounded-lg focus:outline-none focus:border-indigo-600"
+          placeholder="Type your question here..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+        />
+        <button 
+          type="submit" 
+          className="flex-shrink-0 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <i className="bi bi-send mr-2"></i> Send
+        </button>
+      </form>
     </div>
+  </div>
   );
 };
 

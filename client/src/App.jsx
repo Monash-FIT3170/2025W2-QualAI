@@ -2,14 +2,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import Dashboard from './pages/Dashboard';
-import './assets/styles/App.css';
 
 function App() {
   return (
     <Router>
-      <div className="app-container">
+      <div className="flex-col h-screen bg-slate-900 text-white">
         <NavBar />
-        <main className="app-main">
+        <main className="h-[90vh] flex-1 overflow-hidden max-w-[1600px] w-full mx-0-auto p-4">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             {/* Add more routes as needed */}
