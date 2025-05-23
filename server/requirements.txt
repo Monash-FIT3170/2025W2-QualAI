@@ -4,3 +4,4 @@ sqlalchemy
 pydantic
 qdrant-client
 python-dotenv
+sentence-transformers
