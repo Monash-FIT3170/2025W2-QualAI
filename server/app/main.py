@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 import asyncio
 import os
 import json
@@ -152,4 +152,35 @@ async def transcribe_audio(
         for segment in transcription_raw["transcription"]
         if segment["text"].strip()
     )
-    return text_output
+    # Save the transcription to a .txt file
+    transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt"
+    transcript_path = uploads_path / transcript_filename
+    with open(transcript_path, "w", encoding="utf-8") as f:
+        f.write(text_output)
+
+    # Return a download link
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+        <head><title>Transcription Complete</title></head>
+        <body>
+            <h2>Transcription Complete</h2>
+            <p><a href="/download/{transcript_filename}">Download your transcription</a></p>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+
+@app.get("/download/{filename}")
+async def download_transcription(filename: str):
+    base_path = Path(__file__).resolve().parent
+    file_path = base_path / "Interview Uploads" / filename
+
+    if not file_path.exists():
+        return HTMLResponse(content="File not found.", status_code=404)
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type='text/plain'
+    )
