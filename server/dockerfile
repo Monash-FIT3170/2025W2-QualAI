@@ -1,5 +1,5 @@
 # Use slim Python image
-FROM python:3.8-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -17,12 +17,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI application code
 COPY ./app ./app
+COPY ./data ./data
+COPY ./scripts ./scripts
+
 
 # Expose FastAPI port
 EXPOSE 8000
 
 # Setup an app user so the container doesn't run as the root user
-RUN useradd app
+RUN useradd -m app
+ENV HF_HOME=/home/app/.cache/huggingface
+RUN chown -R app:app /home/app
 USER app
 
 # Run FastAPI server
