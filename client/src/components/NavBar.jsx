@@ -35,10 +35,10 @@ const NavBar = () => {
       </div>
       
       <div className="flex items-center">
-        <div className="flex bg-slate-700 rounded-md mr-2 p-1 ml-[5px]">
+        <div className="flex bg-slate-700 rounded-md mr-2 p-1 ml-[5px] gap-2">
           <Link 
-            to="/" 
-            className="px-4 py-2 rounded-md no-underline text-sm font-medium bg-indigo-600 text-white"
+          to="/"
+            className="px-4 py-2 rounded-md no-underline text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
           >
             Project 1
           </Link>
@@ -48,7 +48,7 @@ const NavBar = () => {
           className="flex items-center px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
           onClick={openProjectFile}
         >
-          <i className="bi bi-folder2-open mr-2"></i> Open Project
+          <i className="bi bi-folder2-open mr-2"/> Open Project
         </button>
       </div>
       
@@ -57,7 +57,7 @@ const NavBar = () => {
           className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
           onClick={() => setShowModal(true)}
         >
-          <i className="bi bi-plus mr-2"></i> New Project
+          <i className="bi bi-plus mr-2"/> New Project
         </button>
         
         <div className="flex items-center px-3 py-1 bg-green-50 text-green-800 rounded-full text-xs font-medium">
