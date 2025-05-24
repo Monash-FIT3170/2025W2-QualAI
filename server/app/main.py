@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse
 import asyncio
 import os
@@ -154,9 +154,6 @@ async def transcribe_audio(
     )
     # Save the transcription to a .txt file
     transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt"
-    transcript_path = uploads_path / transcript_filename
-    with open(transcript_path, "w", encoding="utf-8") as f:
-        f.write(text_output)
 
     # Return a download link
     html_content = f"""
@@ -165,22 +162,38 @@ async def transcribe_audio(
         <head><title>Transcription Complete</title></head>
         <body>
             <h2>Transcription Complete</h2>
-            <p><a href="/download/{transcript_filename}">Download your transcription</a></p>
+            
+            <form method="post" action="/download/">
+                <input name = "filename" type = "hidden" value = {transcript_filename}></input>
+                <textarea name = "final_output" cols="50" rows="10">{text_output}</textarea> <br>
+                <button type="Download">Download Transcript</button>
+            </form>
+            <form action = "/transcribe/">
+                <button type="Return">Back</button>
+            </form>
         </body>
     </html>
     """
     return HTMLResponse(content=html_content, status_code=200)
 
-@app.get("/download/{filename}")
-async def download_transcription(filename: str):
+
+
+@app.post("/download/")
+async def downloadTest_transcription(final_output: str = Form(...), filename: str=Form(...)):
     base_path = Path(__file__).resolve().parent
-    file_path = base_path / "Interview Uploads" / filename
+    upload_path = base_path / "Interview Uploads"
+    os.makedirs(upload_path, exist_ok=True) #should suppress error if it exists
 
-    if not file_path.exists():
-        return HTMLResponse(content="File not found.", status_code=404)
+    file_path = upload_path / filename
 
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(final_output)
+    
     return FileResponse(
         path=file_path,
         filename=filename,
         media_type='text/plain'
     )
+    #
+
+    
