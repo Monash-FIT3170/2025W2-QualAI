@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../assets/styles/AIAssistant.css';
+import ReactMarkdown from 'react-markdown';
 
 const AIAssistant = () => {
   const [messages, setMessages] = useState([
@@ -86,7 +87,8 @@ const AIAssistant = () => {
                 <i className={message.sender === 'ai' ? 'icon-robot' : 'icon-user'}></i>
               </div>
               <div className="message-text">
-                <p>{message.sender === 'ai' ? removeThinkingText(message.text) : message.text}</p>
+                {message.sender === 'ai' ? (
+                  <ReactMarkdown>{removeThinkingText(message.text)}</ReactMarkdown>) : (<p>{message.text}</p>)}
               </div>
             </div>
           ))}
