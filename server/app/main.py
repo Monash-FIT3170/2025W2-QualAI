@@ -153,7 +153,7 @@ async def transcribe_audio(
         if segment["text"].strip()
     )
     # Save the transcription to a .txt file
-    transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt"
+    transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt".replace(" ","_")
 
     # Return a download link
     html_content = f"""
