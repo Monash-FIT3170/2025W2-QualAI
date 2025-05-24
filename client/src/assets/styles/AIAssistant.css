@@ -24,6 +24,7 @@
     padding: 1rem;
     margin-bottom: 1rem;
     min-height: 0;
+    align-items: center;
   }
   
   .chat-message {
@@ -32,11 +33,11 @@
   }
   
   .ai-message {
-    align-items: flex-start;
+    align-items: center;
   }
   
   .user-message {
-    align-items: flex-start;
+    align-items: center;
     flex-direction: row-reverse;
     text-align: right;
   }
@@ -44,6 +45,7 @@
   .message-icon {
     flex-shrink: 0;
     margin: 0 0.75rem;
+    align-items: center;
   }
   
   .ai-message .message-icon {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../assets/styles/AIAssistant.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import ReactMarkdown from 'react-markdown';
 
 const AIAssistant = () => {
@@ -7,10 +8,6 @@ const AIAssistant = () => {
     {
       sender: 'ai',
       text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?"
-    },
-    {
-      sender: 'user',
-      text: "Can you identify common themes related to user experience in the latest interviews?"
     }
   ]);
   
@@ -84,7 +81,7 @@ const AIAssistant = () => {
               className={`chat-message ${message.sender === 'ai' ? 'ai-message' : 'user-message'}`}
             >
               <div className="message-icon">
-                <i className={message.sender === 'ai' ? 'icon-robot' : 'icon-user'}></i>
+                <i className={message.sender === 'ai' ? 'bi bi-robot mr-3 text-gray-400' : 'bi bi-person mr-3 text-gray-400'}></i>
               </div>
               <div className="message-text">
                 {message.sender === 'ai' ? (
