@@ -19,7 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./app ./app
 COPY ./data ./data
 COPY ./scripts ./scripts
+COPY ./scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
+ENV QDRANT_URL=http://qdrant:6333
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Expose FastAPI port
 EXPOSE 8000
