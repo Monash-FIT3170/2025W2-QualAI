@@ -15,6 +15,10 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
+    """
+    Sets the Default root html page for the transcription application, details transcription application capabilities
+    """
+
     html_content = """
     <!DOCTYPE html>
     <html>
@@ -100,6 +104,9 @@ class Transcriber:
 
 @app.get("/transcribe/")
 async def transcribe_form():
+    """
+    Form page opened when the Transcribe Button has been implemented, holds the UI data for uploading and initialising transcription.
+    """
     html_content = """
     <!DOCTYPE html>
     <html>
@@ -124,6 +131,11 @@ async def transcribe_audio(
         ..., description="Upload an interview for transcription here"
     )
 ):
+    """
+    Function for transcribing audio using the Transcriber object, creates an upload directory for files and returns a editable transcription page.
+
+    :param file: the File path location of the chosen uploaded file functionality on the webpage.
+    """
     try:
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
@@ -179,10 +191,16 @@ async def transcribe_audio(
 
 
 @app.post("/download/")
-async def downloadTest_transcription(final_output: str = Form(...), filename: str=Form(...)):
+async def download_transcription(final_output: str = Form(...), filename: str=Form(...)):
+    """
+    Function for downloading the edited transcription into a local text file.
+
+    :param final_output: The final text file output derived from the text contained in the editable text box from the transcription page
+    :param filename: The modified name of the file, used to generate a downloadable text file of the same name. Stored in the transcription page prior.
+    """
     base_path = Path(__file__).resolve().parent
     upload_path = base_path / "Interview Uploads"
-    os.makedirs(upload_path, exist_ok=True) #should suppress error if it exists
+    os.makedirs(upload_path, exist_ok=True) #should suppress error if directory exists
 
     file_path = upload_path / filename
 
@@ -194,6 +212,5 @@ async def downloadTest_transcription(final_output: str = Form(...), filename: st
         filename=filename,
         media_type='text/plain'
     )
-    #
-
+    
     
