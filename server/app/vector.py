@@ -4,9 +4,12 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client import QdrantClient
 import os
 
+# Name of the Qdrant collection to use
 COLLECTION = "test_db"
 QDRANT_URL = os.getenv("QDRANT_URL", "http://qdrant:6333")   # docker-compose service name
 
+
+# Cache the embedding model so it's loaded only once per process
 @lru_cache(maxsize=1)
 def get_embeddings():
     return HuggingFaceBgeEmbeddings(
@@ -15,6 +18,7 @@ def get_embeddings():
         encode_kwargs={"normalize_embeddings": False},
     )
 
+# Cache the Qdrant vector store instance
 @lru_cache(maxsize=1)
 def get_db():
     client = QdrantClient(url=QDRANT_URL, prefer_grpc=False)
