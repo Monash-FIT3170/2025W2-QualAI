@@ -23,3 +23,4 @@ def get_db():
         embeddings=get_embeddings(),
         collection_name=COLLECTION,
     )
+

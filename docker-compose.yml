@@ -1,5 +1,7 @@
 version: '3.8'
 
+
+
 services:
   backend:
     build:
@@ -13,7 +15,8 @@ services:
     depends_on:
       - qdrant
     volumes:
-      - ./server/app:/app/app  # Optional: dev hot reload
+      - ./server/app:/home/app  # Optional: dev hot reload
+
 
   qdrant:
     image: qdrant/qdrant:latest

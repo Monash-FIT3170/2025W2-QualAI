@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from .vector import get_db
 from .routes import hello
 
+
 app = FastAPI(title="Vector-Search API")
+
 
 app.include_router(hello.router)   # ← mount its routes
 
@@ -24,4 +26,3 @@ async def search(q: str = Query(..., min_length=2), k: int = 5):
             {"score": score, "content": doc.page_content, "metadata": doc.metadata}
             for doc, score in docs
         ]
-    }
