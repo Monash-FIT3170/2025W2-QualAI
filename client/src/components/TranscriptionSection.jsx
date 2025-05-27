@@ -6,10 +6,29 @@
  */
 const TranscriptionSection =  (TranscriptionData) => {
   const handleDownloadTranscription=()=>{
-    return
-  }
+    if (!transcriptionDataObject){return "No transcription to download"}
+
+      try {
+        //Create FormData object (as the endpoint request a form)
+        const downloadData = new FormData();
+        downloadData.append('final_output', transcriptionDataObject.transcription );
+        downloadData.append('filename', transcriptionDataObject.filename);
+        //POST request to FastAPI endpoint
+        const response = fetch("http://localhost:8000/download/", {
+          method: "POST",
+          body: downloadData,
+        });
   
- 
+
+      } catch (error) {
+        console.log('An unexpected error incurred: ',error)
+      }
+  }
+  const transcriptionDataObject = TranscriptionData.transcriptionData ? JSON.parse(TranscriptionData.transcriptionData) : null;
+  
+  console.log(transcriptionDataObject)
+  if (transcriptionDataObject){console.log(transcriptionDataObject.transcription)}
+
   return (
     /* Main container with card styling and flex layout */
     <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col">
@@ -34,7 +53,7 @@ const TranscriptionSection =  (TranscriptionData) => {
           <button 
             className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2" 
             aria-label="Download transcription"
-            onClick={handleDownloadTranscription()}
+            onClick={handleDownloadTranscription}
             // TODO: Implement transcription download functionality
           >
             <i className="bi bi-download" aria-hidden="true"/>
@@ -50,7 +69,7 @@ const TranscriptionSection =  (TranscriptionData) => {
           <p className="text-sm text-gray-300 leading-6">
             
             {/* TODO: Replace with dynamic transcription content */}
-            {TranscriptionData.transcriptionData? TranscriptionData.transcriptionData.slice(1,-1):"Transcribed interview text will go here."}
+            {transcriptionDataObject? transcriptionDataObject.transcription:"Transcribed interview text will go here."}
           </p>
         </div>
 

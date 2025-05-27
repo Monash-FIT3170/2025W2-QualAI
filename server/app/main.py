@@ -236,7 +236,7 @@ async def transcribe_audio(
     # """
     # return HTMLResponse(content=html_content, status_code=200)
 
-    return text_output
+    return {"filename":transcript_filename,"transcription":text_output}
 
 
 @app.post("/download/")
