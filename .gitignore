@@ -30,6 +30,3 @@ dist-ssr
 
 # Python cache
 __pycache__
-
-# Qdrant persistence
-server/qdrant_data/
