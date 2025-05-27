@@ -1,54 +1,28 @@
-from fastapi import FastAPI
-from sentence_transformers import SentenceTransformer
-from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct, VectorParams, Distance
-import uuid
-
-app = FastAPI()
-
-# Initialize Qdrant client (adjust if running remotely)
-qdrant = QdrantClient("qdrant", port=6333)
-
-# Collection name and vector model setup
-COLLECTION_NAME = "transcripts"
-MODEL_NAME = "all-MiniLM-L6-v2"
-VECTOR_SIZE = 384
-
-# Create the collection (if it doesn't exist)
-qdrant.recreate_collection(
-    collection_name=COLLECTION_NAME,
-    vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE)
-)
-
-# Load model once
-model = SentenceTransformer(MODEL_NAME)
+from fastapi import FastAPI, Query, HTTPException
+from pydantic import BaseModel
+from .vector import get_db
+from .routes import hello
 
 
-@app.get("/")
-async def root():
-    sentences = [
-        "Thsadfe weather is lovely tsadfasfdoday.",
-        "Isadft's so sunny outsasdfsadfide!",
-        "He droasdfve to the stasdfsadfadium.",
-    ]
+app = FastAPI(title="Vector-Search API")
 
-    # Encode the sentences
-    embeddings = model.encode(sentences)
-    similarities = model.similarity(embeddings, embeddings)
 
-    # Create and upsert points
-    points = [
-        PointStruct(
-            id=str(uuid.uuid4()),
-            vector=embeddings[i],
-            payload={"text": sentences[i]}
-        )
-        for i in range(len(sentences))
-    ]
+app.include_router(hello.router)   # ← mount its routes
 
-    qdrant.upsert(collection_name=COLLECTION_NAME, points=points)
+
+class SearchResponse(BaseModel):
+    result: list[dict]
+
+@app.get("/search", response_model=SearchResponse)
+async def search(q: str = Query(..., min_length=2), k: int = 5):
+    db = get_db()
+    try:
+        docs = db.similarity_search_with_score(query=q, k=k)
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
     return {
-        "status": embeddings.tolist(),
-        "stored": similarities.tolist()
-    }
+        "result": [
+            {"score": score, "content": doc.page_content, "metadata": doc.metadata}
+            for doc, score in docs
+        ]
