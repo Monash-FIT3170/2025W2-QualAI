@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-
+import React, { useState,useEffect,useRef  } from 'react';
 /**
  * AI Assistant chat component for research analysis
  * Provides interactive chat interface between user and AI assistant
@@ -11,19 +10,23 @@ const AIAssistant = () => {
       sender: 'ai', 
       text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?"
     },
-    {
-      sender: 'user',
-      text: "Can you identify common themes related to user experience in the latest interviews?"
-    }
+    // {
+    //   sender: 'user',
+    //   text: "Can you identify common themes related to user experience in the latest interviews?"
+    // }
   ]);
   
   const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef(null);
+  // scroll to bottom of chat when there is a new message 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth'});}, [messages]);
 
   /**
    * Handles sending a new message
    * @param {Event} e - Form submit event
    */
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async(e) => {
     e.preventDefault();
     
     // Don't send empty messages
@@ -34,21 +37,49 @@ const AIAssistant = () => {
       ...messages,
       { sender: 'user', text: newMessage }
     ]);
-    
-    // Mock AI response - in production this would be an API call
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { 
-          sender: 'ai', 
-          text: "I've analyzed the interviews and found several recurring themes related to user experience. The main themes include navigation difficulties, appreciation for the interface design, and requests for additional features. Would you like me to elaborate on any specific theme?"
-        }
-      ]);
-    }, 1000); // Simulate API response delay
-    
+    const userPrompt = newMessage;
     // Clear input field after sending
     setNewMessage('');
+
+    try {
+      // Make POST request to FastAPI /generate endpoint
+      const response = await fetch("http://localhost:8000/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prompt: userPrompt })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Error fetching response from AI');
+      }
+
+      const data = await response.json();
+
+      const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
+
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { sender: 'ai', text: aiResponse }
+      ]);
+
+    } catch (error) {
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { sender: 'ai', text: `Error: ${error.message}` }
+      ]);
+    }
+    
+    
   };
+
+  const removeThinkingText = (text) => {
+    const split = text.split('</think>')
+    return split.length > 1 ? split[1].trim() : text;
+  };
+
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-sm p-4 h-full flex flex-col">
@@ -84,11 +115,13 @@ const AIAssistant = () => {
                   'bg-slate-700'    // User message background
               }`}>
                 <p className="text-sm text-slate-200 m-0 leading-6">
-                  {message.text}
+                  {message.sender === 'ai' ? (
+                  removeThinkingText(message.text)) : (message.text)}
                 </p>
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
     
