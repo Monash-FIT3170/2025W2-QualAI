@@ -27,7 +27,27 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    """
+    Sets the Default root html page for the transcription application, details transcription application capabilities
+    """
+
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Audio Transcription API</title>
+    </head>
+    <body>
+        <h1>Welcome to the Audio Transcription API</h1>
+        <p>Use the <code>/transcribe/</code> endpoint to upload an audio file for transcription.</p>
+        <p>Supported formats: mp3, wav, ogg, flac.</p>
+        <form action="/transcribe/">
+            <button type="submit">Go to the /Transcribe/ endpoint</button>
+        </form>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)  
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -63,27 +83,7 @@ async def generate_text(request: PromptRequest):
         error_details = traceback.format_exc()
         # print("Server Error Traceback:\n", error_details)
         return {"error": str(e) or "Unknown server error"}
-    """
-    Sets the Default root html page for the transcription application, details transcription application capabilities
-    """
-
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Audio Transcription API</title>
-    </head>
-    <body>
-        <h1>Welcome to the Audio Transcription API</h1>
-        <p>Use the <code>/transcribe/</code> endpoint to upload an audio file for transcription.</p>
-        <p>Supported formats: mp3, wav, ogg, flac.</p>
-        <form action="/transcribe/">
-            <button type="submit">Go to the /Transcribe/ endpoint</button>
-        </form>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content, status_code=200)
+    
 
 
 class Transcriber:
