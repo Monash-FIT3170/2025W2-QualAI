@@ -4,7 +4,7 @@
  * Provides a drag-and-drop interface for uploading audio files for transcription.
  * Handles file selection and initiates the upload process.
  */
-const UploadAudioCard = () => {
+const UploadAudioCard = ({onTranscriptionComplete}) => {
   // const [selectedFile, setSelectedFile] = useState(null);
   // const [isUploading, setIsUploading] = useState(false);
 
@@ -12,12 +12,40 @@ const UploadAudioCard = () => {
    * Handles file selection
    * @param {React.ChangeEvent<HTMLInputElement>} e - File input change event
    */
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const selectedFile = files[0];
+
       console.log('Selected file:', selectedFile.name);
       // TODO: Implement file validation and upload logic
+
+      try {
+        //Create FormData object (as the endpoint request a form)
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        //POST request to FastAPI endpoint
+        const response = await fetch("http://localhost:8000/transcribe/", {
+          method: "POST",
+          body: formData,
+        });
+  
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Error uploading file');
+        }
+  
+        //Handle the HTML response from FastAPI
+        const resultTranscriptionData = await response.text();
+
+        if (onTranscriptionComplete) {
+          onTranscriptionComplete(resultTranscriptionData);
+        }
+  
+      } catch (error) {
+        console.log('An unexpected error incurred: ',error)
+      }
+
     }
   };
 

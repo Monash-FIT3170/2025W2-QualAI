@@ -215,27 +215,28 @@ async def transcribe_audio(
     # Save the transcription to a .txt file
     transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt".replace(" ","_")
 
-    # Return a download link
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-        <head><title>Transcription Complete</title></head>
-        <body>
-            <h2>Transcription Complete</h2>
+    # # Return a download link
+    # html_content = f"""
+    # <!DOCTYPE html>
+    # <html>
+    #     <head><title>Transcription Complete</title></head>
+    #     <body>
+    #         <h2>Transcription Complete</h2>
             
-            <form method="post" action="/download/">
-                <input name = "filename" type = "hidden" value = {transcript_filename}></input>
-                <textarea name = "final_output" cols="50" rows="10">{text_output}</textarea> <br>
-                <button type="Download">Download Transcript</button>
-            </form>
-            <form action = "/transcribe/">
-                <button type="Return">Back</button>
-            </form>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content, status_code=200)
+    #         <form method="post" action="/download/">
+    #             <input name = "filename" type = "hidden" value = {transcript_filename}></input>
+    #             <textarea name = "final_output" cols="50" rows="10">{text_output}</textarea> <br>
+    #             <button type="Download">Download Transcript</button>
+    #         </form>
+    #         <form action = "/transcribe/">
+    #             <button type="Return">Back</button>
+    #         </form>
+    #     </body>
+    # </html>
+    # """
+    # return HTMLResponse(content=html_content, status_code=200)
 
+    return text_output
 
 
 @app.post("/download/")

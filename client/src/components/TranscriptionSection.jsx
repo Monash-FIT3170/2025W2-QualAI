@@ -4,7 +4,12 @@
  * Displays interview transcriptions with editing and export functionality.
  * Provides a workspace for viewing and annotating transcribed text.
  */
-const TranscriptionSection = () => {
+const TranscriptionSection =  (TranscriptionData) => {
+  const handleDownloadTranscription=()=>{
+    return
+  }
+  
+ 
   return (
     /* Main container with card styling and flex layout */
     <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col">
@@ -29,6 +34,7 @@ const TranscriptionSection = () => {
           <button 
             className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2" 
             aria-label="Download transcription"
+            onClick={handleDownloadTranscription()}
             // TODO: Implement transcription download functionality
           >
             <i className="bi bi-download" aria-hidden="true"/>
@@ -42,8 +48,9 @@ const TranscriptionSection = () => {
         <div className="flex-1 overflow-y-auto">
           {/* Placeholder transcription text - will be replaced with actual content */}
           <p className="text-sm text-gray-300 leading-6">
-            Transcribed interview text will go here.
+            
             {/* TODO: Replace with dynamic transcription content */}
+            {TranscriptionData.transcriptionData? TranscriptionData.transcriptionData.slice(1,-1):"Transcribed interview text will go here."}
           </p>
         </div>
 
