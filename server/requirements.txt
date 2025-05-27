@@ -5,3 +5,12 @@ pydantic
 qdrant-client
 vosk
 python-dotenv
+sentence_transformers
+torch
+pypdf
+langchain
+# Modern split wheels  (recommended)
+langchain-core>=0.1.0
+langchain-community>=0.1.0
+pathlib
+langchain-huggingface>=0.1.0
