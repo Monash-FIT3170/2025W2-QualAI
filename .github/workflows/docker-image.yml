@@ -32,8 +32,18 @@ jobs:
         EOF
 
     # Set up Docker and Compose
-    - name: Set up Docker Compose
-      uses: docker/setup-compose-action@v1
+    - name: Install Docker using Docker's official script
+      run: |
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sudo sh get-docker.sh
+      continue-on-error: false
+
+    - name: Install Docker Compose
+      run: |
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
+      continue-on-error: false
 
     # Frontend build and test (Vite/React)
     - name: Install frontend dependencies
