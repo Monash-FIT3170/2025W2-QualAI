@@ -17,8 +17,8 @@ jobs:
       qdrant:
         image: qdrant/qdrant:latest
         ports:
-        - 6333:6333
-        - 6334:6334
+        - "6334:6333"
+        - "6335:6334"
         volumes:
         - qdrant_data:/qdrant/storage
 
@@ -36,6 +36,7 @@ jobs:
         # Backend configuration
         DATABASE_URL=${{ secrets.DATABASE_URL }}
         QDRANT_URL=qdrant:6333
+        VITE_API_URL=http://localhost:8000
 
         EOF
 
