@@ -2,7 +2,7 @@ name: QualAI CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, feature/YueYaoYan/#23-github-action-workflow ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
@@ -46,6 +46,7 @@ jobs:
         chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
         docker compose version
 
+    # Cache and install dependencies
     - name: Cache node modules
       uses: actions/cache@v3
       with:
@@ -78,11 +79,11 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov
 
+    # Build confidence test
     - name: Start Docker Compose
       run: docker compose up -d --build
       continue-on-error: false
 
-    # Frontend build and test (Vite/React)
     - name: Build frontend
       working-directory: ./client
       run: npm run build
