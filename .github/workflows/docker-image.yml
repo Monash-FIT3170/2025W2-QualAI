@@ -26,6 +26,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Clean up previous runs
+      run: |
+        docker compose down || true
+
     - name: Setup environment variables
       run: |
         cat << EOF > .env
