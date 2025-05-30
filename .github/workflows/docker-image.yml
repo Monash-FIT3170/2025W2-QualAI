@@ -51,7 +51,7 @@ jobs:
       run: npm install
 
     - name: Start application-specific services using Docker Compose
-      run: docker-compose up
+      run: docker-compose up -d
       continue-on-error: false
 
     - name: Build frontend
