@@ -63,6 +63,6 @@ You can access each service in your browser:
   ↳ Check if test_db is created with 40 points
 - Backend (FastAPI): http://localhost:8000 <br>
   ↳ Confirms that the FastAPI server is up and running
-- Search Endpoint: http://localhost:8000/search?q=late%20penalty
+- Search Endpoint: http://localhost:8000/search?q=late%20penalty <br>
   ↳ Confirms the backend can query the vector database successfully
 - Frontend (React): http://localhost:5173
