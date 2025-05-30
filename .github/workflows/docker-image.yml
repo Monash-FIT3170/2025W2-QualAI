@@ -13,14 +13,6 @@ env:
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    services:
-      qdrant:
-        image: qdrant/qdrant:latest
-        ports:
-        - "6334:6333"
-        - "6335:6334"
-        volumes:
-        - qdrant_data:/qdrant/storage
 
     steps:
     - name: Checkout code
@@ -36,6 +28,8 @@ jobs:
         # Backend configuration
         DATABASE_URL=${{ secrets.DATABASE_URL }}
         QDRANT_URL=qdrant:6333
+
+        # Frontend configuration
         VITE_API_URL=http://localhost:8000
 
         EOF
