@@ -18,6 +18,15 @@ jobs:
         volumes:
           - qdrant_data:/qdrant/storage
 
+    - name: Setup environment variables
+      run: |
+        cat << EOF > .env
+        # Backend configuration
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        QDRANT_URL=qdrant:6333
+        
+        EOF
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
