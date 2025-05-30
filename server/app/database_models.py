@@ -1,5 +1,6 @@
 import sqlite3
 from typing import Optional
+from __future__ import annotations
 
 PROJECT_TABLE_NAME = "project"
 TRANS_TABLE_NAME = "transcription"
