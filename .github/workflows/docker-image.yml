@@ -1,0 +1,72 @@
+name: QualAI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+          - 6334:6334
+        volumes:
+          - qdrant_data:/qdrant/storage
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Set up Docker and Compose
+    - name: Install Docker using Docker's official script
+      run: |
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sudo sh get-docker.sh
+      continue-on-error: false
+
+    - name: Install Docker Compose
+      run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+      continue-on-error: false
+      
+    # Frontend build and test (Vite/React)
+    - name: Install frontend dependencies
+      working-directory: ./client
+      run: npm install
+
+    - name: Start application-specific services using Docker Compose
+      run: docker-compose up
+      continue-on-error: false
+
+    - name: Build frontend
+      working-directory: ./client
+      run: npm run build
+
+    - name: Test frontend
+      working-directory: ./client
+      run: npm test 
+
+    # Backend build and test (FastAPI)
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+        
+    - name: Install Python dependencies
+      working-directory: ./server
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run backend tests
+      working-directory: ./server/tests
+      run: |
+        pytest --cov=./ --cov-report=xml
