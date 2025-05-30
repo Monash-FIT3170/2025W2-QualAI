@@ -78,16 +78,17 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov
 
-    - name: Start application-specific services using Docker Compose
+    - name: Start Docker Compose
       run: |
         docker compose up -d --build
 
         # Wait for services to be ready
         docker compose exec backend bash -c 'while ! curl -s http://localhost:8000/health; do sleep 1; done'
-
-        # Run tests
-        docker compose exec backend pytest /app/tests --cov=/app --cov-report=xml
       continue-on-error: false
+
+    - name: Run pytest
+      run: |
+        docker compose exec backend sh -c "pip install pytest pytest-cov && pytest /app/tests --cov=/app --cov-report=xml"
 
     # Frontend build and test (Vite/React)
     - name: Build frontend
