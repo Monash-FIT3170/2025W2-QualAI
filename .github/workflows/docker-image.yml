@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  PYTHON_VERSION: 3.8
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
