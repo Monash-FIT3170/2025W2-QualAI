@@ -79,11 +79,7 @@ jobs:
         pip install pytest pytest-cov
 
     - name: Start Docker Compose
-      run: |
-        docker compose up -d --build
-
-        # Wait for services to be ready
-        docker compose exec backend bash -c 'while ! curl -s http://localhost:8000/health; do sleep 1; done'
+      run: docker compose up -d --build
       continue-on-error: false
 
     # Frontend build and test (Vite/React)
