@@ -17,6 +17,18 @@ Farhan - farhan.hasan3135@gmail.com <br>
 Gunnraj - gunnraj@hotmail.com <br>
 Eamon - esom181002@gmail.com <br>
 
+## 🔗 Project Management
+
+This project is managed using a [Notion](https://www.notion.so/Product-Backlog-Qual-AI-1c2a077291a4801ab085ffc3b73abb7e) product backlog which includes:
+- **User stories**
+- **Tasks**
+- **Assigned agile teams**
+- **Subtasks with individual assignees**
+    
+➡️ You can view it here: [QualAI Product Backlog](https://www.notion.so/Product-Backlog-Qual-AI-1c2a077291a4801ab085ffc3b73abb7e)
+
+---
+
 # QualAI – Docker Setup Guide
 
 This project uses **Docker** to containerize the full QualAI stack, including:
