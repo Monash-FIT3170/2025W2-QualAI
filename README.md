@@ -59,6 +59,10 @@ You should see the following running services:
 
 ## 🌐 Accessing Services
 You can access each service in your browser:
-- Qdrant Dashboard: http://localhost:6333/dashboard
-- Backend (FastAPI): http://localhost:8000
+- Qdrant Dashboard: http://localhost:6333/dashboard <br>
+  ↳ Check if test_db is created with 40 points
+- Backend (FastAPI): http://localhost:8000 <br>
+  ↳ Confirms that the FastAPI server is up and running
+- Search Endpoint: http://localhost:8000/search?q=late%20penalty
+  ↳ Confirms the backend can query the vector database successfully
 - Frontend (React): http://localhost:5173
