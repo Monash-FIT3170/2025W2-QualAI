@@ -2,7 +2,7 @@ name: QualAI CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/YueYaoYan/#23-github-action-workflow ]
   pull_request:
     branches: [ main, develop ]
 
