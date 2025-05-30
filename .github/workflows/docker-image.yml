@@ -7,6 +7,7 @@ on:
     branches: [ main, develop ]
 
 env:
+  DOCKER_COMPOSE_VERSION: v2.23.0
   PYTHON_VERSION: 3.8
 
 jobs:
@@ -35,18 +36,16 @@ jobs:
         EOF
 
     # Set up Docker and Compose
-    - name: Install Docker using Docker's official script
-      run: |
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sudo sh get-docker.sh
-      continue-on-error: false
+    - name: Setup Docker
+      run: sudo systemctl start docker
 
     - name: Install Docker Compose
       run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        docker-compose --version
-      continue-on-error: false
+        DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+        mkdir -p $DOCKER_CONFIG/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/${{ env.DOCKER_COMPOSE_VERSION }}/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+        chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+        docker compose version
 
     - name: Cache node modules
       uses: actions/cache@v3
