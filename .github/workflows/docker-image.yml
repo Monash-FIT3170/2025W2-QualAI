@@ -86,11 +86,18 @@ jobs:
         docker compose exec backend bash -c 'while ! curl -s http://localhost:8000/health; do sleep 1; done'
       continue-on-error: false
 
-    - name: Run pytest
-      run: |
-        docker compose exec backend sh -c "pip install pytest pytest-cov && pytest /app/tests --cov=/app --cov-report=xml"
-
     # Frontend build and test (Vite/React)
     - name: Build frontend
       working-directory: ./client
       run: npm run build
+
+    - name: Run pytest
+      working-directory: ./server/tests
+      run: pytest --cov=./ --cov-report=xml
+
+    - name: Pytest Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Pytest Results
+        path: ./server/tests/**/*.xml
