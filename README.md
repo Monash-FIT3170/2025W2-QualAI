@@ -16,3 +16,49 @@ Lisa - lisagorman00@gmail.com <br>
 Farhan - farhan.hasan3135@gmail.com <br>
 Gunnraj - gunnraj@hotmail.com <br>
 Eamon - esom181002@gmail.com <br>
+
+# QualAI – Docker Setup Guide
+
+This project uses **Docker** to containerize the full QualAI stack, including:
+
+- **FastAPI backend**
+- **Qdrant vector database**
+- **React frontend**
+
+---
+
+## 🚀 Running the Project with Docker
+
+To spin up **all services**, run the following command from the root of the project:
+
+```bash
+docker compose up
+```
+(Note: first time running this command it would take a while)
+
+## 🔧 Running Individual Services
+To run individual services use the following commands in server:
+```cmd
+docker compose up -d [qdrant | server | client]
+```
+Example – running only Qdrant:
+```cmd
+docker compose up -d qdrant
+```
+
+## 🐳 Docker Desktop
+To visually check if the containers are running:
+
+- Open Docker Desktop
+- Navigate to Containers > 2025w2-qualai
+
+You should see the following running services:
+- qdrant
+- qualai-backend
+- qualai-frontend
+
+## 🌐 Accessing Services
+You can access each service in your browser:
+- Qdrant Dashboard: http://localhost:6333/dashboard
+- Backend (FastAPI): http://localhost:8000
+- Frontend (React): http://localhost:5173

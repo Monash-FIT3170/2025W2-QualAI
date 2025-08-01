@@ -1,0 +1,6 @@
+fastapi[standard]
+uvicorn[standard]
+sqlalchemy
+pydantic
+qdrant-client
+python-dotenv
