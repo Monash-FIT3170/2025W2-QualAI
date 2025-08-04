@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     libasound-dev\
     ffmpeg\
     curl \
+    git \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install dependencies
