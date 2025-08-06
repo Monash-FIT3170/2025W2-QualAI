@@ -10,10 +10,32 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      # This line is for development hot-reloading.
+      # It mounts your local ./server directory into the container's /app directory.
+      - ./server:/app
     depends_on:
       - qdrant
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: qualai-client
+    ports:
+      - "5173:5173"
+    environment:
+      # This tells your Vite frontend where to find the backend API.
+      # It uses the service name 'backend', which works within Docker's network.
+      - VITE_API_URL=http://backend:8000
     volumes:
-      - ./server/app:/app/app  # Optional: dev hot reload
+      # Mounts your local client code into the container for hot-reloading.
+      - ./client:/app
+      # This is a trick to prevent your local node_modules from overwriting
+      # the node_modules directory that was installed inside the container.
+      - /app/node_modules
+    depends_on:
+      - backend
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -24,21 +46,5 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    container_name: qualai-client
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-    environment:
-      - VITE_API_URL=http://localhost:8000  # Match with backend port
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-
 volumes:
   qdrant_data:
-  

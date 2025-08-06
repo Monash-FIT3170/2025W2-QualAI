@@ -7,9 +7,11 @@ python-dotenv
 sentence_transformers
 torch
 pypdf
-langchain
 # Modern split wheels  (recommended)
+pathlib
+langchain
 langchain-core>=0.1.0
 langchain-community>=0.1.0
-pathlib
 langchain-huggingface>=0.1.0
+langchain-text-splitters
+spacy==3.7.2

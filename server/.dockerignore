@@ -1,0 +1,26 @@
+# Git files
+.git
+.gitignore
+
+# Python virtual environment
+.venv
+venv
+env
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and editor folders
+.idea/
+.vscode/
+
+# Local data and logs. The 'papers' directory will be mounted as a volume.
+papers/
+*.log
+
+# Docker files
+Dockerfile
+docker-compose.yml
