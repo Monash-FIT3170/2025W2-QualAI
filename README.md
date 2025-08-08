@@ -35,7 +35,8 @@ To spin up **all services**, run the following command from the root of the proj
 docker compose up
 ```
 (Note: first time running this command it would take a while)
-
+noted for deepseek r1 to work on docker, command below need to be run while running ollama container
+docker exec -it ollama ollama pull deepseek-r1:7b
 ## 🔧 Running Individual Services
 To run individual services use the following commands in server:
 ```cmd
