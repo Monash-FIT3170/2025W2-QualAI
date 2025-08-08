@@ -1,0 +1,93 @@
+name: QualAI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  DOCKER_COMPOSE_VERSION: v2.23.0
+  PYTHON_VERSION: 3.8
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Clean up previous runs
+      run: |
+        docker compose down || true
+
+    - name: Setup environment variables
+      run: |
+        cat << EOF > .env
+        # Backend configuration
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        QDRANT_URL=qdrant:6333
+
+        # Frontend configuration
+        VITE_API_URL=http://localhost:8000
+
+        EOF
+
+    # Set up Docker and Compose
+    - name: Setup Docker
+      run: sudo systemctl start docker
+
+    - name: Install Docker Compose
+      run: |
+        DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+        mkdir -p $DOCKER_CONFIG/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/${{ env.DOCKER_COMPOSE_VERSION }}/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+        chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+        docker compose version
+
+    # Cache and install dependencies
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ./client/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('client/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install frontend dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ./server/__pycache__
+        key: ${{ runner.os }}-pip-${{ hashFiles('server/requirements.txt') }}
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Python dependencies
+      working-directory: ./server
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    # Build confidence test
+    - name: Start Docker Compose
+      run: docker compose up -d --build
+      continue-on-error: false
+
+    - name: Build frontend
+      working-directory: ./client
+      run: npm run build
+
+    - name: Run pytest
+      working-directory: ./server/tests
+      run: pytest --cov=./ --cov-report=xml

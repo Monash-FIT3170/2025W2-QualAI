@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Optional
+from typing import Tuple, List, Dict, Optional
 
 PROJECT_TABLE_NAME = "project"
 TRANS_TABLE_NAME = "transcription"
@@ -84,7 +84,7 @@ class Project:
         if rows_deleted < 1:
             raise ValueError("There is no row associated with this project id!")
 
-    def get_project_by_id(self, project_id: int) -> tuple[str, str, str]:
+    def get_project_by_id(self, project_id: int) -> Tuple[str, str, str]:
         """
         Method to get project data by its id.
 
@@ -92,7 +92,7 @@ class Project:
             transcription_id (int): The id of the project
 
         Returns:
-            tuple[str, str, str]: The project name, description and creation date
+            Tuple[str, str, str]: The project name, description and creation date
 
         Raises:
             LookupError: If there is no project with the given id, raises LookupError
@@ -115,12 +115,12 @@ class Project:
 
         return project
 
-    def get_all_projects(self) -> list[tuple[int, str, str, str]]:
+    def get_all_projects(self) -> List[Tuple[int, str, str, str]]:
         """
         Method to get all projects that exist.
 
         Returns:
-            list[tuple[int, str, str, str]]: The project id, name description and creation date for each project
+            List[Tuple[int, str, str, str]]: The project id, name description and creation date for each project
         """
         projects = None
 
@@ -219,7 +219,7 @@ class Transcription:
         if rows_deleted < 1:
             raise ValueError("There is no row associated with this transcription id!")
 
-    def get_transcription_by_id(self, transcription_id: int) -> tuple[int, str, str, str]:
+    def get_transcription_by_id(self, transcription_id: int) -> Tuple[int, str, str, str]:
         """
         Method to get transcriptions data by its id.
 
@@ -227,7 +227,7 @@ class Transcription:
             transcription_id (int): The id of the transcription
 
         Returns:
-            tuple[int, str, str, str]: The transcription id, name, transcription text and process date
+            Tuple[int, str, str, str]: The transcription id, name, transcription text and process date
         """
         transcription = None
 
@@ -247,7 +247,7 @@ class Transcription:
 
         return transcription
 
-    def get_all_project_transcriptions(self, project_id: int) -> list[tuple[int, str, str]]:
+    def get_all_project_transcriptions(self, project_id: int) -> List[Tuple[int, str, str]]:
         """
         Method to get all transcriptions associated with a project. Crucially, it does not return the transcription text itself.
 
@@ -255,7 +255,7 @@ class Transcription:
             project_id (int): The id of the project
 
         Returns:
-            list[tuple[int, str, str]]: The transcription id, name and process date for each transcription associated with the project
+            List[Tuple[int, str, str]]: The transcription id, name and process date for each transcription associated with the project
         """
         transcriptions = None
 
