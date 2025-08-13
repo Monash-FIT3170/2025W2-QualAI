@@ -2,8 +2,9 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
+from dotenv import load_dotenv
 import traceback
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, FileResponse
 import asyncio
 import os
@@ -11,6 +12,7 @@ import json
 from datetime import datetime, timedelta
 from vosk import Model, KaldiRecognizer
 from pathlib import Path
+import requests
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
@@ -51,38 +53,78 @@ async def root():
 
 class PromptRequest(BaseModel):
     prompt: str
+    mode: str = "offline" # default = offline
 
 OLLAMA_URL = "http://ollama:11434/api/generate"
 OLLAMA_MODEL = "deepseek-r1:7b"
+env_path = Path(__file__).resolve().parent.parent / '.env'
+print(f"Loading .env from: {env_path}")
+load_dotenv(dotenv_path=env_path)  # loads variables from .env file
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+print("GEMINI_API_KEY:", os.getenv("GEMINI_API_KEY"))
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                OLLAMA_URL,
-                json={
-                    "model": OLLAMA_MODEL,
-                    "prompt": request.prompt,
-                    "stream": False
-                },
-                    timeout=60.0
-            )
-        if response.status_code != 200:
-            print("OLLAMA Error:", response.text)
-            return {"error": response.text}
+    prompt = request.prompt.strip()
+    mode = request.mode.lower()
+    if mode == "online": 
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": prompt}
+                        ]
+                    }
+                ]
+            }
+
+            headers = {
+                "Content-Type": "application/json"
+            }
+
+            response = requests.post(url, headers=headers, json=payload)
+            data = response.json()
+            print("Gemini API response:", data)
+
+            # Extract text from Gemini's response
+            reply = data["candidates"][0]["content"]["parts"][0]["text"]
+
+            return {"response": reply.strip()}
+
+        except Exception as e:
+            return {"response": f"Online mode failed: {str(e)}"}
+
+
+    else: 
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    OLLAMA_URL,
+                    json={
+                        "model": OLLAMA_MODEL,
+                        "prompt": request.prompt,
+                        "stream": False
+                    },
+                        timeout=60.0
+                )
+            if response.status_code != 200:
+                print("OLLAMA Error:", response.text)
+                return {"error": response.text}
+            
+            # Log what Ollama actually returned
+            json_response = response.json()
+            # print("OLLAMA Response:", json_response)
+            
+            # Return only the part you care about
+            return {"response": json_response.get("response", "No 'response' field in Ollama reply")}
         
-        # Log what Ollama actually returned
-        json_response = response.json()
-        # print("OLLAMA Response:", json_response)
-        
-        # Return only the part you care about
-        return {"response": json_response.get("response", "No 'response' field in Ollama reply")}
-    
-    except Exception as e:
-        error_details = traceback.format_exc()
-        # print("Server Error Traceback:\n", error_details)
-        return {"error": str(e) or "Unknown server error"}
+        except Exception as e:
+            error_details = traceback.format_exc()
+            # print("Server Error Traceback:\n", error_details)
+            return {"error": str(e) or "Unknown server error"}
     
 
 

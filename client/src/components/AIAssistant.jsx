@@ -17,6 +17,7 @@ const AIAssistant = () => {
   ]);
   
   const [newMessage, setNewMessage] = useState('');
+  const [mode, setMode] = useState('offline');
   const messagesEndRef = useRef(null);
   // scroll to bottom of chat when there is a new message 
   useEffect(() => {
@@ -48,7 +49,7 @@ const AIAssistant = () => {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ prompt: userPrompt })
+        body: JSON.stringify({ prompt: userPrompt, mode: mode })
       });
 
       if (!response.ok) {
@@ -86,6 +87,22 @@ const AIAssistant = () => {
       {/* Chat header */}
       <h2 className="text-lg font-semibold text-white mb-4">AI Assistant</h2>
       
+      {/* Mode selector */}
+      <div className="text-white text-sm">
+          <label htmlFor="mode" className="mr-2">Mode:</label>
+          <select
+            id="mode"
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+            className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white"
+          >
+            <option value="offline">Offline</option>
+            <option value="online">Online</option>
+          </select>
+        </div>
+
+
+
       {/* Scrollable messages container */}
       <div className="flex-1 min-h-0 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
         {/* Messages list with vertical spacing */}
