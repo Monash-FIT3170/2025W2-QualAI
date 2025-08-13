@@ -88,7 +88,7 @@ const AIAssistant = () => {
       <h2 className="text-lg font-semibold text-white mb-4">AI Assistant</h2>
       
       {/* Mode selector */}
-      <div className="text-white text-sm">
+      <div className="text-white text-sm mb-2">
           <label htmlFor="mode" className="mr-2">Mode:</label>
           <select
             id="mode"
