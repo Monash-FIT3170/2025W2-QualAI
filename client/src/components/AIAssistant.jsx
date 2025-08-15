@@ -1,5 +1,4 @@
 import React, { useState,useEffect,useRef  } from 'react';
-import React, { useState,useEffect,useRef  } from 'react';
 /**
  * AI Assistant chat component for research analysis
  * Provides interactive chat interface between user and AI assistant
@@ -33,7 +32,6 @@ const AIAssistant = () => {
    * @param {Event} e - Form submit event
    */
   const handleSendMessage = async(e) => {
-  const handleSendMessage = async(e) => {
     e.preventDefault();
     
     // Don't send empty messages
@@ -44,7 +42,6 @@ const AIAssistant = () => {
       ...messages,
       { sender: 'user', text: newMessage }
     ]);
-    const userPrompt = newMessage;
     const userPrompt = newMessage;
     // Clear input field after sending
     setNewMessage('');
@@ -175,5 +172,6 @@ const AIAssistant = () => {
     </div>
   );
 };
+
 
 export default AIAssistant;
