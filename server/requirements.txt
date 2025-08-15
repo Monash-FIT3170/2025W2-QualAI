@@ -3,6 +3,7 @@ uvicorn[standard]
 sqlalchemy
 pydantic
 qdrant-client
+vosk
 python-dotenv
 sentence_transformers
 torch
