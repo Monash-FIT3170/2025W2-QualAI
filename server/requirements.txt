@@ -3,5 +3,6 @@ uvicorn[standard]
 sqlalchemy
 pydantic
 qdrant-client
+vosk
 python-dotenv
 vosk

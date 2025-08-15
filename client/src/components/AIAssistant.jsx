@@ -1,4 +1,5 @@
 import React, { useState,useEffect,useRef  } from 'react';
+import React, { useState,useEffect,useRef  } from 'react';
 /**
  * AI Assistant chat component for research analysis
  * Provides interactive chat interface between user and AI assistant
@@ -10,6 +11,10 @@ const AIAssistant = () => {
       sender: 'ai', 
       text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?"
     },
+    // {
+    //   sender: 'user',
+    //   text: "Can you identify common themes related to user experience in the latest interviews?"
+    // }
     // {
     //   sender: 'user',
     //   text: "Can you identify common themes related to user experience in the latest interviews?"
@@ -28,6 +33,7 @@ const AIAssistant = () => {
    * @param {Event} e - Form submit event
    */
   const handleSendMessage = async(e) => {
+  const handleSendMessage = async(e) => {
     e.preventDefault();
     
     // Don't send empty messages
@@ -38,6 +44,7 @@ const AIAssistant = () => {
       ...messages,
       { sender: 'user', text: newMessage }
     ]);
+    const userPrompt = newMessage;
     const userPrompt = newMessage;
     // Clear input field after sending
     setNewMessage('');
@@ -134,10 +141,13 @@ const AIAssistant = () => {
                 <p className="text-sm text-slate-200 m-0 leading-6">
                   {message.sender === 'ai' ? (
                   removeThinkingText(message.text)) : (message.text)}
+                  {message.sender === 'ai' ? (
+                  removeThinkingText(message.text)) : (message.text)}
                 </p>
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
           <div ref={messagesEndRef} />
         </div>
       </div>
