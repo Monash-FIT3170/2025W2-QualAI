@@ -1,18 +1,18 @@
 fastapi[standard]
 uvicorn[standard]
-sqlalchemy
-pydantic
-qdrant-client
-vosk
 python-dotenv
-sentence_transformers
-torch
-pypdf
-# Modern split wheels  (recommended)
-pathlib
+pydantic
+sqlalchemy
+qdrant-client
 langchain
 langchain-core>=0.1.0
 langchain-community>=0.1.0
 langchain-huggingface>=0.1.0
 langchain-text-splitters
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers
 spacy==3.7.2
+pypdf
+vosk
+python-multipart

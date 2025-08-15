@@ -1,21 +1,38 @@
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-import httpx
-import os
-import traceback
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, FileResponse
-import asyncio
 import os
 import json
-from datetime import datetime, timedelta
-from vosk import Model, KaldiRecognizer
+import traceback
+import asyncio
+from contextlib import asynccontextmanager
+from datetime import timedelta
 from pathlib import Path
+
+import httpx
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from vosk import Model, KaldiRecognizer
+from .vector import get_db
+
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Application startup: Loading models and connecting to DB...")
+    get_db()
+    print("Application startup complete.")
+    yield
+    print("Application shutdown: Cleaning up resources...")
+
+
+
+
+app = FastAPI(title="QualAI API", lifespan=lifespan)
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,6 +65,8 @@ async def root():
     </html>
     """
     return HTMLResponse(content=html_content, status_code=200)  
+
+
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -262,4 +281,33 @@ async def download_transcription(final_output: str = Form(...), filename: str=Fo
         media_type='text/plain'
     )
     
-    
+#Vector DB Things
+class SearchResponse(BaseModel):
+    result: list[dict]
+
+# @app.get("/")
+# def read_root():
+#     return {"message": "API is running. Use the /search endpoint to query."}
+
+@app.get("/search", response_model=SearchResponse)
+async def search(q: str = Query(..., min_length=2), k: int = 5):
+    """
+    Performs a similarity search in the Qdrant vector database.
+    """
+    db = get_db()
+    try:
+        docs_with_scores = db.similarity_search_with_score(query=q, k=k)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Format the results into the desired JSON structure
+    return {
+        "result": [
+            {
+                "score": score,
+                "content": doc.page_content.replace('\n', ' ').strip(),
+                "metadata": doc.metadata
+            }
+            for doc, score in docs_with_scores
+        ]
+    }
