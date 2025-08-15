@@ -26,11 +26,11 @@ CHUNK_SIZE = 4000
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application startup: Loading models and connecting to DB...")
-    get_db()
-    print("Application startup complete.")
+    print("Starting application...")
+    db = get_db()
+    print("Startup complete.")
     yield
-    print("Application shutdown: Cleaning up resources...")
+    print("Shutting down...")
 
 
 
@@ -341,10 +341,13 @@ class SearchResponse(BaseModel):
 # def read_root():
 #     return {"message": "API is running. Use the /search endpoint to query."}
 
-@app.get("/search", response_model=SearchResponse)
+
+
+
+@app.get("/search")
 async def search(q: str = Query(..., min_length=2), k: int = 5):
     """
-    Performs a similarity search in the Qdrant vector database.
+    Performs a similarity search and returns fully cleaned, continuous text.
     """
     db = get_db()
     try:
@@ -352,14 +355,7 @@ async def search(q: str = Query(..., min_length=2), k: int = 5):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Format the results into the desired JSON structure
-    return {
-        "result": [
-            {
-                "score": score,
-                "content": doc.page_content.replace('\n', ' ').strip(),
-                "metadata": doc.metadata
-            }
-            for doc, score in docs_with_scores
-        ]
-    }
+    # Concatenate all page contents into a single clean string
+    clean_text = " ".join([doc.page_content.replace('\n', ' ').strip() for doc, _ in docs_with_scores])
+
+    return {"text": clean_text}

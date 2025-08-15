@@ -42,7 +42,7 @@ def get_qdrant_client():
 def get_db():
     """
     Initializes a LangChain Qdrant vector store object.
-    If collection doesn't exist, create it and run ingestion script.
+    If collection doesn't exist or is empty, create it and run ingestion script.
     """
     print("Initializing vector store...")
     client = get_qdrant_client()
@@ -65,22 +65,25 @@ def get_db():
             )
             print(f"Collection '{QDRANT_COLLECTION_NAME}' created.")
 
-            # Run ingestion script automatically
-            print("Running ingestion pipeline to populate collection...")
-            result = subprocess.run(
-                [sys.executable, "/app/server/scripts/ingest.py"],  # Adjust path if needed
-                capture_output=True,
-                text=True
-            )
+        # Check if collection has any points
+        stats = client.count(QDRANT_COLLECTION_NAME)
+        if stats.count == 0:
+            print("Collection is empty. Running ingestion pipeline...")
+
+            # Correct path to ingest.py relative to vector.py
+            from pathlib import Path
+            script_path = Path("/app/scripts/ingest.py")
+
+            result = subprocess.run([sys.executable, str(script_path)], capture_output=True, text=True)
+
             if result.returncode != 0:
                 print("Ingestion failed:")
                 print(result.stderr)
             else:
                 print("Ingestion completed successfully.")
                 print(result.stdout)
-
         else:
-            print(f"Collection '{QDRANT_COLLECTION_NAME}' already exists.")
+            print(f"Collection '{QDRANT_COLLECTION_NAME}' already populated with {stats.count} points.")
 
     except Exception as e:
         print(f"Error checking/creating collection: {e}")

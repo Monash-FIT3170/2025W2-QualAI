@@ -1,4 +1,3 @@
-# server/scripts/ingest.py
 import os
 import time
 import spacy
@@ -11,7 +10,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.vector import get_embeddings_model, get_qdrant_client, QDRANT_URL, QDRANT_COLLECTION_NAME
 
-# docker dir
+
 DOCUMENTS_DIRECTORY = "/app/papers"
 
 def ensure_spacy_model_is_downloaded(model_name="en_core_web_sm"):
@@ -26,13 +25,11 @@ def ensure_spacy_model_is_downloaded(model_name="en_core_web_sm"):
         print(f"Successfully downloaded '{model_name}'.")
 
 def load_and_split_documents(directory_path: str):
-    """
-    Loads PDF documents from a directory and splits them into chunks using SpaCy.
-    """
+    """Loads PDF documents from a directory and splits them into chunks using SpaCy."""
     print(f"Loading documents from '{directory_path}'...")
     if not os.path.exists(directory_path) or not os.listdir(directory_path):
         print(f"Error: Directory '{directory_path}' not found or is empty.")
-        print("Please make sure you have created a 'papers' directory in './server/app/' and added PDF files to it.")
+        print("Please make sure you have a 'papers' directory in './server/app/' and added PDF files to it.")
         return []
 
     loader = PyPDFDirectoryLoader(directory_path)
@@ -55,18 +52,14 @@ def load_and_split_documents(directory_path: str):
     return chunks
 
 def create_and_store_vectors(chunks):
-    """
-    Creates embeddings for document chunks and stores them in Qdrant.
-    """
+    """Creates embeddings for document chunks and stores them in Qdrant."""
     if not chunks:
         print("No chunks to process. Skipping vector store creation.")
         return
 
     print("Creating vector store and indexing documents...")
     start_time = time.time()
-
     embeddings = get_embeddings_model()
-    qdrant_client = get_qdrant_client()
 
     Qdrant.from_documents(
         documents=chunks,
@@ -80,9 +73,7 @@ def create_and_store_vectors(chunks):
     print(f"Vector store created and documents indexed in {end_time - start_time:.2f} seconds.")
 
 def main():
-    """
-    Main function to run the entire ingestion pipeline.
-    """
+    """Main function to run the entire ingestion pipeline."""
     print("--- Starting Data Ingestion Pipeline ---")
     ensure_spacy_model_is_downloaded()
     document_chunks = load_and_split_documents(DOCUMENTS_DIRECTORY)
