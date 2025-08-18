@@ -6,6 +6,8 @@ WORKDIR /app
 # Install build-essential for compiling some Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 
+RUN apt-get update && apt-get install -y ffmpeg
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -44,6 +46,11 @@ RUN groupadd -r app && useradd -r -g app app
 
 # Set the working directory
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libasound2 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the pre-downloaded wheels, SpaCy model, and requirements file from the builder stage
 COPY --from=builder /app/wheels /wheels/

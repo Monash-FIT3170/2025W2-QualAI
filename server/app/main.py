@@ -27,7 +27,7 @@ CHUNK_SIZE = 4000
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting application...")
-    db = get_db()
+    # db = get_db()
     print("Startup complete.")
     yield
     print("Shutting down...")
@@ -46,13 +46,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Replace with actual frontend URL in prod
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 
 @app.get("/")
 async def root():
@@ -87,10 +81,10 @@ class PromptRequest(BaseModel):
 OLLAMA_URL = "http://ollama:11434/api/generate"
 OLLAMA_MODEL = "deepseek-r1:7b"
 env_path = Path(__file__).resolve().parent.parent / '.env'
-print(f"Loading .env from: {env_path}")
+# print(f"Loading .env from: {env_path}")
 load_dotenv(dotenv_path=env_path)  # loads variables from .env file
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-print("GEMINI_API_KEY:", os.getenv("GEMINI_API_KEY"))
+
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
