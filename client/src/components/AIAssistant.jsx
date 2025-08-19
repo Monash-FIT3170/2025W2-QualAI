@@ -1,23 +1,30 @@
 import React, { useState,useEffect,useRef  } from 'react';
+
+/** Constants **/
+const API_URL = "http://localhost:8000/generate";
+const INITIAL_MESSAGES = [
+  {
+    sender: "ai",
+    text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?",
+  },
+];
+
+/** Utility to strip AI thinking tags **/
+  const removeThinkingText = (text) => {
+    const split = text.split('</think>')
+    return split.length > 1 ? split[1].trim() : text;
+  };
+
 /**
  * AI Assistant chat component for research analysis
  * Provides interactive chat interface between user and AI assistant
  */
 const AIAssistant = () => {
   // State for chat messages with initial conversation
-  const [messages, setMessages] = useState([
-    {
-      sender: 'ai', 
-      text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?"
-    },
-    // {
-    //   sender: 'user',
-    //   text: "Can you identify common themes related to user experience in the latest interviews?"
-    // }
-  ]);
-  
+  const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
+
   // scroll to bottom of chat when there is a new message 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth'});}, [messages]);
@@ -30,25 +37,26 @@ const AIAssistant = () => {
     e.preventDefault();
     
     // Don't send empty messages
-    if (newMessage.trim() === '') return;
+    const trimmedMessage = newMessage.trim();
+    if (!trimmedMessage) return;
     
     // Add user message to chat history
     setMessages([
       ...messages,
-      { sender: 'user', text: newMessage }
+      { sender: 'user', text: trimmedMessage }
     ]);
-    const userPrompt = newMessage;
+
     // Clear input field after sending
     setNewMessage('');
 
     try {
       // Make POST request to FastAPI /generate endpoint
-      const response = await fetch("http://localhost:8000/generate", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ prompt: userPrompt })
+        body: JSON.stringify({ prompt: trimmedMessage })
       });
 
       if (!response.ok) {
@@ -73,11 +81,6 @@ const AIAssistant = () => {
     }
     
     
-  };
-
-  const removeThinkingText = (text) => {
-    const split = text.split('</think>')
-    return split.length > 1 ? split[1].trim() : text;
   };
 
 

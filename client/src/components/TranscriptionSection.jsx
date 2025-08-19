@@ -5,13 +5,26 @@
  */
 import React from 'react'; // Make sure React is imported
 
+/** API endpoint for downloading transcription */
+const DOWNLOAD_API_URL = "http://localhost:8000/download/";
+
+/** Safely parse JSON, returns null on failure */
+const safeParseJSON = (json) => {
+  try {
+    return json ? JSON.parse(json) : null;
+  } catch {
+    console.error("Invalid transcription data JSON");
+    return null;
+  }
+};
+
 const TranscriptionSection = ({ transcriptionData }) => { // Destructure props directly
 
-    const transcriptionDataObject = transcriptionData ? JSON.parse(transcriptionData) : null;
+    const transcriptionDataObject = safeParseJSON(transcriptionData);
 
     const handleDownloadTranscription = async () => { // Make the function async
         if (!transcriptionDataObject) {
-            console.log("No transcription to download");
+            console.warn("No transcription to download");
             return; // Exit if no data
         }
 
@@ -22,7 +35,7 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
             downloadData.append('filename', transcriptionDataObject.filename);
 
             // POST request to FastAPI endpoint and await the response
-            const response = await fetch("http://localhost:8000/download/", {
+            const response = await fetch(DOWNLOAD_API_URL, {
                 method: "POST",
                 body: downloadData,
             });
@@ -40,20 +53,20 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
             const url = window.URL.createObjectURL(blob);
 
             // Create a temporary link element
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            link.href = url;
             // Set the download attribute to the desired filename
-            a.download = transcriptionDataObject.filename;
+            link.download = transcriptionDataObject.filename;
 
             // Append the link to the body
-            document.body.appendChild(a);
+            document.body.appendChild(link);
             // Programmatically click the link to trigger the download
-            a.click();
+            link.click();
 
             // Clean up by revoking the object URL and removing the link
             window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            document.body.removeChild(link);
 
         } catch (error) {
             console.error('An unexpected error occurred during download: ', error);
