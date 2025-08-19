@@ -1,7 +1,7 @@
 import React, { useState,useEffect,useRef  } from 'react';
+import { API_ENDPOINTS } from "../config/api";
 
 /** Constants **/
-const API_URL = "http://localhost:8000/generate";
 const INITIAL_MESSAGES = [
   {
     sender: "ai",
@@ -51,7 +51,7 @@ const AIAssistant = () => {
 
     try {
       // Make POST request to FastAPI /generate endpoint
-      const response = await fetch(API_URL, {
+      const response = await fetch(API_ENDPOINTS.GENERATE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

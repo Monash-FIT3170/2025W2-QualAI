@@ -4,9 +4,8 @@
  * Provides a workspace for viewing and annotating transcribed text.
  */
 import React from 'react'; // Make sure React is imported
+import { API_ENDPOINTS } from "../config/api";
 
-/** API endpoint for downloading transcription */
-const DOWNLOAD_API_URL = "http://localhost:8000/download/";
 
 /** Safely parse JSON, returns null on failure */
 const safeParseJSON = (json) => {
@@ -35,7 +34,7 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
             downloadData.append('filename', transcriptionDataObject.filename);
 
             // POST request to FastAPI endpoint and await the response
-            const response = await fetch(DOWNLOAD_API_URL, {
+            const response = await fetch(API_ENDPOINTS.DOWNLOAD, {
                 method: "POST",
                 body: downloadData,
             });
