@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import '../assets/styles/UploadAudioCard.css'
+import { API_ENDPOINTS } from "../config/api";
 
 const UploadAudioCard = ({ onTranscriptionComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -22,7 +23,7 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
         formData.append('file', selectedFile);
 
         // POST request to FastAPI endpoint
-        const response = await fetch("http://localhost:8000/transcribe/", {
+        const response = await fetch(API_ENDPOINTS.TRANSCRIBE, {
           method: "POST",
           body: formData,
         });
