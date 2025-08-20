@@ -3,6 +3,7 @@ import UploadAudioCard from '../components/UploadAudioCard';
 import AnalysisSteps from '../components/AnalysisSteps';
 import TranscriptionSection from '../components/TranscriptionSection';
 import AIAssistant from '../components/AIAssistant';
+import KnowledgeGraph from '../components/KnowledgeGraph';
 
 /**
  * Dashboard Component
@@ -35,7 +36,9 @@ const Dashboard = () => {
           Main Content Area (2fr width - takes twice the space of sidebars)
           Primary workspace for transcription editing 
         */}
-        <div className="flex flex-col h-full min-h-0">
+
+        <div className="flex flex-col h-full min-h-0 gap-4"> 
+          <KnowledgeGraph /> 
           <TranscriptionSection transcriptionData={transcriptionData}/>
         </div>
         
