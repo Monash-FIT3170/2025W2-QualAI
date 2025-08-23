@@ -4,6 +4,7 @@ import spacy
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import SpacyTextSplitter
 from langchain_community.vectorstores import Qdrant
+import hashlib
 
 # We need to import the functions from the 'app' module.
 import sys
@@ -13,16 +14,6 @@ from app.vector import get_embeddings_model, get_qdrant_client, QDRANT_URL, QDRA
 
 DOCUMENTS_DIRECTORY = "/app/papers"
 
-def ensure_spacy_model_is_downloaded(model_name="en_core_web_sm"):
-    """Checks if a SpaCy model is installed and downloads it if not."""
-    try:
-        spacy.load(model_name)
-        print(f"SpaCy model '{model_name}' already available.")
-    except OSError:
-        print(f"SpaCy model '{model_name}' not found. Downloading...")
-        from spacy.cli import download
-        download(model_name)
-        print(f"Successfully downloaded '{model_name}'.")
 
 def load_and_split_documents(directory_path: str):
     """Loads PDF documents from a directory and splits them into chunks using SpaCy."""
@@ -51,34 +42,44 @@ def load_and_split_documents(directory_path: str):
     print(f"Successfully split documents into {len(chunks)} chunks.")
     return chunks
 
+
+
 def create_and_store_vectors(chunks):
     """Creates embeddings for document chunks and stores them in Qdrant."""
     if not chunks:
-        print("No chunks to process. Skipping vector store creation.")
+        print("No chunks to process")
         return
 
-    print("Creating vector store and indexing documents...")
+    print("Connecting to vector store and indexing documents...")
     start_time = time.time()
+    
+    client = get_qdrant_client()
     embeddings = get_embeddings_model()
-
-    Qdrant.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        url=QDRANT_URL,
-        collection_name=QDRANT_COLLECTION_NAME,
-        force_recreate=True,
+    
+    # Get the vector store object for an existing collection
+    qdrant_store = Qdrant(
+        client=client, 
+        collection_name=QDRANT_COLLECTION_NAME, 
+        embeddings=embeddings
     )
 
+    #Unique id for each chunk so we can run ingest multiple times
+
+
+
+    qdrant_store.add_documents(documents=chunks)
+
     end_time = time.time()
-    print(f"Vector store created and documents indexed in {end_time - start_time:.2f} seconds.")
+    print(f"Vector store updated and documents indexed in {end_time - start_time:.2f} seconds.")
+
+
+
+
 
 def main():
-    """Main function to run the entire ingestion pipeline."""
-    print("--- Starting Data Ingestion Pipeline ---")
-    ensure_spacy_model_is_downloaded()
+    """Main function to run the entire ingestion pipeline."""    
     document_chunks = load_and_split_documents(DOCUMENTS_DIRECTORY)
     create_and_store_vectors(document_chunks)
-    print("\n--- Ingestion Pipeline Finished ---")
 
 if __name__ == "__main__":
     main()

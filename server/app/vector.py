@@ -14,6 +14,32 @@ QDRANT_COLLECTION_NAME = "research_papers_v1"
 EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
 
 
+def setup_qdrant_collection():
+    """Ensures the Qdrant collection exists with the correct configuration."""
+    client = get_qdrant_client()
+    try:
+        collections_list = client.get_collections().collections
+        collection_names = [c.name for c in collections_list]
+
+        if QDRANT_COLLECTION_NAME not in collection_names:
+            print(f"Collection '{QDRANT_COLLECTION_NAME}' not found. Creating...")
+            client.create_collection(
+                collection_name=QDRANT_COLLECTION_NAME,
+                vectors_config=models.VectorParams(
+                    size=VECTOR_SIZE, # Use the defined constant
+                    distance=models.Distance.COSINE
+                )
+            )
+            print(f"Collection '{QDRANT_COLLECTION_NAME}' created.")
+            return True
+        else:
+            print(f"Collection '{QDRANT_COLLECTION_NAME}' already exists.")
+            return False
+
+    except Exception as e:
+        print(f"Error setting up Qdrant collection: {e}")
+        raise
+
 @lru_cache(maxsize=1)
 def get_embeddings_model():
     """

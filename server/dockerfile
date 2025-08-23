@@ -34,7 +34,7 @@ RUN pip download --dest /app/wheels -r requirements.txt
 RUN pip install --no-cache-dir --no-index --find-links=/app/wheels -r requirements.txt
 
 # Now that spacy is installed, download the model
-RUN python -m spacy download en_core_web_sm
+# RUN python -m spacy download en_core_web_sm
 
 
 # --- Stage 2: Final Production Image ---
@@ -49,19 +49,26 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    curl \
     libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the pre-downloaded wheels, SpaCy model, and requirements file from the builder stage
 COPY --from=builder /app/wheels /wheels/
-COPY --from=builder /usr/local/lib/python3.11/site-packages/en_core_web_sm /usr/local/lib/python3.11/site-packages/en_core_web_sm
+
+
 COPY --from=builder /app/requirements.txt .
 
 # Install the Python dependencies from the local wheels. This is very fast.
 RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
 
+
+
 # Copy the entire 'app' directory
 COPY app ./app
+
+COPY scripts ./scripts
+
 
 # Change ownership of the app directory to the non-root user
 RUN chown -R app:app /app
@@ -73,8 +80,9 @@ RUN mkdir -p $HF_HOME && chown -R app:app /home/app
 # Switch to the non-root user
 USER app
 
+
 # Expose the port the app runs on
 EXPOSE 8000
 
-# --- FIX: Update the CMD to point to the 'app' object, not 'main' ---
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+CMD ["python", "/app/start.py"]

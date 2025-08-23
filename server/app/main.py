@@ -27,7 +27,7 @@ CHUNK_SIZE = 4000
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting application...")
-    # db = get_db()
+    db = get_db()
     print("Startup complete.")
     yield
     print("Shutting down...")
