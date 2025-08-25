@@ -73,7 +73,7 @@ const AIAssistant = () => {
           "Content-Type": "application/json"
         },
 
-        body: JSON.stringify({ prompt: userPrompt, mode: mode })
+        body: JSON.stringify({ prompt: trimmedMessage, mode: mode })
 
       });
 
@@ -154,13 +154,10 @@ const AIAssistant = () => {
                 <p className="text-sm text-slate-200 m-0 leading-6">
                   {message.sender === 'ai' ? (
                   removeThinkingText(message.text)) : (message.text)}
-                  {message.sender === 'ai' ? (
-                  removeThinkingText(message.text)) : (message.text)}
                 </p>
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
           <div ref={messagesEndRef} />
         </div>
       </div>
