@@ -14,7 +14,7 @@ services:
       # This line is for development hot-reloading.
       # It mounts your local ./server directory into the container's /app directory.
       - ./server:/app
-      - ./papers:/app/papers
+      - ./papers:/papers
     depends_on:
       - qdrant
 
