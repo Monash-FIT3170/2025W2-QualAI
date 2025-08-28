@@ -2,20 +2,42 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
-import traceback
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, FileResponse
-import asyncio
-import os
 import json
-from datetime import datetime, timedelta
-from vosk import Model, KaldiRecognizer
+from dotenv import load_dotenv
+import traceback
+import asyncio
+from contextlib import asynccontextmanager
+from datetime import timedelta
 from pathlib import Path
+
+import httpx
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Request
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from vosk import Model, KaldiRecognizer
+from .vector import get_db
+
+import requests
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Starting application...")
+    db = get_db()
+    print("Startup complete.")
+    yield
+    print("Shutting down...")
+
+
+
+
+app = FastAPI(title="QualAI API", lifespan=lifespan)
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +46,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 async def root():
@@ -49,40 +72,82 @@ async def root():
     """
     return HTMLResponse(content=html_content, status_code=200)  
 
+
+
 class PromptRequest(BaseModel):
     prompt: str
+    mode: str = "offline" # default = offline
 
 OLLAMA_URL = "http://ollama:11434/api/generate"
 OLLAMA_MODEL = "deepseek-r1:7b"
+env_path = Path(__file__).resolve().parent.parent / '.env'
+# print(f"Loading .env from: {env_path}")
+load_dotenv(dotenv_path=env_path)  # loads variables from .env file
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                OLLAMA_URL,
-                json={
-                    "model": OLLAMA_MODEL,
-                    "prompt": request.prompt,
-                    "stream": False
-                },
-                    timeout=60.0
-            )
-        if response.status_code != 200:
-            print("OLLAMA Error:", response.text)
-            return {"error": response.text}
+    prompt = request.prompt.strip()
+    mode = request.mode.lower()
+    if mode == "online": 
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": prompt}
+                        ]
+                    }
+                ]
+            }
+
+            headers = {
+                "Content-Type": "application/json"
+            }
+
+            response = requests.post(url, headers=headers, json=payload)
+            data = response.json()
+            print("Gemini API response:", data)
+
+            # Extract text from Gemini's response
+            reply = data["candidates"][0]["content"]["parts"][0]["text"]
+
+            return {"response": reply.strip()}
+
+        except Exception as e:
+            return {"response": f"Online mode failed: {str(e)}"}
+
+
+    else: 
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    OLLAMA_URL,
+                    json={
+                        "model": OLLAMA_MODEL,
+                        "prompt": request.prompt,
+                        "stream": False
+                    },
+                        timeout=60.0
+                )
+            if response.status_code != 200:
+                print("OLLAMA Error:", response.text)
+                return {"error": response.text}
+            
+            # Log what Ollama actually returned
+            json_response = response.json()
+            # print("OLLAMA Response:", json_response)
+            
+            # Return only the part you care about
+            return {"response": json_response.get("response", "No 'response' field in Ollama reply")}
         
-        # Log what Ollama actually returned
-        json_response = response.json()
-        # print("OLLAMA Response:", json_response)
-        
-        # Return only the part you care about
-        return {"response": json_response.get("response", "No 'response' field in Ollama reply")}
-    
-    except Exception as e:
-        error_details = traceback.format_exc()
-        # print("Server Error Traceback:\n", error_details)
-        return {"error": str(e) or "Unknown server error"}
+        except Exception as e:
+            error_details = traceback.format_exc()
+            # print("Server Error Traceback:\n", error_details)
+            return {"error": str(e) or "Unknown server error"}
     
 
 
@@ -262,4 +327,29 @@ async def download_transcription(final_output: str = Form(...), filename: str=Fo
         media_type='text/plain'
     )
     
-    
+#Vector DB Things
+class SearchResponse(BaseModel):
+    result: list[dict]
+
+# @app.get("/")
+# def read_root():
+#     return {"message": "API is running. Use the /search endpoint to query."}
+
+
+
+
+@app.get("/search")
+async def search(q: str = Query(..., min_length=2), k: int = 5):
+    """
+    Performs a similarity search and returns fully cleaned, continuous text.
+    """
+    db = get_db()
+    try:
+        docs_with_scores = db.similarity_search_with_score(query=q, k=k)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Concatenate all page contents into a single clean string
+    clean_text = " ".join([doc.page_content.replace('\n', ' ').strip() for doc, _ in docs_with_scores])
+
+    return {"text": clean_text}
