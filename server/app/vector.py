@@ -6,6 +6,7 @@ import sys
 from qdrant_client import QdrantClient
 from langchain_community.vectorstores import Qdrant
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_core.documents import Document
 
 
 
@@ -65,7 +66,7 @@ def get_qdrant_client():
     return QdrantClient(url=QDRANT_URL, prefer_grpc=False)
 
 @lru_cache(maxsize=1)
-def get_db():
+def get_db() -> Qdrant:
     """
     Initializes a LangChain Qdrant vector store object.
     If collection doesn't exist or is empty, create it and run ingestion script.
@@ -120,3 +121,31 @@ def get_db():
         embeddings=embeddings,
         collection_name=QDRANT_COLLECTION_NAME,
     )
+
+def augment_prompt(prompt: str, project: str=None, transcript: str=None):
+    context = get_context(prompt, project=project, transcript=transcript)
+
+    prompt_context= "\n".join(fragment.page_content for fragment in context)
+
+    metaprompt = f"""
+    You are an academic research analyst.
+    Answer the following question using the provided context. 
+    If you can't find the answer, do not pretend you know it, but answer "I don't know".
+
+    Question: {prompt.strip()}
+
+    Context: 
+    {prompt_context.strip()}
+
+    Answer:
+    """
+    
+    return metaprompt
+
+def get_context(prompt: str, project: str=None, transcript: str=None) -> list[Document]:
+    qdrant = get_db()
+
+    response = qdrant.similarity_search(query=prompt)
+
+    return response
+

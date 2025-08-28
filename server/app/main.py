@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from vosk import Model, KaldiRecognizer
-from .vector import get_db
+from .vector import get_db, augment_prompt
 
 import requests
 
@@ -90,6 +90,11 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 async def generate_text(request: PromptRequest):
     prompt = request.prompt.strip()
     mode = request.mode.lower()
+
+    # we need the RAG element here
+    augmented_prompt = augment_prompt(prompt)
+    print(augmented_prompt)
+
     if mode == "online": 
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
@@ -98,7 +103,7 @@ async def generate_text(request: PromptRequest):
                 "contents": [
                     {
                         "parts": [
-                            {"text": prompt}
+                            {"text": augmented_prompt}
                         ]
                     }
                 ]
@@ -128,7 +133,7 @@ async def generate_text(request: PromptRequest):
                     OLLAMA_URL,
                     json={
                         "model": OLLAMA_MODEL,
-                        "prompt": request.prompt,
+                        "prompt": augmented_prompt,
                         "stream": False
                     },
                         timeout=60.0
