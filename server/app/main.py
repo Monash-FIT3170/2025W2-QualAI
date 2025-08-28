@@ -14,6 +14,7 @@ from pathlib import Path
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
+DIAZARIZATION_TIMEOUT_SECOND = 30000
 
 app = FastAPI()
 
@@ -85,7 +86,52 @@ async def generate_text(request: PromptRequest):
         return {"error": str(e) or "Unknown server error"}
     
 
+async def diarize_audio(recording_path: str):
+        base_path = Path(__file__).resolve().parent
+        whisper_module_path=base_path / "whisper-diarization/diarize.py"
+        print("init diarization")
+        # Call diarize.py with subprocess
+        command = [
+            "python", whisper_module_path,
+            "-a", recording_path,
+        ]
+        # print(recording_path)
+        try:
+            # Create subprocess
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            
+            # Wait for process to complete with timeout
+            try:
+                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=DIAZARIZATION_TIMEOUT_SECOND)
+            except asyncio.TimeoutError:
+                try:
+                    process.terminate()
+                    process.kill()
+                except:
+                    pass
+                raise
+            
+            result = {
+                "returncode": process.returncode,
+                "stdout": stdout.decode().strip() if stdout else "",
+                "stderr": stderr.decode().strip() if stderr else ""
+            }
+        # Handle errors
+        except asyncio.TimeoutError:
+            return {
+                "returncode": -2,
+                "stdout": "",
+                "stderr": f"Process timed out after {DIAZARIZATION_TIMEOUT_SECOND} seconds"
+            }
+        except Exception as e:
+            return e
 
+        return result
+        # return {"transcript": transcript}
 class Transcriber:
     def __init__(self, model_path):
         if not os.path.exists(model_path):
@@ -104,7 +150,6 @@ class Transcriber:
             "end": str(timedelta(seconds=end)),
             "text": data.get("text", ""),
         }
-
     async def transcribe(self, recording_path: str):
         rec = KaldiRecognizer(self.model, SAMPLE_RATE)
         rec.SetWords(True)
@@ -184,11 +229,12 @@ async def transcribe_audio(
 
     :param file: the File path location of the chosen uploaded file functionality on the webpage.
     """
+    print(Path(__file__).resolve().parent)
     try:
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
         os.makedirs(f"{uploads_path}")
-
+        os.chmod(uploads_path, 0o777)
         file_path = uploads_path / file.filename
         with open(file_path, "wb") as f:
             f.write(file.file.read())
@@ -196,24 +242,63 @@ async def transcribe_audio(
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
         file_path = uploads_path / file.filename
-
+        os.chmod(uploads_path, 0o777)
         with open(file_path, "wb") as f:
             f.write(file.file.read())
     except Exception as e:
         print (f"Invalid file format provided")
     
+    
+    output_filename = f"{file.filename.rsplit('.', 1)[0]}.txt".replace(" ","_")
+    output_file_path= uploads_path/output_filename
+    os.chmod(output_file_path, 0o777)
+    res = await diarize_audio(file_path)
+    print(res)
 
-    model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
-    transcriber = Transcriber(model_path)
-
-    transcription_raw = await transcriber.transcribe(file_path)
-    text_output = " ".join(
-        segment["text"]
-        for segment in transcription_raw["transcription"]
-        if segment["text"].strip()
-    )
     # Save the transcription to a .txt file
-    transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt".replace(" ","_")
+    
+    return {"output_path":output_file_path}
+# @app.post("/transcribe/")
+# async def transcribe_audio(
+#     file: UploadFile = File(
+#         ..., description="Upload an interview for transcription here"
+#     )
+# ):
+#     """
+#     Function for transcribing audio using the Transcriber object, creates an upload directory for files and returns a editable transcription page.
+
+#     :param file: the File path location of the chosen uploaded file functionality on the webpage.
+#     """
+#     try:
+#         base_path = Path(__file__).resolve().parent
+#         uploads_path = base_path / "Interview Uploads"
+#         os.makedirs(f"{uploads_path}")
+
+#         file_path = uploads_path / file.filename
+#         with open(file_path, "wb") as f:
+#             f.write(file.file.read())
+#     except FileExistsError:
+#         base_path = Path(__file__).resolve().parent
+#         uploads_path = base_path / "Interview Uploads"
+#         file_path = uploads_path / file.filename
+
+#         with open(file_path, "wb") as f:
+#             f.write(file.file.read())
+#     except Exception as e:
+#         print (f"Invalid file format provided")
+    
+
+#     model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
+#     transcriber = Transcriber(model_path)
+
+#     transcription_raw = await transcriber.transcribe(file_path)
+#     text_output = " ".join(
+#         segment["text"]
+#         for segment in transcription_raw["transcription"]
+#         if segment["text"].strip()
+#     )
+    # Save the transcription to a .txt file
+    # transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt".replace(" ","_")
 
     # # Return a download link
     # html_content = f"""
@@ -236,7 +321,7 @@ async def transcribe_audio(
     # """
     # return HTMLResponse(content=html_content, status_code=200)
 
-    return {"filename":transcript_filename,"transcription":text_output}
+    # return {"filename":transcript_filename,"transcription":text_output}
 
 
 @app.post("/download/")

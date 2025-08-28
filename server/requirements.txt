@@ -5,3 +5,5 @@ pydantic
 qdrant-client
 vosk
 python-dotenv
+cython
+faster-whisper>=0.10.0
