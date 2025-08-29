@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: ./server
-      dockerfile: dockerfile
+      dockerfile: dockerfile.dev
     container_name: qualai-backend
     ports:
       - "8000:8000"
@@ -27,25 +27,28 @@ services:
       LHOTSE_CACHE_DIR: /tmp/lhotse
       LHOTSE_TOOLS_CACHE: /tmp/lhotse/tools 
     volumes:
-      - ./server/app:/app/app  # Optional: dev hot reload
+      - ./server:/app # Optional: dev hot reload
       - ./server/cache:/home/app
+      - ./papers:/papers
   ollama:
     build:
-      context: .
-      dockerfile: dockerfile.ollama
-    image: ollama/ollama
-    container_name: ollama
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: qualai-client
     ports:
-      - "11434:11434"
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+      - "5173:5173"
+    environment:
+      # This tells your Vite frontend where to find the backend API.
+      # It uses the service name 'backend', which works within Docker's network.
+      - VITE_API_URL=http://backend:8000
     volumes:
-      - ollama_data:/root/.ollama
+      # Mounts your local client code into the container for hot-reloading.
+      - ./client:/app
+      # This is a trick to prevent your local node_modules from overwriting
+      # the node_modules directory that was installed inside the container.
+      - /app/node_modules
+    depends_on:
+      - backend
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -56,21 +59,5 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-  client:
-    build:
-      context: ./client
-      dockerfile: dockerfile
-    container_name: qualai-client
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-    environment:
-      - VITE_API_URL=http://localhost:8000  # Match with backend port
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-
 volumes:
   qdrant_data:
-  ollama_data:

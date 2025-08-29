@@ -1,6 +1,11 @@
 # Use slim Python image
 FROM python:3.10-slim
 
+# Install build-essential for compiling some Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential
+
+RUN apt-get update && apt-get install -y ffmpeg
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -28,8 +33,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire application code
 COPY . .
 
-# Expose FastAPI port
-EXPOSE 8000
+COPY --from=builder /app/requirements.txt .
 
 # Setup an app user so the container doesn't run as the root user
 RUN useradd app && chown -R app:app /app
