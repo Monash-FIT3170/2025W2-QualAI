@@ -1,6 +1,59 @@
 {
+  "name": "qualai-project",
+  "version": "1.0.0",
+  "description": "QualAI - AI-powered quality assurance platform with FastAPI backend and React frontend",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:landing\"",
+    "dev:backend": "cd server && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd client && npm run dev",
+    "dev:landing": "python -m http.server 3000",
+    "dev:docker": "docker compose up",
+    "dev:docker:build": "docker compose up --build",
+    "build": "npm run build:frontend && npm run build:landing",
+    "build:frontend": "cd client && npm run build",
+    "build:landing": "echo 'Landing page is already built (static HTML)'",
+    "install:all": "npm install && cd client && npm install && cd ../server && pip install -r requirements.txt",
+    "setup": "npm run install:all && npm run setup:env",
+    "setup:env": "node scripts/setup-env.js",
+    "start:backend": "cd server && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "start:frontend": "cd client && npm run preview",
+    "start:landing": "python -m http.server 3000",
+    "test": "cd server && python -m pytest",
+    "test:frontend": "cd client && npm run lint",
+    "clean": "npm run clean:docker && npm run clean:node",
+    "clean:docker": "docker compose down -v --remove-orphans",
+    "clean:node": "cd client && rm -rf node_modules package-lock.json && cd .. && rm -rf node_modules package-lock.json",
+    "reset": "npm run clean && npm run setup",
+    "status": "node scripts/status-check.js",
+    "logs": "docker compose logs -f",
+    "help": "node scripts/help.js"
+  },
   "dependencies": {
     "bootstrap-icons": "^1.13.1",
+<<<<<<< Updated upstream
     "react-router-dom": "^7.7.1"
+=======
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "qualai",
+    "quality-assurance",
+    "ai",
+    "fastapi",
+    "react",
+    "qdrant",
+    "docker"
+  ],
+  "author": "QualAI Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+>>>>>>> Stashed changes
   }
 }
