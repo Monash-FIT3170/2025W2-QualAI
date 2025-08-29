@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api.jsx';
 
 
 /**
@@ -29,11 +30,35 @@ const NewProjectModal = ({ onClose }) => {
    * Handles form submission
    * @param {Object} e - Event object from form submission
    */
-  const handleSubmit = (e) => {
-    e.preventDefault();       
-    console.log('Form submitted:', formData); 
-    onClose();               
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+  
+    try {
+      const res = await fetch(`${API_BASE}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.projectName,
+          description: formData.projectDescription,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to create project');
+      }
+  
+      onClose(); 
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+  
 
   return (
     <div className="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-50">

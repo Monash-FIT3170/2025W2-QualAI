@@ -1,8 +1,8 @@
 // src/config/api.js
-const BASE_URL = "http://localhost:8000";
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export const API_ENDPOINTS = {
-  TRANSCRIBE: `${BASE_URL}/transcribe/`,
-  DOWNLOAD: `${BASE_URL}/download/`,
-  GENERATE: `${BASE_URL}/generate/`,
+  TRANSCRIBE: `${API_BASE}/transcribe/`,
+  DOWNLOAD: `${API_BASE}/download/`,
+  GENERATE: `${API_BASE}/generate/`,
 };

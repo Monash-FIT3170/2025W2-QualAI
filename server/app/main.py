@@ -11,11 +11,20 @@ import json
 from datetime import datetime, timedelta
 from vosk import Model, KaldiRecognizer
 from pathlib import Path
+from app import database_models as db
+
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
 
 app = FastAPI()
+
+# new
+DB_PATH = str((Path(__file__).resolve().parent / "qualAI.db"))
+projects_store = db.Project(DB_PATH)
+transcripts_store = db.Transcription(DB_PATH)
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,6 +57,17 @@ async def root():
     </html>
     """
     return HTMLResponse(content=html_content, status_code=200)  
+
+
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: str = ""
+
+class TranscriptionCreate(BaseModel):
+    name: str
+    text: str
+
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -84,6 +104,7 @@ async def generate_text(request: PromptRequest):
         # print("Server Error Traceback:\n", error_details)
         return {"error": str(e) or "Unknown server error"}
     
+
 
 
 class Transcriber:
@@ -263,3 +284,90 @@ async def download_transcription(final_output: str = Form(...), filename: str=Fo
     )
     
     
+@app.post("/projects")
+def create_project(name: str, description: str = "", db: Session = Depends(get_db)):
+    project = Project(name=name, description=description)
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+@app.get("/projects")
+def list_projects(db: Session = Depends(get_db)):
+    return db.query(Project).all()
+
+
+@app.get("/projects/{project_id}")
+def get_project(project_id: int, db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        return {"error": "Project not found"}
+    return project
+
+
+
+# these are routes that connect to the SQLite models that we have for projects and transcriptions.
+#API endpoints
+
+
+@app.post("/projects")
+def create_project(body: ProjectCreate):
+    pid = projects_store.insert(body.name, body.description)
+    return {"project_id": pid, "name": body.name, "description": body.description}
+
+@app.get("/projects")
+def list_projects():
+    rows = projects_store.get_all_projects()
+    # rows: List[Tuple[int, str, str, str]] -> (project_id, name, description, created_at)
+    return [
+        {"project_id": pid, "name": name, "description": desc, "created_at": created_at}
+        for (pid, name, desc, created_at) in rows
+    ]
+
+@app.get("/projects/{project_id}")
+def get_project(project_id: int):
+    try:
+        name, desc, created_at = projects_store.get_project_by_id(project_id)
+        return {"project_id": project_id, "name": name, "description": desc, "created_at": created_at}
+    except LookupError:
+        return {"error": "Project not found"}
+
+@app.delete("/projects/{project_id}")
+def delete_project(project_id: int):
+    try:
+        projects_store.delete(project_id)
+        return {"ok": True}
+    except ValueError:
+        return {"error": "Project not found"}
+
+
+@app.post("/projects/{project_id}/transcriptions")
+def add_transcription(project_id: int, body: TranscriptionCreate):
+    tid = transcripts_store.insert(project_id, body.name, body.text)
+    return {"transcription_id": tid, "project_id": project_id, "name": body.name}
+
+@app.get("/projects/{project_id}/transcriptions")
+def list_transcriptions(project_id: int):
+    rows = transcripts_store.get_all_project_transcriptions(project_id)
+    # rows: List[Tuple[int, str, str]] -> (transcription_id, name, processed_at)
+    return [{"transcription_id": tid, "name": name, "processed_at": ts} for (tid, name, ts) in rows]
+
+@app.get("/transcriptions/{transcription_id}")
+def get_transcription(transcription_id: int):
+    try:
+        project_id, name, text, processed_at = transcripts_store.get_transcription_by_id(transcription_id)
+        return {"transcription_id": transcription_id, "project_id": project_id, "name": name, "text": text, "processed_at": processed_at}
+    except LookupError:
+        return {"error": "Transcription not found"}
+    
+# this is to add a second endpoint that transcribes and stores into DB after vosk
+@app.post("/transcribe/{project_id}")
+async def transcribe_audio_for_project(
+    project_id: int,
+    file: UploadFile = File(..., description="Upload an interview for transcription here")
+):
+    # ... your existing transcribe code up to text_output ...
+    transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt".replace(" ","_")
+    tid = transcripts_store.insert(project_id, transcript_filename, text_output)
+    return {"filename": transcript_filename, "transcription": text_output, "project_id": project_id, "transcription_id": tid}
