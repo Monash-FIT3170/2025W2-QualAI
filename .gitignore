@@ -30,3 +30,4 @@ dist-ssr
 
 # Python cache
 __pycache__
+cache

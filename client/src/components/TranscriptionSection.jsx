@@ -74,7 +74,6 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
     };
 
     console.log(transcriptionDataObject);
-    if (transcriptionDataObject) { console.log(transcriptionDataObject.transcription); }
 
     return (
         /* Main container with card styling and flex layout */
@@ -113,7 +112,7 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
                 <div className="flex-1 overflow-y-auto">
                     {/* Placeholder transcription text - will be replaced with actual content */}
                     <p className="text-sm text-gray-300 leading-6">
-                        {transcriptionDataObject ? transcriptionDataObject.transcription : "Transcribed interview text will go here."}
+                        {transcriptionDataObject ? text = fs.readFileSync(transcriptionDataObject.output_path, 'utf-8') : "Transcribed interview text will go here."}
                     </p>
                 </div>
 

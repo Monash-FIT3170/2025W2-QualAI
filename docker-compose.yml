@@ -13,11 +13,22 @@ services:
     depends_on:
       - qdrant
       - ollama
-    # environment:
-    #   - OLLAMA_URL=http://ollama:11434
+    environment:
+      # Hugging Face / Transformers
+      HF_HOME: /tmp/huggingface
+      TRANSFORMERS_CACHE: /tmp/huggingface
+      TORCH_HOME: /tmp/torch
+
+      # Matplotlib
+      MPLCONFIGDIR: /tmp/matplotlib
+
+      # NeMo + Lhotse
+      NEMO_HOME: /tmp/nemo
+      LHOTSE_CACHE_DIR: /tmp/lhotse
+      LHOTSE_TOOLS_CACHE: /tmp/lhotse/tools 
     volumes:
       - ./server/app:/app/app  # Optional: dev hot reload
-
+      - ./server/cache:/home/app
   ollama:
     build:
       context: .

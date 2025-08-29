@@ -7,3 +7,6 @@ vosk
 python-dotenv
 cython
 faster-whisper>=0.10.0
+torch 
+torchaudio 
+--index-url https://download.pytorch.org/whl/cpu

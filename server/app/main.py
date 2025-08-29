@@ -9,7 +9,6 @@ import asyncio
 import os
 import json
 from datetime import datetime, timedelta
-from vosk import Model, KaldiRecognizer
 from pathlib import Path
 
 SAMPLE_RATE = 16000
@@ -132,67 +131,7 @@ async def diarize_audio(recording_path: str):
 
         return result
         # return {"transcript": transcript}
-class Transcriber:
-    def __init__(self, model_path):
-        if not os.path.exists(model_path):
-            raise ValueError(f"Model path not found: {model_path}")
-        self.model_path = model_path
-        self.model = Model(model_path)
 
-    async def fmt(self, data):
-        data = json.loads(data)
-        result = data.get("result", [{"start": 0, "end": 0}])
-        start = min(r["start"] for r in result) if result else 0
-        end = max(r["end"] for r in result) if result else 0
-
-        return {
-            "start": str(timedelta(seconds=start)),
-            "end": str(timedelta(seconds=end)),
-            "text": data.get("text", ""),
-        }
-    async def transcribe(self, recording_path: str):
-        rec = KaldiRecognizer(self.model, SAMPLE_RATE)
-        rec.SetWords(True)
-
-        if not os.path.exists(self.model_path):
-            raise FileNotFoundError(f"File not found: {self.model_path}")
-
-        transcription = []
-        ffmpeg_command = [
-            "ffmpeg",
-            "-nostdin",
-            "-loglevel",
-            "quiet",
-            "-i",
-            recording_path,
-            "-ar",
-            str(SAMPLE_RATE),
-            "-ac",
-            "1",
-            "-f",
-            "s16le",
-            "-",
-        ]
-
-        process = await asyncio.create_subprocess_exec(
-            *ffmpeg_command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,  # Capture stderr for potential errors
-        )
-
-        while True:
-            if process.stdout is None:
-                break
-            data = await process.stdout.read(CHUNK_SIZE)
-            print("read chunk")
-            if not data:
-                break
-            if rec.AcceptWaveform(data):
-                transcription.append(await self.fmt(rec.Result()))
-
-        transcription.append(await self.fmt(rec.FinalResult()))
-
-        return {"transcription": transcription}
 
 
 @app.get("/transcribe/")
@@ -229,7 +168,7 @@ async def transcribe_audio(
 
     :param file: the File path location of the chosen uploaded file functionality on the webpage.
     """
-    print(Path(__file__).resolve().parent)
+    
     try:
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
@@ -251,78 +190,13 @@ async def transcribe_audio(
     
     output_filename = f"{file.filename.rsplit('.', 1)[0]}.txt".replace(" ","_")
     output_file_path= uploads_path/output_filename
-    os.chmod(output_file_path, 0o777)
+    print("run diarize")
     res = await diarize_audio(file_path)
     print(res)
 
     # Save the transcription to a .txt file
     
     return {"output_path":output_file_path}
-# @app.post("/transcribe/")
-# async def transcribe_audio(
-#     file: UploadFile = File(
-#         ..., description="Upload an interview for transcription here"
-#     )
-# ):
-#     """
-#     Function for transcribing audio using the Transcriber object, creates an upload directory for files and returns a editable transcription page.
-
-#     :param file: the File path location of the chosen uploaded file functionality on the webpage.
-#     """
-#     try:
-#         base_path = Path(__file__).resolve().parent
-#         uploads_path = base_path / "Interview Uploads"
-#         os.makedirs(f"{uploads_path}")
-
-#         file_path = uploads_path / file.filename
-#         with open(file_path, "wb") as f:
-#             f.write(file.file.read())
-#     except FileExistsError:
-#         base_path = Path(__file__).resolve().parent
-#         uploads_path = base_path / "Interview Uploads"
-#         file_path = uploads_path / file.filename
-
-#         with open(file_path, "wb") as f:
-#             f.write(file.file.read())
-#     except Exception as e:
-#         print (f"Invalid file format provided")
-    
-
-#     model_path = "/app/app/vosk-model-en-us-0.22-lgraph"  # Ensure this path is correct
-#     transcriber = Transcriber(model_path)
-
-#     transcription_raw = await transcriber.transcribe(file_path)
-#     text_output = " ".join(
-#         segment["text"]
-#         for segment in transcription_raw["transcription"]
-#         if segment["text"].strip()
-#     )
-    # Save the transcription to a .txt file
-    # transcript_filename = f"{file.filename.rsplit('.', 1)[0]}_transcript.txt".replace(" ","_")
-
-    # # Return a download link
-    # html_content = f"""
-    # <!DOCTYPE html>
-    # <html>
-    #     <head><title>Transcription Complete</title></head>
-    #     <body>
-    #         <h2>Transcription Complete</h2>
-            
-    #         <form method="post" action="/download/">
-    #             <input name = "filename" type = "hidden" value = {transcript_filename}></input>
-    #             <textarea name = "final_output" cols="50" rows="10">{text_output}</textarea> <br>
-    #             <button type="Download">Download Transcript</button>
-    #         </form>
-    #         <form action = "/transcribe/">
-    #             <button type="Return">Back</button>
-    #         </form>
-    #     </body>
-    # </html>
-    # """
-    # return HTMLResponse(content=html_content, status_code=200)
-
-    # return {"filename":transcript_filename,"transcription":text_output}
-
 
 @app.post("/download/")
 async def download_transcription(final_output: str = Form(...), filename: str=Form(...)):
