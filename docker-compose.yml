@@ -47,8 +47,6 @@ services:
       # This is a trick to prevent your local node_modules from overwriting
       # the node_modules directory that was installed inside the container.
       - /app/node_modules
-    depends_on:
-      - backend
 
   qdrant:
     image: qdrant/qdrant:latest

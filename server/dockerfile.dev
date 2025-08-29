@@ -14,11 +14,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
+
 # Install pip + requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
+    
+COPY app/whisper-diarization/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
+
+
+RUN useradd app && chown -R app:app /app
+USER app
 # Default: mount code with volumes (no COPY here!)
 EXPOSE 8000
 
