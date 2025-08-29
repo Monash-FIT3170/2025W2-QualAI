@@ -1,14 +1,16 @@
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
+# Add this line at the top of /app/app/vector.py
+from qdrant_client import models
 import os
 import json
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import traceback
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from pathlib import Path
+# from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Request
@@ -80,9 +82,9 @@ class PromptRequest(BaseModel):
 
 OLLAMA_URL = "http://ollama:11434/api/generate"
 OLLAMA_MODEL = "deepseek-r1:7b"
-env_path = Path(__file__).resolve().parent.parent / '.env'
+# env_path = Path(__file__).resolve().parent.parent / '.env'
 # print(f"Loading .env from: {env_path}")
-load_dotenv(dotenv_path=env_path)  # loads variables from .env file
+# load_dotenv(dotenv_path=env_path)  # loads variables from .env file
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
