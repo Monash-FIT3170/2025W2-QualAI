@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 from qdrant_client import QdrantClient
-from langchain_community.vectorstores import Qdrant
+from langchain_community.vectorstores import Qdrant,
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_core.documents import Document
 
