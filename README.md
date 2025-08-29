@@ -75,3 +75,8 @@ You can access each service in your browser:
 - Qdrant Dashboard: http://localhost:6333/dashboard
 - Backend (FastAPI): http://localhost:8000
 - Frontend (React): http://localhost:5173
+
+## citation (External application used)
+whisper-diarization by MahmoudAshraf97
+- used for diarization
+- Location: 2025W2-QualAI/server/app

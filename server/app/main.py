@@ -14,7 +14,7 @@ from pathlib import Path
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
 DIAZARIZATION_TIMEOUT_SECOND = 30000
-
+WHISPER_DIARIZATION_GIT= "https://github.com/MahmoudAshraf97/whisper-diarization.git"
 app = FastAPI()
 
 app.add_middleware(
@@ -87,13 +87,14 @@ async def generate_text(request: PromptRequest):
 
 async def diarize_audio(recording_path: str):
         base_path = Path(__file__).resolve().parent
-        whisper_module_path=base_path / "whisper-diarization/diarize.py"
+        whisper_module_executable_path = base_path / "whisper-diarization/diarize.py"
         print("init diarization")
         # Call diarize.py with subprocess
         command = [
-            "python", whisper_module_path,
+            "python", whisper_module_executable_path,
             "-a", recording_path,
         ]
+        
         # print(recording_path)
         try:
             # Create subprocess
