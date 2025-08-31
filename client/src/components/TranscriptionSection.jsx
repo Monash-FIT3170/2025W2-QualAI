@@ -3,7 +3,6 @@
  * * Displays interview transcriptions with editing and export functionality.
  * Provides a workspace for viewing and annotating transcribed text.
  */
-//hhihihihi
 /**
  * TranscriptionSection Component
  * Displays interview transcriptions with rich-text editing (bold/italic/highlight)
@@ -20,22 +19,31 @@ const DEFAULT_PLACEHOLDER = `<p class="text-slate-400">Transcribed interview tex
 const MenuBar = ({ editor }) => {
   if (!editor) return null;
   return (
-    <div className="flex gap-2 mb-2">
+    <div className="flex items-center gap-2 mb-2 border-b border-slate-500 pb-2">
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
-        className={editor.isActive('bold') ? 'font-bold bg-indigo-600 text-white px-2 py-1 rounded' : 'px-2 py-1 rounded bg-slate-600 text-white'}
+        className={`p-2 rounded hover:bg-slate-600 ${editor.isActive('bold') ? 'bg-indigo-600 text-white' : 'text-slate-200'}`}
         type="button"
-      >B</button>
+        title="Bold"
+      >
+        <i className="bi bi-type-bold"></i>
+      </button>
       <button
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        className={editor.isActive('italic') ? 'italic bg-indigo-600 text-white px-2 py-1 rounded' : 'px-2 py-1 rounded bg-slate-600 text-white'}
+        className={`p-2 rounded hover:bg-slate-600 ${editor.isActive('italic') ? 'bg-indigo-600 text-white' : 'text-slate-200'}`}
         type="button"
-      >I</button>
+        title="Italic"
+      >
+        <i className="bi bi-type-italic"></i>
+      </button>
       <button
         onClick={() => editor.chain().focus().toggleHighlight().run()}
-        className={editor.isActive('highlight') ? 'bg-yellow-300 text-black px-2 py-1 rounded' : 'px-2 py-1 rounded bg-slate-600 text-white'}
+        className={`p-2 rounded hover:bg-slate-600 ${editor.isActive('highlight') ? 'bg-yellow-300 text-black' : 'text-slate-200'}`}
         type="button"
-      >Highlight</button>
+        title="Highlight"
+      >
+        <i className="bi bi-highlighter"></i>
+      </button>
     </div>
   );
 };
@@ -51,7 +59,6 @@ const TranscriptionSection = ({ transcriptionData }) => {
     editable: isEditing,
   });
 
-  // Update content when new transcription arrives
   useEffect(() => {
     if (!editor) return;
     const html = initialHTML || DEFAULT_PLACEHOLDER;
@@ -59,7 +66,6 @@ const TranscriptionSection = ({ transcriptionData }) => {
     setIsEditing(false);
   }, [initialHTML, editor]);
 
-  // Toggle editability when state changes
   useEffect(() => {
     if (editor) editor.setEditable(isEditing);
   }, [isEditing, editor]);
@@ -83,7 +89,6 @@ const TranscriptionSection = ({ transcriptionData }) => {
     if (!editor) return;
     const html = editor.getHTML();
 
-    // Try API first
     try {
       if (API_ENDPOINTS?.SAVE) {
         const resp = await fetch(API_ENDPOINTS.SAVE, {
@@ -93,13 +98,11 @@ const TranscriptionSection = ({ transcriptionData }) => {
         });
         if (!resp.ok) throw new Error(await resp.text());
       } else {
-        // Fallback to localStorage
         localStorage.setItem(`qualai:${filename}`, html);
       }
       setIsEditing(false);
     } catch (err) {
       console.error('Save failed:', err);
-      // Always keep a local fallback
       try {
         localStorage.setItem(`qualai:${filename}`, html);
         alert('Saved locally (no API).');
