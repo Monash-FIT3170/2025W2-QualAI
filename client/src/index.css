@@ -1,2 +1,39 @@
 @import "tailwindcss";
 @import "bootstrap-icons/font/bootstrap-icons.css";
+
+
+/* Tiptap dark mode styling */
+.tiptap-editor {
+  background: #334155; /* Tailwind bg-slate-700 */
+  color: #e2e8f0;      /* Tailwind text-slate-200 */
+  border-radius: 0.5rem;
+  min-height: 200px;
+  padding: 0.75rem;
+  outline: none;
+  font-size: 1rem;
+}
+.tiptap-editor strong { font-weight: bold; }
+.tiptap-editor em { font-style: italic; }
+.tiptap-editor mark { background: #fde68a; color: #1e293b; }
+
+/* Tiptap Editor Styles */
+.ProseMirror {
+  min-height: 100px;
+  padding: 1rem;
+  background: #334155;
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p {
+  margin: 1em 0;
+}
+
+.ProseMirror mark {
+  background-color: #fde68a;
+  color: #1e293b;
+}
