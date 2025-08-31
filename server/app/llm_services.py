@@ -29,7 +29,7 @@ async def generate_online(prompt: str) -> dict:
             response.raise_for_status()  # Raise an exception for bad status codes
             
             data = response.json()
-            print("Gemini API response:", data)
+            # print("Gemini API response:", data)
             
             # Safely extract the text from the response
             reply = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
@@ -73,6 +73,5 @@ async def generate_offline(prompt: str) -> dict:
         print(f"OLLAMA Error: {e.response.text}")
         raise HTTPException(status_code=e.response.status_code, detail=f"Offline mode failed: {e.response.text}")
     except Exception as e:
-        error_details = traceback.format_exc()
-        print("Server Error Traceback:\n", error_details)
-        raise HTTPException(status_code=500, detail=f"Offline mode failed: {str(e)}")
+        print(f"An unexpected error occurred in offline mode: {e}")
+        raise HTTPException(status_code=500, detail=f"Offline mode failed with an unexpected error: {str(e)}")

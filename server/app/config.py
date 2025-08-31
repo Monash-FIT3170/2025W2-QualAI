@@ -9,7 +9,7 @@ load_dotenv(dotenv_path=env_path)
 
 class Config(BaseSettings):
     """
-    Loads values from environment variables.
+    Central location for server settings and data. Also loads values from environment variables.
     """
     # Project settings
     DEFAULT_PROJECT: str = "project_1"
