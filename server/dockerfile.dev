@@ -1,0 +1,25 @@
+# --- Development Backend Dockerfile ---
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies once
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libsqlite3-dev \
+    libasound2 \
+    ffmpeg \
+    curl \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pip + requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Default: mount code with volumes (no COPY here!)
+EXPOSE 8000
+
+CMD ["python", "start.py"]
