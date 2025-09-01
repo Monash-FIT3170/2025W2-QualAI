@@ -1,6 +1,6 @@
 __pycache__/
 *.srt
-*.txt
+constraints.txt
 *.wav
 *.mp3
 *.m4a
