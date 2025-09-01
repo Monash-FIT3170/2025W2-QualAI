@@ -45,33 +45,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/")
-async def root():
-    """
-    Sets the Default root html page for the transcription application, details transcription application capabilities
-    """
-
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Audio Transcription API</title>
-    </head>
-    <body>
-        <h1>Welcome to the Audio Transcription API</h1>
-        <p>Use the <code>/transcribe/</code> endpoint to upload an audio file for transcription.</p>
-        <p>Supported formats: mp3, wav, ogg, flac.</p>
-        <form action="/transcribe/">
-            <button type="submit">Go to the /Transcribe/ endpoint</button>
-        </form>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content, status_code=200)  
-
-
-
 class PromptRequest(BaseModel):
     prompt: str
     mode: str = "offline" # default = offline
@@ -148,8 +121,8 @@ async def generate_text(request: PromptRequest):
             return {"error": str(e) or "Unknown server error"}
     
 
-async def diarize_audio(recording_path: str):
-        base_path = Path(__file__).resolve().parent
+async def diarize_audio(recording_path: str,base_path:str):
+        
         whisper_module_executable_path = base_path / "whisper-diarization/diarize.py"
         print("init diarization")
         # Call diarize.py with subprocess
@@ -208,19 +181,24 @@ async def transcribe_audio(
 
     :param file: the File path location of the chosen uploaded file functionality on the webpage.
     """
-    
+    print("HERE")
+    print(Path(__file__).resolve().parent)
     try:
         base_path = Path(__file__).resolve().parent
+        print(base_path)
         uploads_path = base_path / "Interview Uploads"
         os.makedirs(f"{uploads_path}")
+        
         os.chmod(uploads_path, 0o777)
         file_path = uploads_path / file.filename
+        os.chmod(file_path, 0o777)
         with open(file_path, "wb") as f:
             f.write(file.file.read())
     except FileExistsError:
         base_path = Path(__file__).resolve().parent
         uploads_path = base_path / "Interview Uploads"
         file_path = uploads_path / file.filename
+        os.chmod(file_path, 0o777)
         os.chmod(uploads_path, 0o777)
         with open(file_path, "wb") as f:
             f.write(file.file.read())
