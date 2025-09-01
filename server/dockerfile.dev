@@ -12,10 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     wget \
+    ca-certificates \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
 
+RUN pip install --no-cache-dir python-dotenv
+RUN pip install --no-cache-dir cython
 # Install pip + requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \

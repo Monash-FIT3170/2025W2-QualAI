@@ -1,7 +1,5 @@
 fastapi[standard]
 uvicorn[standard]
-python-dotenv
-cython
 faster-whisper>=0.10.0
 torch 
 torchaudio 
@@ -19,7 +17,6 @@ torch
 sentence-transformers
 spacy==3.7.2
 pypdf
-vosk
 python-multipart
 setuptools #Spacy related
 wheel #Spacy related
