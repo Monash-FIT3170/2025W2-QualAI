@@ -1,0 +1,272 @@
+Monash University
+
+FIT3170 Software Engineering Practice
+
+Milestone 1
+Specifications
+Due: 11:55pm (AU/Malaysia), Friday Week 6
+Your project
+By now, you have all been assigned a project, which you are going to develop using the
+SAFe methodology. You should be in the process of being assigned to:
+• an agile team within the project
+• a speciality group, either
+– Agile Release Train Engineers (RTE)
+– Product Management (PM)
+– Systems Architect (SA)
+Everyone is essentially a developer first, with a specialty role on the side, with every
+team member having a specialty role. This means there will be multiple RTEs, PMs and
+SAs inside each agile team as well as across agile teams within the project. We
+recommend 2 RTEs, 2 PMs and 1 SA for a team of 5.
+This milestone
+This is a short milestone spanning 4 weeks from week 3 to week 6. The usual
+timeframe for a milestone would be 6 weeks. There will be two important events
+where you will be coordinating and running the session:
+●​
+
+PI planning meeting (Week 3 workshop)
+
+●​
+
+End of PI presentation(Week 6 workshop)
+
+The focal point of this milestone would be creating important process and design
+documentation prior to actually beginning software development as well as setting
+up your development environment. You will be primarily assessed on the deliverables
+as outlined below as well as individual contribution to each document.
+Each project should only have one set of deliverables hence you should be working
+across your groups to facilitate this. All these deliverables are essentially live
+documents which means they will probably need revision as the project progresses.
+
+Monash University
+
+FIT3170 Software Engineering Practice
+
+In preparation for this milestone, we will be running a planning session during week 3
+(of your regular scheduled workshop) for the first Program Increment (PI). If you are
+unfamiliar with PIs, please brush up on the definitions available in the SAFe framework
+documentation. There will be a few deliverables that will require some progress even
+before the planning session so please read carefully.
+Before Week 3’s PI planning meeting
+The Agile Release Train Engineering team is responsible for:
+●​ Developing (and documenting into the PMP) a plan for running the week 3
+program increment (PI) planning session, and running the planning
+session, a template can be found under week 2 on Moodle, we expect this
+to be heavily modified to fit for your purposes
+The Product Management team is responsible for:
+●​ Creating a Program Backlog with example user stories(user stories can be
+fake for now, the idea is to understand the structure)(ClickUp)
+The System Architecture team is responsible for:
+●​ Creating a Potential Solution Architectures (PSA) document exploring the
+options of software technologies available to build the solution and
+communicating them to the project members. This does not include
+detailed design of every single module; that would be premature. It should
+only house suggestions.
+During Week 3’s PI planning meeting and until Week 6
+The Agile Release Train Engineering team is responsible for:
+●​ Developing more on the project-wide Project Management Plan (PMP)
+based on SAFe but making clear the specifics relating to your particular
+solution
+●​ Developing a preliminary version of the Quality Assurance Plan (QAP) in
+your program
+●​ Developing a project-wide Risk Register (SAFe doesn’t provide much
+explicit guidance on how to do this, so consider what you’ve done in past
+units and consult your lecturers)
+●​ Proposing and implementing a Work Breakdown Structure (Google sheet
+that will track who is responsible for which tasks for each sprint)
+
+Monash University
+
+FIT3170 Software Engineering Practice
+
+The Product Management team is responsible for:
+●​ Developing the Project Roadmap (This is a high level document of what
+features your project aims to achieve at certain points in the year)
+●​ Communicate with the client and relay objectives to rest of the project
+team
+●​ Developing preliminary solution-level nonfunctional requirements (NFR)
+as described in the SAFe website and documenting them in the QAP
+●​ Ensuring each Agile team has their Program Backlog (low level individual
+tasks) and iteration goals for the first iteration
+●​ Ensuring each Agile team completes their PI Objectives/Backlog Tasks for
+the first PI
+The System Architecture team is responsible for:
+●​ Determining and documenting potential advantages, disadvantages and
+risks of each architecture in the Potential Solution Architecture (PSA)
+document
+●​ Developing a Technology Tutorial Plan which involves creating spikes(a
+spike is a technical term for the simplest possible program to understand
+the basics of any technology) for your team be able to understand the
+basics of React, Meteor, MongoDb or alternatives as well as documenting
+the execution of said spikes
+●​ Developing a plan for managing the Git Workflow to standardize the
+processes for working with the GitHub/Gitlab repository for the entire
+project team (which obviously also relates to quality assurance and hence
+should be part of your QAP)
+Each of these three task sets is going to require consultation with the other specialty
+teams, so you will be expected to coordinate with them and ensure that your proposals
+are workable. Furthermore, everyone must participate in the PI planning session in the
+week 3 class, and you will be assessed on your active contribution to that.
+Note that many of these artefacts are preliminary. That means we recognize that they
+are likely to change over the course of the project – as we all come to understand the
+project and refine the requirements and the technological and organizational
+challenges, we will undoubtedly change our minds on some things.
+
+End of PI presentation(Week 6)
+At the end of the first PI, students are expected to do a system demo. The demo is a
+critical aspect of the PI learning cycle for the Agile Release Train (ART). This event
+
+Monash University
+
+FIT3170 Software Engineering Practice
+
+allows stakeholders, customers (or their internal proxies), and senior management to
+view the progress that the Agile Release Train has made during the PI.
+We understand that this is the first PI, and different projects have different levels of
+complexity in terms of setting up, so we expect very little coding to be done by now.
+During the end of PI presentation, the Agile Release Train will present their
+accomplishments for the entire PI. Clients and stakeholders review the progress in the
+broader solution context. Think of it as a Sprint Review Meeting for SAFe. Your system
+demo should draw some inspiration from the description on the Scaled Agile
+Framework website here.
+In the process of completing your first PI, you will have undoubtedly discovered that
+some things didn’t go so well and could be done better. Some of these can be handled at
+the team level, others will need to be handled at the program (project-wide) level.
+Teams are responsible for documenting the outcomes of their team-level
+retrospectives, including any team-level actions to be taken. It is generally expected
+that each team will identify at least a couple of team-level improvements - if you can’t,
+the FIT3170 staff will expect a strong justification as to why your process cannot be
+improved further!
+To summarise, please prepare some Google Slides covering the following:
+RTEs
+●​ Project background
+●​ Communication channels and management processes, what worked and
+what didn't(e.g. Sprint duration or meeting times)
+●​ Run through of deliverables and when to use them
+PMs
+●​ Present Project Roadmap
+●​ Current State of Program Backlog
+●​ High Fidelity Mockup of Solution
+SAs
+●​ Chosen Technology for project(and why alternatives weren't chosen)
+●​ Git management strategies
+●​ The planning and execution of spikes
+●​ Screenshot of commits from multiple members on a fully setup repository
+
+Monash University
+
+FIT3170 Software Engineering Practice
+
+We do not expect any live demonstration of working software as it is early in the
+semester, however we do expect to see some progress, such as a screenshot of
+commits to a fully set up Github repository.
+Presentation Feedback Form
+Everyone needs to fill in a feedback form during the week 6 PI presentations. You will
+only need to rate other projects, not your own. More details will be included in the
+form, which will be available on the Moodle Assessments Tab during the presentations.
+SAFe Role Peer Assessment Form
+We understand that working with a large group can mean that potentially everyone
+has differences in opinions of ways things are done. The purpose of this unit is to
+understand how to work together in a team effectively using battle tested processes.
+An important part of that is understanding who is contributing more and
+acknowledging that as well as who could use a pick me up in terms of project
+contribution.
+To facilitate this, a compulsory peer assessment form for this and all future milestones
+where we expect you to rate the contribution of your peers, and this rating will carry
+weight for your peers. This form also carries weight for being filled out so if you do not
+complete it, you will lose marks! This milestone we will rate everyone in our Role
+subteams as majority of the teamwork will be conducted by roles, but next milestone
+we will be rating those in our Agile Subteams.
+These forms will be available under the Moodle Assessments Tab.
+
+What to submit
+Outline of deliverables:
+●​
+●​
+●​
+●​
+●​
+●​
+●​
+
+Project Management Plan (PMP)
+Quality Assurance Plan (QAP)
+Risk Register
+Project Roadmap
+Potential Solution Architecture(PSA)
+Technology Tutorial Plan
+Program Backlog(Non document based)
+
+Note: Project team is referring to the big team with up to 15 students, whereas agile
+subteam is referring to your smaller teams of 4-6 students.
+
+Monash University
+
+FIT3170 Software Engineering Practice
+
+Your entire project team(not agile sub teams) should submit 2 items, comprising:
+1.​
+2.​
+
+A zip file containing PDF versions of the documents outlined above.
+A Google Sheet which contains the Work Breakdown Structure.
+
+For non-document based deliverables, you will need to ensure that all markers have
+access to your shared Google Drive, Clickup board, and any other online system that
+you are using to organize your project. Failure to share these artifacts with your
+marker will lose marks. The accounts you must share with are(add only the mentor for
+your project and our lecturer):
+Clayton
+●​
+●​
+●​
+●​
+●​
+●​
+
+Xiaoning Du, xiaoning.du@monash.edu
+Ian Felix, ian.felix@monash.edu
+Riordan Alfredo, riordan.alfredo1@monash.edu
+Adrian Kristanto, adrian.kristanto@monash.edu
+Zhiming Deng, zhiming.deng@monash.edu
+Baaset Moslih, baaset.moslih@monash.edu
+
+Malaysia
+●​
+
+Shamala Maniam, shamala.maniam@monash.edu
+
+Late submissions
+If you do not ask to be marked late, you will be marked on a snapshot of your
+repositories taken at the due date and time. You may request late marking by emailing
+the staff.
+If you would like an extension, you will find information about the requirements and
+process at https://www.monash.edu/exams/changes/special-consideration. Click on
+the “In-semester task” tab and open the “Information Technology” section for a link to
+the correct form.
+
+Marking criteria
+When marking your submission, your marker will take into account:
+• Correctness of understanding of client’s requirements
+• Sufficiency of documentation
+• Clarity of documentation
+
+Monash University
+
+FIT3170 Software Engineering Practice
+
+• Presentation – spelling, grammar, readability
+• Extent of your contribution to the project
+You will receive detailed feedback within two weeks of the due date unless your team
+is granted an extension. Note that we do not have a page limit of the report, but making
+it compact and precise is courtesy.
+
+Penalties
+If the team requests late marking and has not been granted an extension, a late penalty
+of 5% per working day will apply.
+Although all students in a team will receive the same mark on group tasks, if there is
+evidence that the distribution of workload in the team is unfair, then we may penalize
+students who do not appear to be pulling their weight or overly ambitious students
+who do work assigned to others leaving nothing for them to contribute.
+Penalties may also be applied for breaches of the academic honesty policy.
+
+
