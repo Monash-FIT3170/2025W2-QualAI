@@ -42,13 +42,17 @@ services:
     # REMOVED the healthcheck block from here
 
   ollama:
-    image: ollama/ollama
+    build: ./ollama
     container_name: ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+      - ./ollama/entrypoint.sh:/entrypoint.sh  # Mount the script
+      - ollama_setup:/setup                   # Mount a volume for the setup marker
+    entrypoint: ["/entrypoint.sh"]             # Set the entrypoint to our script
 
 volumes:
   qdrant_data:
   ollama_data:
+  ollama_setup: # Add the new volume for the setup marke
