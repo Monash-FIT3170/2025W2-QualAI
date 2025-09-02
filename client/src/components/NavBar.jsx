@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState} from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import NewProjectModal from './modals/NewProjectModal';
+import { API_BASE } from '../config/api.jsx';
 
 /**
  * Main navigation bar component
@@ -10,6 +11,25 @@ import NewProjectModal from './modals/NewProjectModal';
 const NavBar = () => {
   // State for controlling modal visibility
   const [showModal, setShowModal] = useState(false);
+
+  // newly added - Rohith
+  const [projects, setProjects] = useState([]) ;
+  const [activeProjectId, setActiveProjectId] = useState(null);
+
+  async function loadProjects() {
+    const res = await fetch (`${API_BASE}/projects`);
+    const data = await res.json();
+    setProjects(data);
+    if (!activeProjectId && data.length) {
+      setActiveProjectId(data[0].project_id) // default select first project
+    }
+  }
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  // finish newly added - Rohith
 
   /**
    * Handles opening project files
@@ -56,14 +76,26 @@ const NavBar = () => {
         <div className="flex items-center">
           {/* Project selector pill */}
           <div className="flex bg-slate-700 rounded-md mr-2 p-1 ml-[5px] gap-2">
-            <Link 
-              to="/"
-              className="px-4 py-2 rounded-md no-underline text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-              aria-current="page"
-            >
-              Project 1
-            </Link>
+            {projects.length === 0 && (
+              <span className="px-3 py-2 text-sm text-slate-300">No projects yet</span>
+            )}
+            {projects.map((p) => (
+              <button
+                key={p.project_id}
+                onClick={() => setActiveProjectId(p.project_id)}
+                className={
+                  "px-4 py-2 rounded-md text-sm font-medium transition-colors " +
+                  (activeProjectId === p.project_id
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-slate-600 text-white/80 hover:bg-slate-500")
+                }
+                title={p.description || ""}
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
+
           
           {/* Open project button */}
           <button 
@@ -100,10 +132,19 @@ const NavBar = () => {
         </div>
       </div>
       
-      {/* Conditionally render New Project modal */}
+      {/* Conditionally render New Project modal
       {showModal && (
         <NewProjectModal onClose={() => setShowModal(false)} />
+      )} */}
+
+      {/*this reloads list of projects when a project is created*/}
+      {showModal && (
+        <NewProjectModal
+        onClose={() => setShowModal(false)}
+        onCreated={() => loadProjects()}  // refresh after create
+        />
       )}
+
     </nav>
   );
 };

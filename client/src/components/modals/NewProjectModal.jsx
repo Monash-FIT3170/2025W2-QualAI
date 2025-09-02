@@ -7,13 +7,17 @@ import { API_BASE } from '../../config/api.jsx';
  * @param {Object} props - Component props
  * @param {Function} props.onClose - Function to close the modal
  */
-const NewProjectModal = ({ onClose }) => {
+const NewProjectModal = ({ onClose, onCreated }) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     projectName: '',          // Stores project name input
     projectDescription: '',   // Stores project description
     researchMethod: 'thematic' // Default research method selection
   });
+
+   // NEW: submission state + error
+   const [submitting, setSubmitting] = useState(false);
+   const [error, setError] = useState('');
 
   /**
    * Handles changes in form inputs
@@ -50,7 +54,8 @@ const NewProjectModal = ({ onClose }) => {
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Failed to create project');
       }
-  
+
+      onCreated?.(data); // reloads projects before closing the navbar
       onClose(); 
     } catch (err) {
       setError(err.message);
