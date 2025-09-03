@@ -181,7 +181,7 @@ async def transcribe_audio(file: UploadFile = File(..., description="Upload an a
     print("run diarize")
     res = await diarize_audio(file_path)
     print(res)
-    with open(filename, 'r', encoding='utf-8') as file:
+    with open(output_file_path, 'r', encoding='utf-8') as file:
         transcription = file.read()
         
     # Save the transcription to a .txt file
