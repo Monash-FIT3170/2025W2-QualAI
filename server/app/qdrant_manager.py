@@ -120,6 +120,14 @@ class QdrantManager:
             force_recreate=False  # Set to False to add to an existing collection
         )
 
+    def clear_collection(self, project_name: str):
+        print("clear vector start")
+        self.client.delete_collection(
+            collection_name = project_name
+        )
+        print("clear vector end")
+    
+
     # --- Private methods to assist with funcitonalities ---
 
     def _process_and_split_documents(self, transcription_path: str) -> List[Document]:
@@ -205,3 +213,5 @@ class QdrantManager:
         )
 
         return vector_store.similarity_search(query=prompt, k=k)
+    
+    
