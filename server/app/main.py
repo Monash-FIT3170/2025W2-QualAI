@@ -300,3 +300,16 @@ def list_transcriptions(project_id: int) -> List[Dict]:
 
     rows = transcripts_store.get_all_project_transcriptions(project_id)
     return [_transcription_meta_row_to_dict(r) for r in rows]
+
+@app.delete("/projects/{project_id}")
+def delete_project(project_id: int):
+    """
+    Delete a project by id.
+    """
+    try:
+        projects_store.delete(project_id)  
+        return {"ok": True, "message": "Project deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
