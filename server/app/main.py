@@ -24,16 +24,6 @@ async def lifespan(app: FastAPI):
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
 
-    # --- this is just for placeholder data to be filled into vector db ---
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
-    if os.path.exists(data_path):
-        app.state.qdrant_manager.ingest_from_directory(
-            config.DEFAULT_PROJECT, data_path)
-        print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
-    else:
-        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
-    # ------
-
     # Initialize the transcriber model
     app.state.transcriber = Transcriber(config.VOSK_MODEL_PATH)
     print("Startup complete.")
@@ -122,36 +112,42 @@ async def transcribe_audio(file: UploadFile = File(..., description="Upload an a
         raise HTTPException(
             status_code=500, detail=f"Transcription failed: {e}")
     finally:
+
         #Ingest transcription into Vector Database
         #test 
-        data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "testHolder.txt"))
+        await ingest_transcription(text_output)
+        
 
-        try:
-            with open(data_path, "w", encoding="utf-8") as f:
-                f.write(text_output)
-        except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Failed to write transcription file: {e}")
-        
-        print("process reached")
-        print(data_path)
-        await process_transcription(data_path)
-        
         # Clean up the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
 
-async def process_transcription(file_path: str):
-    print("process transcription")
-    print(file_path)
+async def ingest_transcription(text_output: str):
+    
+    #create temporary text file in projects folder (this can be replaced with database methodology when complete)
+    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "temporaryTranscriptIngestionFile.txt"))
+
+    if not os.path.exists(data_path):
+        f = open(data_path, "x")
+        
+    try:
+        with open(data_path, "w", encoding="utf-8") as f:
+            f.write(text_output)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to write transcription file: {e}")
+    
+
+
     qdrant_manager = app.state.qdrant_manager
     qdrant_manager.clear_collection(config.DEFAULT_PROJECT)
-
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  file_path))
     if os.path.exists(data_path):
         app.state.qdrant_manager.ingest_from_directory(
             config.DEFAULT_PROJECT, data_path)
         print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
+
+        #deletes temporary text file *this can be replaced with supplementary database management tools*
+        os.remove(data_path)
     else:
         print(f"Warning: Data path not found, skipping ingestion: {data_path}")
 
