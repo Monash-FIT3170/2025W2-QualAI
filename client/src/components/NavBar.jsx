@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import NewProjectModal from './modals/NewProjectModal';
 import { API_BASE } from '../config/api.jsx';
+import DeleteProjectModal from './modals/DeleteProjectModal';
 
 /**
  * Main navigation bar component
@@ -11,6 +12,7 @@ import { API_BASE } from '../config/api.jsx';
 const NavBar = () => {
   // State for controlling modal visibility
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // newly added - Rohith
   const [projects, setProjects] = useState([]) ;
@@ -110,6 +112,14 @@ const NavBar = () => {
         
         {/* Action buttons section */}
         <div className="flex items-center gap-4">
+           {/* Delete project button */}
+          <button
+            className="flex items-center p-2 text-white text-sm font-medium rounded-md transition-colors hover:text-red-600"
+            onClick={() => setShowDeleteModal(true)}
+            aria-label="Delete project"
+          >
+            <i className="bi bi-trash text-xl" aria-hidden="true" />
+          </button>
           {/* New project button */}
           <button 
             className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
@@ -142,6 +152,17 @@ const NavBar = () => {
         <NewProjectModal
         onClose={() => setShowModal(false)}
         onCreated={() => loadProjects()}  // refresh after create
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteProjectModal
+          projectId={activeProjectId} 
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={() => {
+            loadProjects(); // refresh project list after deletion
+            setActiveProjectId(null); 
+          }}
         />
       )}
 
