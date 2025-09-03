@@ -121,7 +121,12 @@ class QdrantManager:
         )
 
     def clear_collection(self, project_name: str):
-        #clears the vector database of the data under project_name
+        """
+        clears the vector database of the project data 
+
+        Args:
+            project_name (str): The name of the project, used as the collection name.
+        """
         print("clear vector start")
         self.client.delete_collection(
             collection_name = project_name
