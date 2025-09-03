@@ -16,9 +16,11 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from vosk import Model, KaldiRecognizer
-from .vector import get_db
+from .vector import get_db, get_qdrant_client, QDRANT_COLLECTION_NAME
 
 import requests
+import sys
+from subprocess import run as run_subprocess
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
@@ -353,3 +355,88 @@ async def search(q: str = Query(..., min_length=2), k: int = 5):
     clean_text = " ".join([doc.page_content.replace('\n', ' ').strip() for doc, _ in docs_with_scores])
 
     return {"text": clean_text}
+
+# allows for retrieving all documents from the vector database for display
+@app.get("/documents")
+async def get_all_documents():
+    """
+    Retrieves all documents from the vector database for display.
+    """
+    try:
+        # Get all documents from the collection
+        client = get_qdrant_client()
+        
+        # Get all points from the collection
+        all_points = client.scroll(
+            collection_name=QDRANT_COLLECTION_NAME,
+            limit=1000,  # Adjust this limit as needed
+            with_payload=True,
+            with_vectors=False
+        )
+        
+        # Extract document content
+        documents = []
+        for point in all_points[0]:  # all_points[0] contains the points
+            if point.payload and 'page_content' in point.payload:
+                documents.append({
+                    'id': point.id,
+                    'content': point.payload['page_content'],
+                    'metadata': point.payload.get('metadata', {})
+                })
+        
+        # Concatenate all document contents
+        full_text = " ".join([doc['content'] for doc in documents])
+        
+        return {
+            "documents": documents,
+            "full_text": full_text,
+            "total_documents": len(documents)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# breaks down the vector database into collections of per-file documents
+@app.get("/collections")
+async def list_collections():
+    try:
+        client = get_qdrant_client()
+        cols = client.get_collections().collections
+        return {"collections": [c.name for c in cols if c.name.startswith("paper_")]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/documents/{collection}")
+async def get_documents_by_collection(collection: str):
+    try:
+        client = get_qdrant_client()
+        points, _ = client.scroll(
+            collection_name=collection,
+            limit=1000,
+            with_payload=True,
+            with_vectors=False,
+        )
+        documents = []
+        for p in points:
+            content = p.payload.get('page_content') if p.payload else None
+            metadata = p.payload.get('metadata') if p.payload else {}
+            if content:
+                documents.append({"id": p.id, "content": content, "metadata": metadata})
+        full_text = " ".join([d["content"] for d in documents])
+        return {"collection": collection, "documents": documents, "full_text": full_text, "total_documents": len(documents)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/ingest")
+async def ingest_per_file():
+    try:
+        script_path = Path("/app/scripts/ingest.py")
+        result = run_subprocess([sys.executable, str(script_path)], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=result.stderr)
+        # return updated collection list
+        client = get_qdrant_client()
+        cols = client.get_collections().collections
+        return {"ok": True, "stdout": result.stdout, "collections": [c.name for c in cols if not c.name.startswith('.internal')]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -48,9 +48,12 @@ const MenuBar = ({ editor }) => {
   );
 };
 
-const TranscriptionSection = ({ transcriptionData }) => {
+const TranscriptionSection = ({ transcriptionData, collectionName }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const filename = transcriptionData?.filename || 'transcription.html';
+  const [vectorData, setVectorData] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const filename = transcriptionData?.filename || `${collectionName || 'vector_documents'}.html`;
   const initialHTML = transcriptionData?.transcription || '';
 
   const editor = useEditor({
@@ -58,6 +61,43 @@ const TranscriptionSection = ({ transcriptionData }) => {
     content: initialHTML || DEFAULT_PLACEHOLDER,
     editable: isEditing,
   });
+
+  // Fetch data from vector database
+  useEffect(() => {
+    const fetchVectorData = async () => {
+      if (!collectionName) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const url = API_ENDPOINTS.DOCUMENTS_BY_COLLECTION(collectionName);
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        if (data.full_text) {
+          setVectorData(data.full_text);
+          // Update editor content with vector data
+          if (editor) {
+            editor.commands.setContent(`<p>${data.full_text}</p>`, false);
+          }
+        } else {
+          setVectorData('No documents found in this collection.');
+        }
+      } catch (err) {
+        console.error('Failed to fetch vector data:', err);
+        setError(err.message);
+        setVectorData('Failed to load documents from vector database.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVectorData();
+  }, [editor, collectionName]);
 
   useEffect(() => {
     if (!editor) return;
@@ -114,7 +154,7 @@ const TranscriptionSection = ({ transcriptionData }) => {
   return (
     <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col">
       <div className="flex justify-between items-center mb-2 font-sora">
-        <h3 className="text-lg text-white font-bold">Transcription</h3>
+        <h3 className="text-lg text-white font-bold">Transcriptions</h3>
         <div className='flex gap-3'>
           <button
             className={`bg-indigo-600 text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 ${isEditing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
@@ -143,10 +183,36 @@ const TranscriptionSection = ({ transcriptionData }) => {
           )}
         </div>
       </div>
-      <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col">
+      <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col min-h-0">
         {isEditing && <MenuBar editor={editor} />}
-        <div className="flex-1 overflow-y-auto">
-          <EditorContent editor={editor} className="tiptap-editor" />
+        
+        {/* Loading and error states */}
+        {isLoading && (
+          <div className="flex items-center justify-center p-4">
+            <div className="text-slate-300">Loading documents from vector database...</div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-3 mb-3">
+            <div className="text-red-300 text-sm">Error: {error}</div>
+          </div>
+        )}
+        
+        {/* Vector data info */}
+        {vectorData && !isLoading && (
+          <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-3 mb-3">
+            <div className="text-blue-300 text-sm">
+              Displaying content from vector database ({vectorData.length} characters)
+            </div>
+          </div>
+        )}
+        
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto min-h-0 border border-slate-600 rounded-lg bg-slate-800" style={{ maxHeight: '400px' }}>
+          <div className="p-4">
+            <EditorContent editor={editor} className="tiptap-editor" />
+          </div>
         </div>
       </div>
     </div>
