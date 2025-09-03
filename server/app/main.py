@@ -62,7 +62,7 @@ class PromptRequest(BaseModel):
     prompt: str
     project: str = config.DEFAULT_PROJECT  # default for testing
     mode: str = "offline"  # default = offline
-    analysis_mode: str = "default" # Analysis mode
+    template: str = "default" # Analysis mode
 
 
 # --- API Endpoints ---
@@ -76,11 +76,11 @@ async def generate_text(request: PromptRequest):
     prompt = request.prompt.strip()
     mode = request.mode.lower()
     project = request.project
-    analysis_mode = request.analysis_mode.lower()
+    template = request.template.lower()
 
     # Augment the prompt with RAG
     qdrant_manager = app.state.qdrant_manager
-    augmented_prompt = qdrant_manager.augment_prompt(prompt, project, analysis_mode)
+    augmented_prompt = qdrant_manager.augment_prompt(prompt, project, template)
     print(f"Augmented Prompt: {augmented_prompt}")
 
     if mode == "online":
