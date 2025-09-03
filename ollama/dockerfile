@@ -1,0 +1,4 @@
+FROM ollama/ollama
+
+# Install python3 and pip so we can run our startup script
+RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
