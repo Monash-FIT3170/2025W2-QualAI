@@ -25,7 +25,8 @@ async def lifespan(app: FastAPI):
     app.state.qdrant_manager = QdrantManager()
 
     # --- this is just for placeholder data to be filled into vector db ---
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
+    data_path = os.path.abspath(os.path.join(os.path.dirname(
+        __file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
     if os.path.exists(data_path):
         app.state.qdrant_manager.ingest_from_directory(
             config.DEFAULT_PROJECT, data_path)
@@ -52,14 +53,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- API Models ---
 
+# --- API Models ---
 
 class PromptRequest(BaseModel):
     prompt: str
     project: str = config.DEFAULT_PROJECT  # default for testing
     mode: str = "offline"  # default = offline
 
+
+# --- API Endpoints ---
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
