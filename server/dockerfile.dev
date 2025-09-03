@@ -1,9 +1,9 @@
 # --- Development Backend Dockerfile ---
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies once
+# Install system dependencies once - ADDED MISSING DEPENDENCIES
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libsqlite3-dev \
@@ -18,32 +18,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-RUN mkdir -p "app/Interview Uploads" && chmod 777 "app/Interview Uploads"
-#manual installation due to the unmatched python version, if not doing these manual pip install all these requirement dkcker would return No matching distribution found for all the module below
+RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
+
+# Install core dependencies first
 RUN pip install --no-cache-dir python-dotenv
 RUN pip install --no-cache-dir cython
 RUN pip install --no-cache-dir faster-whisper
-RUN pip install --no-cache-dir pydantic
-RUN pip install --no-cache-dir sqlalchemy
-RUN pip install --no-cache-dir qdrant-client
-RUN pip install --no-cache-dir langchain
-RUN pip install --no-cache-dir langchain-community
-RUN pip install --no-cache-dir langchain-huggingface
-RUN pip install --no-cache-dir sentence-transformers
 
-# Install pip + requirements
+# Install pip + requirements - FIXED ORDER
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
-    
-COPY app/whisper-diarization/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
 
+# Install whisper-diarization requirements - FIXED PATH
+COPY app/whisper-diarization/requirements.txt ./whisper-requirements.txt
+RUN pip install --no-cache-dir -r whisper-requirements.txt
 
+# Copy application code (if needed, otherwise remove since you use volumes)
+COPY app/ .
 
 RUN useradd app && chown -R app:app /app
 USER app
-# Default: mount code with volumes (no COPY here!)
+
 EXPOSE 8000
 
 CMD ["python", "start.py"]

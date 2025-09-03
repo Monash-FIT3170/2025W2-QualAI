@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
@@ -9,117 +10,87 @@ import traceback
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
-
-import httpx
-from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Request
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from .vector import get_db
 
-import requests
+from app.config import config
+from app.llm_services import generate_online, generate_offline
+from app.transcription_service import Transcriber
+from app.qdrant_manager import QdrantManager
 
-SAMPLE_RATE = 16000
-CHUNK_SIZE = 4000
 DIAZARIZATION_TIMEOUT_SECOND = 30000
-WHISPER_DIARIZATION_GIT= "https://github.com/MahmoudAshraf97/whisper-diarization.git"
+
+# --- Application Setup ---
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Handles application startup and shutdown events.
+    """
     print("Starting application...")
-    db = get_db()
+
+    # Initialize and ingest data for Qdrant on startup
+    app.state.qdrant_manager = QdrantManager()
+
+    # --- this is just for placeholder data to be filled into vector db ---
+    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
+    if os.path.exists(data_path):
+        app.state.qdrant_manager.ingest_from_directory(
+            config.DEFAULT_PROJECT, data_path)
+        print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
+    else:
+        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
+    # ------
+
+    # Initialize the transcriber model
+    app.state.transcriber = Transcriber(config.VOSK_MODEL_PATH)
     print("Startup complete.")
     yield
     print("Shutting down...")
 
-
 app = FastAPI(title="QualAI API", lifespan=lifespan)
 
-
+# --- Middleware ---
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Replace with actual frontend URL in prod
+    allow_origins=config.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --- API Models ---
+
+
 class PromptRequest(BaseModel):
     prompt: str
-    mode: str = "offline" # default = offline
+    project: str = config.DEFAULT_PROJECT  # default for testing
+    mode: str = "offline"  # default = offline
 
-OLLAMA_URL = "http://ollama:11434/api/generate"
-OLLAMA_MODEL = "deepseek-r1:7b"
-env_path = Path(__file__).resolve().parent.parent / '.env'
-# print(f"Loading .env from: {env_path}")
-load_dotenv(dotenv_path=env_path)  # loads variables from .env file
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# --- API Endpoints ---
 
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
+    """
+    Generates a text response using either an online (Gemini) or offline (Ollama) model.
+    The prompt is augmented with context from a Qdrant vector database.
+    """
     prompt = request.prompt.strip()
     mode = request.mode.lower()
-    if mode == "online": 
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    project = request.project
 
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": prompt}
-                        ]
-                    }
-                ]
-            }
+    # Augment the prompt with RAG
+    qdrant_manager = app.state.qdrant_manager
+    augmented_prompt = qdrant_manager.augment_prompt(prompt, project)
+    print(f"Augmented Prompt: {augmented_prompt}")
+    if mode == "online":
+        return await generate_online(augmented_prompt)
+    else:
+        return await generate_offline(augmented_prompt)
 
-            headers = {
-                "Content-Type": "application/json"
-            }
-
-            response = requests.post(url, headers=headers, json=payload)
-            data = response.json()
-            print("Gemini API response:", data)
-
-            # Extract text from Gemini's response
-            reply = data["candidates"][0]["content"]["parts"][0]["text"]
-
-            return {"response": reply.strip()}
-
-        except Exception as e:
-            return {"response": f"Online mode failed: {str(e)}"}
-
-
-    else: 
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    OLLAMA_URL,
-                    json={
-                        "model": OLLAMA_MODEL,
-                        "prompt": request.prompt,
-                        "stream": False
-                    },
-                        timeout=60.0
-                )
-            if response.status_code != 200:
-                print("OLLAMA Error:", response.text)
-                return {"error": response.text}
-            
-            # Log what Ollama actually returned
-            json_response = response.json()
-            # print("OLLAMA Response:", json_response)
-            
-            # Return only the part you care about
-            return {"response": json_response.get("response", "No 'response' field in Ollama reply")}
-        
-        except Exception as e:
-            error_details = traceback.format_exc()
-            # print("Server Error Traceback:\n", error_details)
-            return {"error": str(e) or "Unknown server error"}
-    
+      
 
 async def diarize_audio(recording_path: str,base_path:str):
         
@@ -171,18 +142,17 @@ async def diarize_audio(recording_path: str,base_path:str):
 
 
 @app.post("/transcribe/")
-async def transcribe_audio(
-    file: UploadFile = File(
-        ..., description="Upload an interview for transcription here"
-    )
-):
+async def transcribe_audio(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
     """
-    Function for transcribing audio using the Transcriber object, creates an upload directory for files and returns a editable transcription page.
-
-    :param file: the File path location of the chosen uploaded file functionality on the webpage.
+    Transcribes an uploaded audio file using the Vosk-based Transcriber service.
+     :param file: the File path location of the chosen uploaded file functionality on the webpage.
     """
-    print("HERE")
-    print(Path(__file__).resolve().parent)
+    # Define paths
+    base_path = Path(__file__).resolve().parent
+    uploads_path = base_path / "Interview_Uploads"
+    uploads_path.mkdir(exist_ok=True)
+    file_path = uploads_path / (file.filename or "default_filename")
+   
     try:
         base_path = Path(__file__).resolve().parent
         print(base_path)
@@ -211,57 +181,33 @@ async def transcribe_audio(
     print("run diarize")
     res = await diarize_audio(file_path)
     print(res)
-
+    with open(filename, 'r', encoding='utf-8') as file:
+        transcription = file.read()
+        
     # Save the transcription to a .txt file
     
-    return {"output_path":output_file_path}
+    return {"output_path":output_file_path,"transcription":transcription},
 
 @app.post("/download/")
-async def download_transcription(final_output: str = Form(...), filename: str=Form(...)):
+async def download_transcription(final_output: str = Form(...), filename: str = Form(...)):
     """
-    Function for downloading the edited transcription into a local text file.
-
-    :param final_output: The final text file output derived from the text contained in the editable text box from the transcription page
-    :param filename: The modified name of the file, used to generate a downloadable text file of the same name. Stored in the transcription page prior.
+    Saves the final transcription text to a file and provides it for download.
     """
     base_path = Path(__file__).resolve().parent
-    upload_path = base_path / "Interview Uploads"
-    os.makedirs(upload_path, exist_ok=True) #should suppress error if directory exists
+    download_path = base_path / "Transcripts"
+    download_path.mkdir(exist_ok=True)
 
-    file_path = upload_path / filename
+    file_path = download_path / filename
 
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(final_output)
-    
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(final_output)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to write transcription file: {e}")
+
     return FileResponse(
         path=file_path,
         filename=filename,
         media_type='text/plain'
     )
-    
-#Vector DB Things
-class SearchResponse(BaseModel):
-    result: list[dict]
-
-# @app.get("/")
-# def read_root():
-#     return {"message": "API is running. Use the /search endpoint to query."}
-
-
-
-
-@app.get("/search")
-async def search(q: str = Query(..., min_length=2), k: int = 5):
-    """
-    Performs a similarity search and returns fully cleaned, continuous text.
-    """
-    db = get_db()
-    try:
-        docs_with_scores = db.similarity_search_with_score(query=q, k=k)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    # Concatenate all page contents into a single clean string
-    clean_text = " ".join([doc.page_content.replace('\n', ' ').strip() for doc, _ in docs_with_scores])
-
-    return {"text": clean_text}
