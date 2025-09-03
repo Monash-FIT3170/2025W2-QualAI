@@ -120,3 +120,17 @@ def get_db():
         embeddings=embeddings,
         collection_name=QDRANT_COLLECTION_NAME,
     )
+
+@lru_cache(maxsize=64)
+def get_db_for_collection(collection_name: str):
+    """
+    Returns a LangChain Qdrant vector store for a specific collection name.
+    It does not auto-ingest; assumes the collection exists.
+    """
+    client = get_qdrant_client()
+    embeddings = get_embeddings_model()
+    return Qdrant(
+        client=client,
+        embeddings=embeddings,
+        collection_name=collection_name,
+    )

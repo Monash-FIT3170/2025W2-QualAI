@@ -5,6 +5,7 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import SpacyTextSplitter
 from langchain_community.vectorstores import Qdrant
 import hashlib
+from qdrant_client.http import models as rest_models
 
 # We need to import the functions from the 'app' module.
 import sys
@@ -45,32 +46,55 @@ def load_and_split_documents(directory_path: str):
 
 
 def create_and_store_vectors(chunks):
-    """Creates embeddings for document chunks and stores them in Qdrant."""
+    """Creates embeddings for document chunks and stores them in per-file Qdrant collections.
+
+    Assumes each chunk has metadata with 'source' (file path) and possibly 'page'. We will group by source filename
+    and index each group into its own collection named 'paper_<slug>'.
+    """
     if not chunks:
         print("No chunks to process")
         return
 
-    print("Connecting to vector store and indexing documents...")
+    print("Connecting to vector store and indexing documents (per-file collections)...")
     start_time = time.time()
-    
+
     client = get_qdrant_client()
     embeddings = get_embeddings_model()
-    
-    # Get the vector store object for an existing collection
-    qdrant_store = Qdrant(
-        client=client, 
-        collection_name=QDRANT_COLLECTION_NAME, 
-        embeddings=embeddings
-    )
 
-    #Unique id for each chunk so we can run ingest multiple times
+    # Group chunks by source filename
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for d in chunks:
+        src = (d.metadata.get('source') or '').split('/')[-1]
+        if not src:
+            src = 'unknown'
+        groups[src].append(d)
 
+    for src_filename, docs in groups.items():
+        # Build a safe collection name
+        base = os.path.splitext(src_filename)[0]
+        slug = base.replace(' ', '_').replace('/', '_').replace(':', '_')
+        collection_name = f"paper_{slug}"
+        print(f"Indexing {len(docs)} chunks into collection '{collection_name}'")
 
+        # Ensure collection exists with correct vector size
+        dim = embeddings.client.get_sentence_embedding_dimension()
+        try:
+            existing = client.get_collection(collection_name)
+        except Exception:
+            client.create_collection(
+                collection_name=collection_name,
+                vectors_config={
+                    "size": dim,
+                    "distance": "Cosine"
+                }
+            )
 
-    qdrant_store.add_documents(documents=chunks)
+        store = Qdrant(client=client, collection_name=collection_name, embeddings=embeddings)
+        store.add_documents(documents=docs)
 
     end_time = time.time()
-    print(f"Vector store updated and documents indexed in {end_time - start_time:.2f} seconds.")
+    print(f"All collections indexed in {end_time - start_time:.2f} seconds.")
 
 
 
