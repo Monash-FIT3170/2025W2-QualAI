@@ -36,7 +36,10 @@ async def lifespan(app: FastAPI):
     print("Starting application...")
     # Initalise SQL Database
     app.state.projects_store = db.Project(config.DB_PATH)
-    app.state.projects_store.insert(config.DEFAULT_PROJECT, config.DEFAULT_PROJECT)
+    try:
+        app.state.projects_store.insert(config.DEFAULT_PROJECT, config.DEFAULT_PROJECT)
+    except sqlite3.IntegrityError:
+        print(f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation")
     app.state.transcripts_store = db.Transcription(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
