@@ -1,4 +1,4 @@
-fastapi[standard]
+fastapi
 uvicorn[standard]
 faster-whisper
 torch 
