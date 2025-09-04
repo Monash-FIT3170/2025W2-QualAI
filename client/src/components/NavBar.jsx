@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import NewProjectModal from './modals/NewProjectModal';
 import { useEffect } from 'react';
 import { useRef } from 'react';
+import { useProject } from '../contexts/ProjectContext';
+import DeleteProjectModal from './modals/DeleteProjectModal';
+
 
 /**
  * Main navigation bar component
@@ -47,19 +49,22 @@ useEffect(() => {
     booting: {
       text: "System Booting",
       classes: "bg-yellow-50 text-yellow-800",
-      dot: "bg-yellow-500 animate-pulse" // ✅ pulsing effect
+      dot: "bg-yellow-500 animate-pulse"
     }
   };
 
   const { text: statusText, classes: statusClasses, dot: dotColor } =
     statusConfig[status] || statusConfig.booting;
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { projects, activeProjectId, setActiveProjectId, loadProjects } = useProject();
 
 
   /**
    * Handles opening project files
    * Creates a hidden file input element programmatically
    */
-  const openProjectFile = () => {
+  const openProjectFile = () => { 
     // Create a hidden file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -100,14 +105,26 @@ useEffect(() => {
         <div className="flex items-center">
           {/* Project selector pill */}
           <div className="flex bg-slate-700 rounded-md mr-2 p-1 ml-[5px] gap-2">
-            <Link 
-              to="/"
-              className="px-4 py-2 rounded-md no-underline text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-              aria-current="page"
-            >
-              Project 1
-            </Link>
+            {projects.length === 0 && (
+              <span className="px-3 py-2 text-sm text-slate-300">No projects yet</span>
+            )}
+            {projects.map((p) => (
+              <button
+                key={p.project_id}
+                onClick={() => setActiveProjectId(p.project_id)}
+                className={
+                  "px-4 py-2 rounded-md text-sm font-medium transition-colors " +
+                  (activeProjectId === p.project_id
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-slate-600 text-white/80 hover:bg-slate-500")
+                }
+                title={p.description || ""}
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
+
           
           {/* Open project button */}
           <button 
@@ -122,6 +139,14 @@ useEffect(() => {
         
         {/* Action buttons section */}
         <div className="flex items-center gap-4">
+           {/* Delete project button */}
+          <button
+            className="flex items-center p-2 text-white text-sm font-medium rounded-md transition-colors hover:text-red-600"
+            onClick={() => setShowDeleteModal(true)}
+            aria-label="Delete project"
+          >
+            <i className="bi bi-trash text-xl" aria-hidden="true" />
+          </button>
           {/* New project button */}
           <button 
             className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
@@ -145,10 +170,30 @@ useEffect(() => {
         </div>
       </div>
       
-      {/* Conditionally render New Project modal */}
+      {/* Conditionally render New Project modal
       {showModal && (
         <NewProjectModal onClose={() => setShowModal(false)} />
+      )} */}
+
+      {/*this reloads list of projects when a project is created*/}
+      {showModal && (
+        <NewProjectModal
+        onClose={() => setShowModal(false)}
+        onCreated={() => loadProjects()}  // refresh after create
+        />
       )}
+
+      {showDeleteModal && (
+        <DeleteProjectModal
+          projectId={activeProjectId} 
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={() => {
+            loadProjects(); // refresh project list after deletion
+            setActiveProjectId(null); 
+          }}
+        />
+      )}
+
     </nav>
   );
 };
