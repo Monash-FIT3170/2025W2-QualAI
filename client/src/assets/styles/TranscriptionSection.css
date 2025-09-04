@@ -48,6 +48,25 @@
     line-height: 1.5;
   }
   
+  /* Highlighted text styling */
+  .highlighted-text {
+    padding: 2px 4px;
+    border-radius: 3px;
+    display: inline;
+  }
+  
+  /* Edit mode styling */
+  .transcription-text textarea {
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+  }
+  
+  .transcription-text textarea:focus {
+    outline: none;
+  }
+  
   .transcription-actions {
     display: flex;
     justify-content: flex-end;

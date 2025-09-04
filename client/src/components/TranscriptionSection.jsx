@@ -26,6 +26,10 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     const [selectedTranscriptionText, setSelectedTranscriptionText] = useState("");
     const [loading, setLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedText, setEditedText] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [highlightColor, setHighlightColor] = useState("yellow");
     const previousProjectId = useRef(activeProjectId);
     const previousTranscriptionData = useRef(transcriptionData);
 
@@ -160,6 +164,8 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     // Clear selection
                     setSelectedTranscriptionId(null);
                     setSelectedTranscriptionText("");
+                    setEditedText("");
+                    setIsEditing(false);
                 }
                 console.log('Transcription deleted successfully');
             } else {
@@ -173,6 +179,83 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         } finally {
             setDeleting(false);
         }
+    };
+
+    // Handle edit mode toggle
+    const handleEditToggle = () => {
+        if (isEditing) {
+            // Cancel editing
+            setEditedText("");
+            setIsEditing(false);
+        } else {
+            // Start editing
+            setEditedText(selectedTranscriptionText);
+            setIsEditing(true);
+        }
+    };
+
+    // Handle save transcription
+    const handleSaveTranscription = async () => {
+        if (!selectedTranscriptionId || !activeProjectId || !editedText.trim()) return;
+        
+        try {
+            setSaving(true);
+            const response = await fetch(
+                API_ENDPOINTS.updateProjectTranscription(activeProjectId, selectedTranscriptionId),
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: editedText }),
+                }
+            );
+            
+            if (response.ok) {
+                setSelectedTranscriptionText(editedText);
+                setIsEditing(false);
+                setEditedText("");
+                console.log('Transcription saved successfully');
+            } else {
+                const errorData = await response.json();
+                console.error('Failed to save transcription:', errorData);
+                alert('Failed to save transcription. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error saving transcription:', error);
+            alert('An error occurred while saving the transcription. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Handle text highlighting
+    const handleHighlightText = () => {
+        const selection = window.getSelection();
+        if (selection.toString().trim()) {
+            const range = selection.getRangeAt(0);
+            const span = document.createElement('span');
+            span.style.backgroundColor = highlightColor;
+            span.style.padding = '2px 4px';
+            span.style.borderRadius = '3px';
+            span.className = 'highlighted-text';
+            
+            try {
+                range.surroundContents(span);
+                selection.removeAllRanges();
+            } catch (e) {
+                // If surroundContents fails, try a different approach
+                const contents = range.extractContents();
+                span.appendChild(contents);
+                range.insertNode(span);
+                selection.removeAllRanges();
+            }
+        }
+    };
+
+    // Handle highlight color change
+    const handleHighlightColorChange = (color) => {
+        setHighlightColor(color);
     };
 
     const handleDownloadTranscription = async () => { // Make the function async
@@ -271,15 +354,46 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
                 {/* Action buttons container */}
                 <div className='flex gap-3'>
-                    {/* Edit transcription button */}
+                    {/* Edit/Save transcription button */}
                     <button
-                        className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
-                        aria-label="Edit transcription"
-                    // onClick={editTranscription} 
-                    // TODO: Implement transcription editing functionality
+                        className={`text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 ${
+                            isEditing 
+                                ? "bg-green-600 hover:bg-green-700" 
+                                : "bg-indigo-600 hover:bg-indigo-700"
+                        }`}
+                        aria-label={isEditing ? "Save transcription" : "Edit transcription"}
+                        onClick={isEditing ? handleSaveTranscription : handleEditToggle}
+                        disabled={!selectedTranscriptionId || saving}
                     >
-                        <i className="bi bi-pencil" aria-hidden="true" />
+                        {saving ? (
+                            <>
+                                <i className="bi bi-arrow-clockwise spin" aria-hidden="true" />
+                                Saving...
+                            </>
+                        ) : isEditing ? (
+                            <>
+                                <i className="bi bi-check" aria-hidden="true" />
+                                Save
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-pencil" aria-hidden="true" />
+                                Edit
+                            </>
+                        )}
                     </button>
+
+                    {/* Cancel edit button - only show when editing */}
+                    {isEditing && (
+                        <button
+                            className="bg-gray-600 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-700 flex items-center gap-2"
+                            aria-label="Cancel editing"
+                            onClick={handleEditToggle}
+                        >
+                            <i className="bi bi-x" aria-hidden="true" />
+                            Cancel
+                        </button>
+                    )}
 
                     {/* Delete transcription button */}
                     <button
@@ -315,12 +429,49 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
             {/* Transcription content area */}
             <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col min-h-0">
+                {/* Highlighting toolbar - only show when not editing */}
+                {!isEditing && selectedTranscriptionId && (
+                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-600">
+                        <span className="text-xs text-slate-400">Highlight:</span>
+                        <div className="flex gap-1">
+                            {['yellow', 'lightblue', 'lightgreen', 'pink', 'orange'].map((color) => (
+                                <button
+                                    key={color}
+                                    className={`w-4 h-4 rounded border-2 ${
+                                        highlightColor === color ? 'border-white' : 'border-slate-500'
+                                    }`}
+                                    style={{ backgroundColor: color }}
+                                    onClick={() => handleHighlightColorChange(color)}
+                                    aria-label={`Select ${color} highlight color`}
+                                />
+                            ))}
+                        </div>
+                        <button
+                            className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
+                            aria-label="Highlight selected text"
+                            onClick={handleHighlightText}
+                        >
+                            <i className="bi bi-highlighter" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                )}
+
                 {/* Scrollable transcription text container */}
                 <div className="flex-1 overflow-y-auto max-h-[200px] transcription-text">
-                    {/* Placeholder transcription text - will be replaced with actual content */}
-                    <p className="text-sm text-gray-300 leading-6 whitespace-pre-wrap">
-                        {displayText}
-                    </p>
+                    {isEditing ? (
+                        <textarea
+                            className="w-full h-full bg-transparent text-sm text-gray-300 leading-6 resize-none border-none outline-none"
+                            value={editedText}
+                            onChange={(e) => setEditedText(e.target.value)}
+                            placeholder="Edit transcription text here..."
+                        />
+                    ) : (
+                        <div 
+                            className="text-sm text-gray-300 leading-6 whitespace-pre-wrap"
+                            contentEditable={false}
+                            dangerouslySetInnerHTML={{ __html: displayText.replace(/\n/g, '<br>') }}
+                        />
+                    )}
                 </div>
 
                 {/* Transcription toolbar (bottom right) */}
@@ -332,15 +483,6 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     // TODO: Implement code view toggle functionality
                     >
                         <i className="bi bi-code" aria-hidden="true"></i>
-                    </button>
-
-                    {/* Highlighting tool button */}
-                    <button
-                        className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
-                        aria-label="Highlight text"
-                    // TODO: Implement text highlighting functionality
-                    >
-                        <i className="bi bi-highlighter" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
