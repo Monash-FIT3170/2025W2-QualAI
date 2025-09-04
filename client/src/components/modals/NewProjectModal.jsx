@@ -44,21 +44,27 @@ const NewProjectModal = ({ onClose, onCreated }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.projectName,
+          name: formData.projectName.trim(),
           description: formData.projectDescription,
         }),
       });
   
-      const data = await res.json();
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        // ignore JSON parse error; will handle with generic error
+      }
   
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Failed to create project');
+      if (!res.ok || (data && (data.error || data.detail))) {
+        const msg = data?.detail || data?.error || 'Failed to create project';
+        throw new Error(msg);
       }
 
-      onCreated?.(data); // reloads projects before closing the navbar
+      onCreated?.(data);
       onClose(); 
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to create project');
     } finally {
       setSubmitting(false);
     }
@@ -77,6 +83,7 @@ const NewProjectModal = ({ onClose, onCreated }) => {
             className="text-slate-400 hover:text-white transition-colors"
             onClick={onClose}
             aria-label="Close modal"
+            disabled={submitting}
           >
             <i className="bi bi-times"></i>
           </button>
@@ -84,6 +91,17 @@ const NewProjectModal = ({ onClose, onCreated }) => {
         
         {/* Form section */}
         <form className="p-6" onSubmit={handleSubmit}>
+          {/* Error banner */}
+          {error && (
+            <div
+              className="mb-4 rounded-md border border-red-700 bg-red-900/40 text-red-200 px-3 py-2 text-sm"
+              role="alert"
+              aria-live="assertive"
+            >
+              {error}
+            </div>
+          )}
+
           {/* Project Name input field */}
           <div className="mb-4">
             <label 
@@ -99,8 +117,9 @@ const NewProjectModal = ({ onClose, onCreated }) => {
               className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-600"
               value={formData.projectName}
               onChange={handleChange}
-              required            // Field is required
+              required
               placeholder="Enter project name"
+              disabled={submitting}
             />
           </div>
           
@@ -120,6 +139,7 @@ const NewProjectModal = ({ onClose, onCreated }) => {
               value={formData.projectDescription}
               onChange={handleChange}
               placeholder="Briefly describe your project"
+              disabled={submitting}
             ></textarea>
           </div>
           
@@ -130,15 +150,17 @@ const NewProjectModal = ({ onClose, onCreated }) => {
               type="button" 
               className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
               onClick={onClose}
+              disabled={submitting}
             >
               Cancel
             </button>
             {/* Submit button */}
             <button 
               type="submit" 
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60"
+              disabled={submitting}
             >
-              Create Project
+              {submitting ? "Creating..." : "Create Project"}
             </button>
           </div>
         </form>
