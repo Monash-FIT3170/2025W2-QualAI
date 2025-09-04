@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "../config/api";
 
 const UploadAudioCard = ({ onTranscriptionComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   /**
    * Handles file selection
@@ -47,6 +48,14 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
     }
   };
 
+  
+
+
+
+
+
+
+
   return (
     <div className="bg-slate-800 rounded-xl shadow-md p-4 mb-4">
       <div className="flex flex-col items-center justify-center py-2 px-4 gap-2">
@@ -70,7 +79,7 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
             type="file"
             id="audio-upload-input"
             className="hidden"
-            accept="audio/*"
+            accept=".mp3,.m4a,.wav,.mp4,audio/*,video/*"
             onChange={handleFileChange}
             disabled={isUploading} // Disables file selection during upload
           />

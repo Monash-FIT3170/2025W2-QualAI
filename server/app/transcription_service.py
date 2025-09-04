@@ -2,36 +2,33 @@ import os
 import json
 import asyncio
 from datetime import timedelta
-from vosk import Model, KaldiRecognizer
 from fastapi import HTTPException
-
+import whisper
 from .config import config
 
 class Transcriber:
     """
     A service class for handling audio transcription using Vosk.
     """
-    def __init__(self, model_path: str):
-        if not os.path.exists(model_path):
-            raise ValueError(f"Model path not found: {model_path}")
-        self.model = Model(model_path)
+    def __init__(self, model_size: str = "base"):
+        print(f"Loading Whisper model: {model_size} ...")
+        self.model = whisper.load_model(model_size)
 
-    async def _format_result(self, data_str: str) -> dict:
+    async def _format_result(self, segment: dict) -> dict:
         """
         Formats a single transcription result segment.
         """
-        data = json.loads(data_str)
-        result = data.get("result", [])
-        start = min((r.get("start", 0) for r in result), default=0)
-        end = max((r.get("end", 0) for r in result), default=0)
-
+        start = segment.get("start", 0)
+        end = segment.get("end", 0)
         return {
             "start": str(timedelta(seconds=start)),
             "end": str(timedelta(seconds=end)),
-            "text": data.get("text", ""),
+            "text": segment.get("text", "").strip(),
         }
+    
 
-    async def transcribe(self, recording_path: str) -> dict:
+
+    async def transcribe(self, recording_path: str, language: str = None) -> dict:
         """
         Transcribes an audio file using ffmpeg and Vosk.
 
@@ -44,38 +41,16 @@ class Transcriber:
         if not os.path.exists(recording_path):
             raise FileNotFoundError(f"Audio file not found: {recording_path}")
 
-        recognizer = KaldiRecognizer(self.model, config.SAMPLE_RATE)
-        recognizer.SetWords(True)
+        try:
+            # Whisper does the ffmpeg conversion internally
+            result = await asyncio.to_thread(
+                self.model.transcribe, recording_path, language=language
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Whisper error: {str(e)}")
 
-        ffmpeg_command = [
-            "ffmpeg", "-nostdin", "-loglevel", "quiet",
-            "-i", recording_path,
-            "-ar", str(config.SAMPLE_RATE),
-            "-ac", "1", "-f", "s16le", "-",
+        transcription = [
+            await self._format_result(segment) for segment in result.get("segments", [])
         ]
 
-        process = await asyncio.create_subprocess_exec(
-            *ffmpeg_command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        transcription = []
-        while True:
-            if process.stdout is None:
-                break
-            data = await process.stdout.read(config.CHUNK_SIZE)
-            if not data:
-                break
-            if recognizer.AcceptWaveform(data):
-                transcription.append(await self._format_result(recognizer.Result()))
-
-        transcription.append(await self._format_result(recognizer.FinalResult()))
-        
-        # Check for errors from ffmpeg
-        stderr_data = await process.communicate()
-        if process.returncode != 0:
-            error_message = stderr_data[1].decode().strip()
-            raise HTTPException(status_code=500, detail=f"ffmpeg error: {error_message}")
-
-        return {"transcription": transcription}
+        return {"text": result.get("text", ""), "segments": transcription}
