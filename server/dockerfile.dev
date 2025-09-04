@@ -19,26 +19,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
-
-# manually install the dependency
-RUN pip install --no-cache-dir python-dotenv
-RUN pip install --no-cache-dir cython
-RUN pip install --no-cache-dir fastapi uvicorn[standard]
-RUN pip install --no-cache-dir faster-whisper
-RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir qdrant-client
-RUN pip install --no-cache-dir langchain
-RUN pip install --no-cache-dir langchain-core
-RUN pip install --no-cache-dir langchain-community
-RUN pip install --no-cache-dir langchain-huggingface
-RUN pip install --no-cache-dir langchain-text-splitters
-RUN pip install --no-cache-dir sentence-transformers
-RUN pip install --no-cache-dir spacy==3.7.2
-RUN pip install --no-cache-dir pypdf
-RUN pip install --no-cache-dir python-multipart
-RUN pip install --no-cache-dir setuptools #Spacy related
-RUN pip install --no-cache-dir wheel #Spacy related
-RUN pip install --no-cache-dir https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0.tar.gz
+#uncomment the manual installation if getting not found version error
+#following command would manually install the dependency 
+# RUN pip install --no-cache-dir python-dotenv
+# RUN pip install --no-cache-dir cython
+# RUN pip install --no-cache-dir fastapi uvicorn[standard]
+# RUN pip install --no-cache-dir faster-whisper
+# RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+# RUN pip install --no-cache-dir qdrant-client
+# RUN pip install --no-cache-dir langchain
+# RUN pip install --no-cache-dir langchain-core
+# RUN pip install --no-cache-dir langchain-community
+# RUN pip install --no-cache-dir langchain-huggingface
+# RUN pip install --no-cache-dir langchain-text-splitters
+# RUN pip install --no-cache-dir sentence-transformers
+# RUN pip install --no-cache-dir spacy==3.7.2
+# RUN pip install --no-cache-dir pypdf
+# RUN pip install --no-cache-dir python-multipart
+# RUN pip install --no-cache-dir setuptools #Spacy related
+# RUN pip install --no-cache-dir wheel #Spacy related
+# RUN pip install --no-cache-dir https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0.tar.gz
 
 # Install pip + requirements 
 COPY requirements.txt .
