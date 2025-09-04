@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_ENDPOINTS } from '../../config/api.jsx';
 
 
 /**
@@ -6,13 +7,17 @@ import React, { useState } from 'react';
  * @param {Object} props - Component props
  * @param {Function} props.onClose - Function to close the modal
  */
-const NewProjectModal = ({ onClose }) => {
+const NewProjectModal = ({ onClose, onCreated }) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     projectName: '',          // Stores project name input
     projectDescription: '',   // Stores project description
     researchMethod: 'thematic' // Default research method selection
   });
+
+   // NEW: submission state + error
+   const [submitting, setSubmitting] = useState(false);
+   const [error, setError] = useState('');
 
   /**
    * Handles changes in form inputs
@@ -29,11 +34,36 @@ const NewProjectModal = ({ onClose }) => {
    * Handles form submission
    * @param {Object} e - Event object from form submission
    */
-  const handleSubmit = (e) => {
-    e.preventDefault();       
-    console.log('Form submitted:', formData); 
-    onClose();               
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+  
+    try {
+      const res = await fetch(API_ENDPOINTS.PROJECT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.projectName,
+          description: formData.projectDescription,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to create project');
+      }
+
+      onCreated?.(data); // reloads projects before closing the navbar
+      onClose(); 
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+  
 
   return (
     <div className="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-50">

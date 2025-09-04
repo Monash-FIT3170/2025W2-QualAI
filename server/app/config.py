@@ -11,6 +11,9 @@ class Config(BaseSettings):
     """
     Central location for server settings and data. Also loads values from environment variables.
     """
+    # SQL Databse settings
+    DB_PATH: str = str((Path(__file__).resolve().parent / "qualAI.db"))
+
     # Project settings
     DEFAULT_PROJECT: str = "project_1"
     
