@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react'; // Make sure React is imported
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from "../contexts/ProjectContext";
+import "../assets/styles/TranscriptionSection.css";
 
 
 /** Safely parse JSON, returns null on failure */
@@ -242,7 +243,8 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
     return (
         /* Main container with card styling and flex layout */
-        <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col">
+        <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+
             {/* Header section with title and action buttons */}
             <div className="flex justify-between items-center mb-2 font-sora">
                 {/* Section title with dropdown */}
@@ -312,11 +314,11 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
             </div>
 
             {/* Transcription content area */}
-            <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col">
+            <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col min-h-0">
                 {/* Scrollable transcription text container */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto max-h-[200px] transcription-text">
                     {/* Placeholder transcription text - will be replaced with actual content */}
-                    <p className="text-sm text-gray-300 leading-6">
+                    <p className="text-sm text-gray-300 leading-6 whitespace-pre-wrap">
                         {displayText}
                     </p>
                 </div>

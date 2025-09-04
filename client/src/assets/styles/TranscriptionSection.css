@@ -20,6 +20,26 @@
   .transcription-text {
     flex: 1;
     overflow-y: auto;
+    max-height: 37.5rem; /* 600px - equivalent to max-h-[600px] */
+  }
+  
+  /* Custom scrollbar styling for better visibility */
+  .transcription-text::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .transcription-text::-webkit-scrollbar-track {
+    background: #475569; /* slate-600 */
+    border-radius: 4px;
+  }
+  
+  .transcription-text::-webkit-scrollbar-thumb {
+    background: #64748b; /* slate-500 */
+    border-radius: 4px;
+  }
+  
+  .transcription-text::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* slate-400 */
   }
   
   .transcription-text p {
