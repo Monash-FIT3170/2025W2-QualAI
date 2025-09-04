@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 from pathlib import Path
-from pydantic import BaseModel
 import sqlite3
 from typing import List, Dict
 
@@ -27,7 +26,6 @@ import app.helpers.transcription_converters as trans_conv
 boot_state = {"status": "booting"}
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -36,16 +34,11 @@ async def lifespan(app: FastAPI):
     print("Starting application...")
     # Initalise SQL Database
     app.state.projects_store = db.Project(config.DB_PATH)
-    try:
-        app.state.projects_store.insert(config.DEFAULT_PROJECT, config.DEFAULT_PROJECT)
-    except sqlite3.IntegrityError:
-        print(f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation")
     app.state.transcripts_store = db.Transcription(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
     app.state.transcriber = Transcriber(model_size="base")
-
 
     # --- this is just for placeholder data to be filled into vector db ---
     data_path = os.path.abspath(os.path.join(os.path.dirname(
@@ -56,6 +49,19 @@ async def lifespan(app: FastAPI):
         print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
     else:
         print(f"Warning: Data path not found, skipping ingestion: {data_path}")
+
+    try:
+        project_id = app.state.projects_store.insert(
+            config.DEFAULT_PROJECT, config.DEFAULT_PROJECT)
+
+        with open(data_path, 'r', encoding='utf-8') as file:
+            data_content = file.read()
+            app.state.transcripts_store.insert(
+                project_id, config.DEFAULT_PROJECT, data_content
+            )
+    except sqlite3.IntegrityError:
+        print(
+            f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation")
     # ------
 
     # Initialize the transcriber model
@@ -78,14 +84,11 @@ app.add_middleware(
 )
 
 
-
-
 # --- Back-end Status ---
 
 @app.get("/status")
 async def get_status():
     return boot_state
-
 
 
 # --- API Endpoints ---
@@ -112,9 +115,17 @@ async def generate_text(request: PromptRequest):
 
 
 @app.post("/transcribe/")
-async def transcribe_endpoint(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
+async def transcribe_endpoint(
+    file: UploadFile = File(...,
+                            description="Upload an audio file for transcription."),
+    project_id: int = Form(...,
+                           description="Project ID to save transcription to"),
+    project_name: str = Form(...,
+                             description="Project name for the transcription")
+):
     """
     Transcribe an uploaded audio file using Whisper (CPU, base model).
+    Saves the transcription to the specified project.
     """
     # Save the uploaded file
     base_path = Path(__file__).resolve().parent
@@ -131,6 +142,8 @@ async def transcribe_endpoint(file: UploadFile = File(..., description="Upload a
         )
 
     # Transcribe the file using Whisper
+    text_output = ""
+
     try:
         transcriber = app.state.transcriber
         result = await transcriber.transcribe(str(file_path), language="en")
@@ -140,21 +153,28 @@ async def transcribe_endpoint(file: UploadFile = File(..., description="Upload a
             f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
         )
 
-        return {"filename": transcript_filename, "transcription": text_output}
+        # Save transcription to the database
+        transcription_id = app.state.transcripts_store.insert(
+            project_id, transcript_filename, text_output
+        )
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
-
-    finally:
-
-        #Ingest transcription into Vector Database
-        app.state.qdrant_manager.clear_collection(config.DEFAULT_PROJECT)
-        app.state.qdrant_manager.ingest_from_text(config.DEFAULT_PROJECT, text_output) #for now uses default project, this should change based on project management tools
-        
+        # for now uses default project, this should change based on project management tools
+        app.state.qdrant_manager.ingest_from_text(
+            project_name, text_output)
 
         if os.path.exists(file_path):
-
             os.remove(file_path)
+
+        return {
+            "filename": transcript_filename,
+            "transcription": text_output,
+            "transcription_id": transcription_id,
+            "project_id": project_id
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Transcription failed: {e}")
 
 
 @app.post("/download/")
@@ -180,7 +200,6 @@ async def download_transcription(final_output: str = Form(...), filename: str = 
         filename=filename,
         media_type='text/plain'
     )
-
 
 
 @app.post("/projects/{project_id}/transcriptions")
@@ -222,6 +241,86 @@ def list_transcriptions(project_id: int) -> List[Dict]:
     rows = app.state.transcripts_store.get_all_project_transcriptions(
         project_id)
     return [trans_conv.transcription_meta_row_to_dict(r) for r in rows]
+
+
+@app.get("/projects/{project_id}/transcriptions/{transcription_id}")
+def get_transcription(project_id: int, transcription_id: int) -> Dict:
+    """
+    Get a specific transcription by project and transcription ID.
+    """
+    # Ensure project exists
+    try:
+        app.state.projects_store.get_project_by_id(project_id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Get the transcription
+    try:
+        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
+            transcription_id)
+
+        # Verify the transcription belongs to the specified project
+        if proj_id != project_id:
+            raise HTTPException(
+                status_code=404, detail="Transcription not found in this project")
+
+        return {
+            "transcription_id": transcription_id,
+            "project_id": proj_id,
+            "name": name,
+            "text": text,
+            "processed_at": processed_at,
+        }
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Transcription not found")
+
+
+@app.delete("/projects/{project_id}/transcriptions/{transcription_id}")
+def delete_transcription(project_id: int, transcription_id: int):
+    """
+    Delete a specific transcription by project and transcription ID.
+    """
+    # Ensure project exists
+    try:
+        project_name, _, _ = app.state.projects_store.get_project_by_id(
+            project_id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Get the transcription first to verify it exists and belongs to the project
+    try:
+        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
+            transcription_id)
+
+        # Verify the transcription belongs to the specified project
+        if proj_id != project_id:
+            raise HTTPException(
+                status_code=404, detail="Transcription not found in this project")
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Transcription not found")
+
+    # Delete the transcription from the database
+    try:
+        app.state.transcripts_store.delete(transcription_id)
+        print(
+            f"Deleted transcription {transcription_id} from project {project_id}")
+
+        try:
+            ### TODO
+            ### IMPORTANT - Transcript should be removed from project
+            pass
+            
+        except Exception as vector_error:
+            print(
+                f"Warning: Failed to update vector database for project '{project_name}': {vector_error}")
+            # Don't fail the entire operation if vector update fails
+
+        return {"ok": True, "message": "Transcription deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete transcription: {e}")
 
 
 @app.post("/projects")
@@ -276,15 +375,36 @@ def get_project(project_id: int) -> Dict:
 
     return project_row_to_dict(project_id, (name, desc, created_at))
 
+
 @app.delete("/projects/{project_id}")
 def delete_project(project_id: int):
     """
     Delete a project by id.
+    Also deletes the corresponding Qdrant collection.
     """
     try:
-        app.state.projects_store.delete(project_id)  
+        # Get project name before deleting (needed for Qdrant collection deletion)
+        try:
+            project_name, _, _ = app.state.projects_store.get_project_by_id(
+                project_id)
+        except LookupError:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Delete the project from the database (this will also delete associated transcriptions due to foreign key cascade)
+        app.state.projects_store.delete(project_id)
+
+        # Delete the corresponding Qdrant collection
+        try:
+            app.state.qdrant_manager.clear_collection(project_name)
+            print(f"Deleted Qdrant collection for project: {project_name}")
+        except Exception as qdrant_error:
+            print(
+                f"Warning: Failed to delete Qdrant collection for project '{project_name}': {qdrant_error}")
+            # Don't fail the entire operation if Qdrant deletion fails
+
         return {"ok": True, "message": "Project deleted successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete project: {e}")

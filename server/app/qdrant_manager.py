@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+from fastapi import HTTPException
 from qdrant_client import QdrantClient, models, AsyncQdrantClient
 from langchain_community.vectorstores import Qdrant
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -321,10 +322,20 @@ class QdrantManager:
         )
         print("clear vector end")
     
+    def clear_filtered_metadata(project_name: str, metadata_type: str, metadata_label):
+            self.client.delete(
+            collection_name=project_name,
+            filter=models.Filter(
+            must=[models.FieldCondition(key=metadata_type, match=models.MatchValue(value=metadata_label))]
+            )
+    )
+
+    
+    
 
     # --- Private methods to assist with funcitonalities ---
 
-    def _process_and_split_documents(self, transcription_path: str) -> List[Document]:
+    def _process_and_split_documents(self, transcription_path: str, project_name: str, transcript_name: str) -> List[Document]:
         """
         Loads text document from a directory and splits them into chunks.
 
@@ -343,10 +354,14 @@ class QdrantManager:
         try:
             with open(transcription_path, "r") as file:
                 transcription_content = file.read()
+            
 
             documents = Document(
                 page_content=transcription_content,
-                metadata={"source": transcription_path}
+                metadata={
+                    "source": transcription_path,
+                    "transcription_id": transcript_name,
+                    "project_id": project_name}
             )
 
             return self.text_splitter.split_documents([documents])
@@ -355,15 +370,6 @@ class QdrantManager:
             print(f"Error: The file at {transcription_path} was not found.")
         except Exception as e:
             print(f"An error occurred: {e}")
-
-    def _get_embeddings_model(self) -> HuggingFaceBgeEmbeddings:
-        """Loads the embedding model."""
-        print(f"Loading embedding model: '{self.embedding_model_name}'...")
-        return HuggingFaceBgeEmbeddings(
-            model_name=self.embedding_model_name,
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": False},
-        )
 
     def _get_qdrant_client(self) -> QdrantClient:
         """Initializes the Qdrant client."""
