@@ -4,15 +4,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 from pathlib import Path
+from pydantic import BaseModel
 import sqlite3
 from typing import List, Dict
 
 from app.config import config
 import app.api_models as api_models
+from app.api_models import PromptRequest
 from app.llm_services import generate_online, generate_offline
 from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
-from app.transcribe_logic import load_model, transcribe_audio
 from app import database_models as db
 from app.helpers.project_converters import (
     project_row_to_dict,
@@ -63,11 +64,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="QualAI API", lifespan=lifespan)
 
+
 # --- Middleware ---
-
-
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
@@ -86,10 +84,10 @@ async def get_status():
     return boot_state
 
 
-# --- API Endpoints ---
 
+# --- API Endpoints ---
 @app.post("/generate")
-async def generate_text(request: api_models.PromptRequest):
+async def generate_text(request: PromptRequest):
     """
     Generates a text response using either an online (Gemini) or offline (Ollama) model.
     The prompt is augmented with context from a Qdrant vector database.
@@ -129,6 +127,7 @@ async def transcribe_endpoint(file: UploadFile = File(..., description="Upload a
             status_code=500, detail=f"Failed to save uploaded file: {e}"
         )
 
+    # Transcribe the file using Whisper
     try:
         transcriber = app.state.transcriber
         result = await transcriber.transcribe(str(file_path), language="en")
@@ -146,6 +145,7 @@ async def transcribe_endpoint(file: UploadFile = File(..., description="Upload a
     finally:
 
         #Ingest transcription into Vector Database
+        app.state.qdrant_manager.clear_collection(config.DEFAULT_PROJECT)
         app.state.qdrant_manager.ingest_from_text(config.DEFAULT_PROJECT, text_output) #for now uses default project, this should change based on project management tools
         
 
