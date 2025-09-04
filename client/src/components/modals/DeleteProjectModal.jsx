@@ -1,36 +1,64 @@
 import React, { useState } from "react";
 import { API_BASE } from '../../config/api.jsx';
+import { useProject } from '../../contexts/ProjectContext';
 
 /**
  * Modal component for deleting a project
  * @param {Object} props - Component props
- * @param {number} props.projectId - ID of the project to delete
  * @param {Function} props.onClose - Function to close the modal
  * @param {Function} props.onDelete - Optional callback to update parent after deletion
  */
-const DeleteProjectModal = ({ projectId, onClose, onDelete }) => {
+const DeleteProjectModal = ({ onClose, onDelete }) => {
   const [loading, setLoading] = useState(false);
+  const { projects, activeProjectId, setActiveProjectId, loadProjects } = useProject();
+
+  const canDelete = projects.length > 1;
+  const projectId = activeProjectId;
 
   const handleDelete = async (e) => {
     e.preventDefault();
+    if (!canDelete) {
+      alert("You cannot delete the only remaining project.");
+      return;
+    }
+    if (!projectId) {
+      alert("No active project selected.");
+      return;
+    }
     setLoading(true);
 
+    // Pick a next active project deterministically (prefer neighbor, else first available)
+    const currentIndex = projects.findIndex(p => p.project_id === projectId);
+    const candidates = projects.filter(p => p.project_id !== projectId);
+    const preferred = candidates[currentIndex] || candidates[currentIndex - 1] || candidates[0];
+    const nextActiveId = preferred?.project_id ?? null;
+
     try {
-      const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+      const res = await fetch(`${API_BASE}/projects/${projectId}`, {
         method: "DELETE",
       });
+      const data = await res.json();
 
-      const data = await response.json();
-
-      if (data.ok) {
-        if (onDelete) onDelete(projectId); // Notify parent
-        onClose();
-      } else {
-        alert(data.error || "Failed to delete project");
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to delete project");
       }
+
+      // Remove chat thread for the deleted project
+      try {
+        localStorage.removeItem(`aiMessages_${projectId}`);
+      } catch {}
+
+      // Switch active project locally (immediately) then refresh list
+      if (nextActiveId) {
+        setActiveProjectId(nextActiveId);
+      }
+      await loadProjects();
+
+      onDelete?.(projectId);
+      onClose();
     } catch (err) {
       console.error(err);
-      alert("An error occurred while deleting the project");
+      alert(err.message || "An error occurred while deleting the project");
     } finally {
       setLoading(false);
     }
@@ -57,6 +85,11 @@ const DeleteProjectModal = ({ projectId, onClose, onDelete }) => {
             <p className="text-sm text-slate-200">
               Are you sure you wish to delete this project forever?
             </p>
+            {!canDelete && (
+              <p className="text-xs text-red-400 mt-2">
+                You must have at least one project. Deletion is disabled when only one project remains.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
@@ -71,7 +104,7 @@ const DeleteProjectModal = ({ projectId, onClose, onDelete }) => {
             <button
               type="submit"
               className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-              disabled={loading}
+              disabled={loading || !canDelete}
             >
               {loading ? "Deleting..." : "Delete"}
             </button>
