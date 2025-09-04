@@ -33,7 +33,8 @@ async def lifespan(app: FastAPI):
     app.state.qdrant_manager = QdrantManager()
 
     # --- this is just for placeholder data to be filled into vector db ---
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
+    data_path = os.path.abspath(os.path.join(os.path.dirname(
+        __file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
     if os.path.exists(data_path):
         app.state.qdrant_manager.ingest_from_directory(
             config.DEFAULT_PROJECT, data_path)
@@ -58,16 +59,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- API Models ---
 
+# --- API Models ---
 
 class PromptRequest(BaseModel):
     prompt: str
     project: str = config.DEFAULT_PROJECT  # default for testing
     mode: str = "offline"  # default = offline
 
-# --- API Endpoints ---
 
+# --- API Endpoints ---
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
@@ -83,18 +84,18 @@ async def generate_text(request: PromptRequest):
     qdrant_manager = app.state.qdrant_manager
     augmented_prompt = qdrant_manager.augment_prompt(prompt, project)
     print(f"Augmented Prompt: {augmented_prompt}")
+
     if mode == "online":
         return await generate_online(augmented_prompt)
     else:
         return await generate_offline(augmented_prompt)
 
 @app.post("/transcribe/")
-async def transcribe_audio(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
+async def transcribe_endpoint(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
     """
-    Transcribes an uploaded audio file using the Vosk-based Transcriber service.
-     :param file: the File path location of the chosen uploaded file functionality on the webpage.
+    Transcribe an uploaded audio file using Whisper (CPU, base model).
     """
-    # Define paths
+    # Save the uploaded file
     base_path = Path(__file__).resolve().parent
     uploads_path = base_path / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
@@ -128,8 +129,8 @@ async def transcribe_audio(file: UploadFile = File(..., description="Upload an a
         transcription = ouput_file.read()
         
     # Save the transcription to a .txt file
-    print(output_file_path)
-    print(transcription)
+    # print(output_file_path)
+    # print(transcription)
     return {"output_path":output_file_path,"transcription":transcription},
 
 @app.post("/download/")
