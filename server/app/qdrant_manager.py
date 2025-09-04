@@ -120,6 +120,62 @@ class QdrantManager:
             force_recreate=False  # Set to False to add to an existing collection
         )
 
+    def ingest_from_text(self, project_name: str, text_output: str):
+        """
+        Process text and ingests it into the Vector Database
+
+        Args:
+            text_output (str): The text string that has been transcribed by the software
+            project_name (str): The name of the project, used as the collection name.
+        """
+
+        """
+        For future reference, this can almost certainly be better written, right now im just abusing the fact that the 
+        above ingestion from directory function exists.
+        """
+        
+        #create temporary text file in projects folder (this can be replaced with database methodology when complete)
+
+        data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", "temporaryTranscriptIngestionFile.txt"))
+
+        if not os.path.exists(data_path):
+            f = open(data_path, "x")
+            
+        try:
+            with open(data_path, "w", encoding="utf-8") as f:
+                f.write(text_output)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to write transcription file: {e}")
+        
+        #clears qdrant_manager of past project details (we may want to change this at a later date)
+        
+
+        #ingests new transcript data
+        if os.path.exists(data_path):
+            self.ingest_from_directory(
+                project_name, data_path)
+            print(f"Ingested data for project: {project_name}")
+
+            #deletes temporary text file *this can be replaced with supplementary database management tools*
+            os.remove(data_path)
+        else:
+            print(f"Warning: Data path not found, skipping ingestion: {data_path}")
+
+    def clear_collection(self, project_name: str):
+        """
+        clears the vector database of the project data 
+
+        Args:
+            project_name (str): The name of the project, used as the collection name.
+        """
+        print("clear vector start")
+        self.client.delete_collection(
+            collection_name = project_name
+        )
+        print("clear vector end")
+    
+
     # --- Private methods to assist with funcitonalities ---
 
     def _process_and_split_documents(self, transcription_path: str) -> List[Document]:
