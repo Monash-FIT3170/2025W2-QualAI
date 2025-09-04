@@ -288,7 +288,6 @@ def delete_project(project_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
-    
 
 @app.post("/save")
 @app.get("/projects/{project_id}")
@@ -299,7 +298,3 @@ def update_edit_transcripts(project_name: str, metadata_type: str, metadata_labe
             raise HTTPException(status_code=404, detail="Project not found")
         
         transcript_id = 1
-        
-    
-
-

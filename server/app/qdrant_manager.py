@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+from fastapi import HTTPException
 from qdrant_client import QdrantClient, models, AsyncQdrantClient
 from langchain_community.vectorstores import Qdrant
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -224,7 +225,7 @@ class QdrantManager:
         <RELEVANT_QUOTES>
         """
 
-    def ingest_from_directory(self, project_name: str, transcription_name: str, transcription_path: str):
+    def ingest_from_directory(self, project_name: str, transcription_path: str):
         """
         Main ingestion pipeline for a project.
 
@@ -234,7 +235,7 @@ class QdrantManager:
         """
         print("splitting chunks")
         collection_name = project_name
-        chunks = self._process_and_split_documents(transcription_path, project_name)
+        chunks = self._process_and_split_documents(transcription_path)
 
         if not chunks:
             print(
@@ -266,7 +267,7 @@ class QdrantManager:
             force_recreate=False  # Set to False to add to an existing collection
         )
 
-    def ingest_from_text(self, project_name: str, transcription_name: str, text_output: str):
+    def ingest_from_text(self, project_name: str, text_output: str):
         """
         Process text and ingests it into the Vector Database
 
@@ -320,16 +321,14 @@ class QdrantManager:
             collection_name = project_name
         )
         print("clear vector end")
-
-
-
+    
     def clear_filtered_metadata(project_name: str, metadata_type: str, metadata_label):
-        self.client.delete(
-        collection_name=project_name,
-        filter=models.Filter(
-        must=[models.FieldCondition(key=metadata_type, match=models.MatchValue(value=metadata_label))]
-        )
-)
+            self.client.delete(
+            collection_name=project_name,
+            filter=models.Filter(
+            must=[models.FieldCondition(key=metadata_type, match=models.MatchValue(value=metadata_label))]
+            )
+    )
 
     
     
@@ -371,15 +370,6 @@ class QdrantManager:
             print(f"Error: The file at {transcription_path} was not found.")
         except Exception as e:
             print(f"An error occurred: {e}")
-
-    def _get_embeddings_model(self) -> HuggingFaceBgeEmbeddings:
-        """Loads the embedding model."""
-        print(f"Loading embedding model: '{self.embedding_model_name}'...")
-        return HuggingFaceBgeEmbeddings(
-            model_name=self.embedding_model_name,
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": False},
-        )
 
     def _get_qdrant_client(self) -> QdrantClient:
         """Initializes the Qdrant client."""
