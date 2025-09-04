@@ -4,27 +4,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 from pathlib import Path
-from pydantic import BaseModel
+import sqlite3
+from typing import List, Dict
 
 from app.config import config
+import app.api_models as api_models
 from app.llm_services import generate_online, generate_offline
 from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
 from app import database_models as db
-
-
-
 from app.helpers.project_converters import (
     project_row_to_dict,
     project_full_row_to_dict,
 )
-
 import app.helpers.transcription_converters as trans_conv
-
-
-import sqlite3
-from typing import List, Dict
-
 
 
 # --- Application Setup ---
@@ -36,12 +29,16 @@ async def lifespan(app: FastAPI):
     Handles application startup and shutdown events.
     """
     print("Starting application...")
+    # Initalise SQL Database
+    app.state.projects_store = db.Project(config.DB_PATH)
+    app.state.transcripts_store = db.Transcription(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
 
     # --- this is just for placeholder data to be filled into vector db ---
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
+    data_path = os.path.abspath(os.path.join(os.path.dirname(
+        __file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
     if os.path.exists(data_path):
         app.state.qdrant_manager.ingest_from_directory(
             config.DEFAULT_PROJECT, data_path)
@@ -60,13 +57,6 @@ app = FastAPI(title="QualAI API", lifespan=lifespan)
 
 # --- Middleware ---
 
-# new
-DB_PATH = str((Path(__file__).resolve().parent / "qualAI.db"))
-projects_store = db.Project(DB_PATH)
-transcripts_store = db.Transcription(DB_PATH)
-
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
@@ -75,30 +65,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- API Models ---
-
-
-
-
-class ProjectCreate(BaseModel):
-    name: str
-    description: str = ""
-
-class TranscriptionCreate(BaseModel):
-    name: str
-    text: str
-
-
-class PromptRequest(BaseModel):
-    prompt: str
-    project: str = config.DEFAULT_PROJECT  # default for testing
-    mode: str = "offline"  # default = offline
 
 # --- API Endpoints ---
 
 
 @app.post("/generate")
-async def generate_text(request: PromptRequest):
+async def generate_text(request: api_models.PromptRequest):
     """
     Generates a text response using either an online (Gemini) or offline (Ollama) model.
     The prompt is augmented with context from a Qdrant vector database.
@@ -185,20 +157,23 @@ async def download_transcription(final_output: str = Form(...), filename: str = 
         media_type='text/plain'
     )
 
+
 @app.post("/projects/{project_id}/transcriptions")
-def add_transcription(project_id: int, payload: TranscriptionCreate) -> Dict:
+def add_transcription(project_id: int, payload: api_models.Transcription) -> Dict:
     """
     Attach a transcription to a specific project.
     """
     # Ensure project exists first (will raise LookupError -> 404)
     try:
-        projects_store.get_project_by_id(project_id)
+        app.state.projects_store.get_project_by_id(project_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    new_id = transcripts_store.insert(project_id, payload.name, payload.text)
+    new_id = app.state.transcripts_store.insert(
+        project_id, payload.name, payload.text)
     # Optionally return minimal info with id, or the full record:
-    proj_id, name, text, processed_at = transcripts_store.get_transcription_by_id(new_id)
+    proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
+        new_id)
     return {
         "transcription_id": new_id,
         "project_id": proj_id,
@@ -215,27 +190,30 @@ def list_transcriptions(project_id: int) -> List[Dict]:
     """
     # Ensure project exists
     try:
-        projects_store.get_project_by_id(project_id)
+        app.state.projects_store.get_project_by_id(project_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    rows = transcripts_store.get_all_project_transcriptions(project_id)
+    rows = app.state.transcripts_store.get_all_project_transcriptions(
+        project_id)
     return [trans_conv.transcription_meta_row_to_dict(r) for r in rows]
 
 
 @app.post("/projects")
-def create_project(payload: ProjectCreate):
+def create_project(payload: api_models.Project):
     """
     Create a new project. Name must be unique (sqlite UNIQUE constraint).
     """
     try:
-        new_id = projects_store.insert(payload.name, payload.description or "")
+        new_id = app.state.projects_store.insert(
+            payload.name, payload.description or "")
     except sqlite3.IntegrityError:
         # UNIQUE(name) violated
-        raise HTTPException(status_code=400, detail="Project name already exists.")
+        raise HTTPException(
+            status_code=400, detail="Project name already exists.")
 
     # fetch and return canonical row
-    name, desc, created_at = projects_store.get_project_by_id(new_id)
+    name, desc, created_at = app.state.projects_store.get_project_by_id(new_id)
     return project_row_to_dict(new_id, (name, desc, created_at))
 
 
@@ -244,16 +222,18 @@ def list_projects() -> List[Dict]:
     """
     List all projects. If DB is empty, create a default 'Project 1' and return it.
     """
-    rows = projects_store.get_all_projects()
+    rows = app.state.projects_store.get_all_projects()
     if not rows:
         # auto-create default to keep UX consistent with your current app
         try:
-            default_id = projects_store.insert("Project 1", "Default project")
-            name, desc, created_at = projects_store.get_project_by_id(default_id)
+            default_id = app.state.projects_store.insert(
+                "Project 1", "Default project")
+            name, desc, created_at = app.state.projects_store.get_project_by_id(
+                default_id)
             return project_row_to_dict(default_id, (name, desc, created_at))
         except sqlite3.IntegrityError:
             # extremely unlikely race; just refetch all
-            rows = projects_store.get_all_projects()
+            rows = app.state.projects_store.get_all_projects()
 
     return [project_full_row_to_dict(r) for r in rows]
 
@@ -264,9 +244,9 @@ def get_project(project_id: int) -> Dict:
     Get a single project by id.
     """
     try:
-        name, desc, created_at = projects_store.get_project_by_id(project_id)
+        name, desc, created_at = app.state.projects_store.get_project_by_id(
+            project_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
     return project_row_to_dict(project_id, (name, desc, created_at))
-
