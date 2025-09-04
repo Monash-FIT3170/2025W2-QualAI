@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import '../assets/styles/UploadAudioCard.css'
 import { API_ENDPOINTS } from "../config/api";
+import { useProject } from "../contexts/ProjectContext";
 
 const UploadAudioCard = ({ onTranscriptionComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const { activeProjectId, activeProject } = useProject();
 
   /**
    * Handles file selection
@@ -17,11 +19,20 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
 
       console.log('Selected file:', selectedFile.name);
 
+      // Check if a project is selected
+      if (!activeProjectId || !activeProject) {
+        console.error('No project selected. Please select a project first.');
+        alert('Please select a project before uploading audio.');
+        return;
+      }
+
       setIsUploading(true);
       try {
         // Create FormData object (as the endpoint expects form data)
         const formData = new FormData();
         formData.append('file', selectedFile);
+        formData.append('project_id', activeProjectId.toString());
+        formData.append('project_name', activeProject.name);
 
         // POST request to FastAPI endpoint
         const response = await fetch(API_ENDPOINTS.TRANSCRIBE, {
@@ -34,27 +45,20 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
           throw new Error(errorText || 'Error uploading file');
         }
 
-        // Process the HTML response from FastAPI
-        const resultTranscriptionData = await response.text();
+        // Process the JSON response from FastAPI
+        const resultTranscriptionData = await response.json();
 
         if (onTranscriptionComplete) {
-          onTranscriptionComplete(resultTranscriptionData);
+          onTranscriptionComplete(JSON.stringify(resultTranscriptionData));
         }
       } catch (error) {
         console.error('An unexpected error occurred:', error);
+        alert('Upload failed. Please try again.');
       } finally {
         setIsUploading(false);
       }
     }
   };
-
-  
-
-
-
-
-
-
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-md p-4 mb-4">
@@ -65,11 +69,18 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
         {/* Title and instructions */}
         <h3 className="text-sm font-medium text-slate-200 mb-1">Upload Audio</h3>
         <p className="text-xs text-slate-500 mb-3">Drag and drop or click to select</p>
+        
+        {/* Show current project */}
+        {activeProject && (
+          <p className="text-xs text-slate-400 mb-2">
+            Project: {activeProject.name}
+          </p>
+        )}
 
         {/* Upload button with conditional spinner and text */}
         <label
           className={`bg-indigo-600 text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer transition-colors ${
-            isUploading ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-700"
+            isUploading || !activeProjectId ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-700"
           }`}
           aria-label="Upload audio file"
           htmlFor="audio-upload-input"
@@ -81,12 +92,17 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
             className="hidden"
             accept=".mp3,.m4a,.wav,.mp4,audio/*,video/*"
             onChange={handleFileChange}
-            disabled={isUploading} // Disables file selection during upload
+            disabled={isUploading || !activeProjectId} // Disables file selection during upload or when no project selected
           />
           {isUploading ? (
             <>
               <i className="bi bi-arrow-clockwise spin" aria-hidden="true" />
               Processing...
+            </>
+          ) : !activeProjectId ? (
+            <>
+              <i className="bi bi-exclamation-triangle" aria-hidden="true" />
+              Select Project First
             </>
           ) : (
             <>
