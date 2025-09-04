@@ -18,7 +18,7 @@ const safeParseJSON = (json) => {
   }
 };
 
-const TranscriptionSection = ({ transcriptionData }) => { // Destructure props directly
+const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) => { // Add callback prop
     const { activeProjectId } = useProject();
     const [transcriptions, setTranscriptions] = useState([]);
     const [selectedTranscriptionId, setSelectedTranscriptionId] = useState(null);
@@ -54,6 +54,31 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
         loadTranscriptions();
     }, [activeProjectId]);
 
+    // Refresh transcriptions when a new one is uploaded
+    useEffect(() => {
+        if (transcriptionDataObject && transcriptionDataObject.transcription_id) {
+            // A new transcription was uploaded, refresh the list
+            const refreshTranscriptions = async () => {
+                if (!activeProjectId) return;
+                
+                try {
+                    const response = await fetch(API_ENDPOINTS.listProjectTranscriptions(activeProjectId));
+                    if (response.ok) {
+                        const data = await response.json();
+                        setTranscriptions(data);
+                        // Auto-select the newly uploaded transcription
+                        setSelectedTranscriptionId(transcriptionDataObject.transcription_id);
+                        setSelectedTranscriptionText(transcriptionDataObject.transcription);
+                    }
+                } catch (error) {
+                    console.error('Error refreshing transcriptions:', error);
+                }
+            };
+            
+            refreshTranscriptions();
+        }
+    }, [transcriptionDataObject, activeProjectId]);
+
     // Load selected transcription text
     const loadTranscriptionText = async (transcriptionId) => {
         if (!activeProjectId || !transcriptionId) return;
@@ -66,9 +91,11 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
                 setSelectedTranscriptionText(data.text);
             } else {
                 console.error('Failed to load transcription text');
+                setSelectedTranscriptionText("");
             }
         } catch (error) {
             console.error('Error loading transcription text:', error);
+            setSelectedTranscriptionText("");
         } finally {
             setLoading(false);
         }
@@ -162,7 +189,7 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
                         disabled={loading || transcriptions.length === 0}
                         className="bg-slate-700 text-white text-sm px-3 py-1 rounded-md border border-slate-600 focus:border-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <option value="">
+                        <option value="" disabled>
                             {loading ? "Loading..." : transcriptions.length === 0 ? "No transcriptions" : "Select transcription"}
                         </option>
                         {transcriptions.map((transcription) => (

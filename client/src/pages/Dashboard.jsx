@@ -14,6 +14,11 @@ import AIAssistant from '../components/AIAssistant';
  */
 const Dashboard = () => {
   const [transcriptionData, setTranscriptionData] = useState(null);
+  
+  const handleTranscriptionComplete = (data) => {
+    setTranscriptionData(data);
+  };
+
   return (
     /* Main container with full height */
     <div className="flex h-full">
@@ -25,7 +30,7 @@ const Dashboard = () => {
         */}
         <div className="flex flex-col gap-4 h-full min-h-0">
           {/* File upload card */}
-          <UploadAudioCard onTranscriptionComplete={setTranscriptionData}/>
+          <UploadAudioCard onTranscriptionComplete={handleTranscriptionComplete}/>
           
           {/* Analysis workflow steps */}
           <AnalysisSteps />
@@ -36,7 +41,10 @@ const Dashboard = () => {
           Primary workspace for transcription editing 
         */}
         <div className="flex flex-col h-full min-h-0">
-          <TranscriptionSection transcriptionData={transcriptionData}/>
+          <TranscriptionSection 
+            transcriptionData={transcriptionData}
+            onTranscriptionUploaded={handleTranscriptionComplete}
+          />
         </div>
         
         {/* 

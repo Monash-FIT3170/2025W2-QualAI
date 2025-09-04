@@ -334,9 +334,28 @@ def get_project(project_id: int) -> Dict:
 def delete_project(project_id: int):
     """
     Delete a project by id.
+    Also deletes the corresponding Qdrant collection.
     """
     try:
+        # Get project name before deleting (needed for Qdrant collection deletion)
+        try:
+            project_name, _, _ = app.state.projects_store.get_project_by_id(
+                project_id)
+        except LookupError:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Delete the project from the database (this will also delete associated transcriptions due to foreign key cascade)
         app.state.projects_store.delete(project_id)
+
+        # Delete the corresponding Qdrant collection
+        try:
+            app.state.qdrant_manager.clear_collection(project_name)
+            print(f"Deleted Qdrant collection for project: {project_name}")
+        except Exception as qdrant_error:
+            print(
+                f"Warning: Failed to delete Qdrant collection for project '{project_name}': {qdrant_error}")
+            # Don't fail the entire operation if Qdrant deletion fails
+
         return {"ok": True, "message": "Project deleted successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
