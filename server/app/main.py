@@ -12,7 +12,6 @@ import app.api_models as api_models
 from app.llm_services import generate_online, generate_offline
 from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
-from app.transcribe_logic import load_model, transcribe_audio
 from app import database_models as db
 from app.helpers.project_converters import (
     project_row_to_dict,
@@ -84,13 +83,6 @@ app.add_middleware(
 async def get_status():
     return boot_state
 
-
-# --- API Models ---
-
-class PromptRequest(BaseModel):
-    prompt: str
-    project: str = config.DEFAULT_PROJECT  # default for testing
-    mode: str = "offline"  # default = offline
 
 
 
