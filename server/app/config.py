@@ -23,7 +23,7 @@ class Config(BaseSettings):
     # Ollama settings
     OLLAMA_URL: str = "http://ollama:11434/api/generate"
     OLLAMA_MODEL: str = "deepseek-r1:7b"
-    OLLAMA_TIMEOUT: float = 60.0
+    OLLAMA_TIMEOUT: float = 300.0  
 
     # Gemini settings
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")

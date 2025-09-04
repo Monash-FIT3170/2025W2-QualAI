@@ -12,6 +12,7 @@ import app.api_models as api_models
 from app.llm_services import generate_online, generate_offline
 from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
+from app.transcribe_logic import load_model, transcribe_audio
 from app import database_models as db
 from app.helpers.project_converters import (
     project_row_to_dict,
@@ -55,6 +56,7 @@ async def lifespan(app: FastAPI):
     print("Shutting down...")
 
 app = FastAPI(title="QualAI API", lifespan=lifespan)
+whisper_model = load_model("base")
 
 # --- Middleware ---
 
@@ -67,8 +69,9 @@ app.add_middleware(
 )
 
 
-# --- API Endpoints ---
 
+
+# --- API Endpoints ---
 
 @app.post("/generate")
 async def generate_text(request: api_models.PromptRequest):
@@ -92,46 +95,37 @@ async def generate_text(request: api_models.PromptRequest):
 
 
 @app.post("/transcribe/")
-async def transcribe_audio(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
+async def transcribe_endpoint(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
     """
-    Transcribes an uploaded audio file using the Vosk-based Transcriber service.
+    Transcribe an uploaded audio file using Whisper (CPU, base model).
     """
-    # Define paths
+    # Save the uploaded file
     base_path = Path(__file__).resolve().parent
     uploads_path = base_path / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
 
-    # Save the uploaded file
     try:
         with open(file_path, "wb") as f:
             f.write(file.file.read())
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to save uploaded file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
 
-    # Transcribe the audio file
-    transcriber = app.state.transcriber
+    # Transcribe the file using Whisper
     try:
-        transcription_raw = await transcriber.transcribe(str(file_path))
-        text_output = " ".join(
-            segment["text"]
-            for segment in transcription_raw["transcription"]
-            if segment["text"].strip()
-        )
+        result = transcribe_audio(whisper_model, str(file_path))
+        text_output = result.get("text", "")
 
-        # Generate a filename for the transcript
-        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
-            " ", "_")
-
+        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
         return {"filename": transcript_filename, "transcription": text_output}
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Transcription failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+
     finally:
-        # Clean up the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
+
 
 
 @app.post("/download/")
