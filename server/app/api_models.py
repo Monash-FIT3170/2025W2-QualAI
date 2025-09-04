@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-import config
+from app.config import config
 
 # === Project and Transcription Management ===
 
