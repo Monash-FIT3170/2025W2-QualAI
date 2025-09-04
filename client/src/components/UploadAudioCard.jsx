@@ -5,59 +5,57 @@ import { API_ENDPOINTS } from "../config/api";
 const UploadAudioCard = ({ onTranscriptionComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
 
-  /**
-   * Handles file selection
-   * @param {React.ChangeEvent<HTMLInputElement>} e - File input change event
-   */
   const handleFileChange = async (e) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      const selectedFile = files[0];
+    if (!files || files.length === 0) return;
 
-      console.log('Selected file:', selectedFile.name);
+    const selectedFile = files[0];
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-      setIsUploading(true);
-      try {
-        // Create FormData object (as the endpoint expects form data)
-        const formData = new FormData();
-        formData.append('file', selectedFile);
+      const response = await fetch(API_ENDPOINTS.TRANSCRIBE, {
+        method: "POST",
+        body: formData,
+      });
 
-        // POST request to FastAPI endpoint
-        const response = await fetch(API_ENDPOINTS.TRANSCRIBE, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Error uploading file');
-        }
-
-        // Process the HTML response from FastAPI
-        const resultTranscriptionData = await response.text();
-
-        if (onTranscriptionComplete) {
-          onTranscriptionComplete(resultTranscriptionData);
-        }
-      } catch (error) {
-        console.error('An unexpected error occurred:', error);
-      } finally {
-        setIsUploading(false);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Error uploading file');
       }
+
+      // Prefer JSON from API: { filename, transcription }
+      let dataObj = null;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        dataObj = await response.json();
+      } else {
+        // Fallback: treat response as raw HTML/text and wrap it
+        const raw = await response.text();
+        dataObj = {
+          filename: selectedFile.name.replace(/\.[^/.]+$/, '') + '.html',
+          transcription: raw
+        };
+      }
+
+      onTranscriptionComplete?.(dataObj);
+    } catch (error) {
+      console.error('An unexpected error occurred:', error);
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+      // reset input so same file can be chosen again if needed
+      e.target.value = '';
     }
   };
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-md p-4 mb-4">
       <div className="flex flex-col items-center justify-center py-2 px-4 gap-2">
-        {/* File icon */}
         <i className="bi bi-file-text text-6xl text-slate-400" aria-hidden="true" />
-
-        {/* Title and instructions */}
-        <h3 className="text-sm font-medium text-slate-200 mb-1">Upload Audio</h3>
+        <h3 className="text-sm font-medium text-slate-2 00 mb-1">Upload Audio</h3>
         <p className="text-xs text-slate-500 mb-3">Drag and drop or click to select</p>
-
-        {/* Upload button with conditional spinner and text */}
         <label
           className={`bg-indigo-600 text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer transition-colors ${
             isUploading ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-700"
@@ -65,14 +63,13 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
           aria-label="Upload audio file"
           htmlFor="audio-upload-input"
         >
-          {/* Hidden file input */}
           <input
             type="file"
             id="audio-upload-input"
             className="hidden"
             accept="audio/*"
             onChange={handleFileChange}
-            disabled={isUploading} // Disables file selection during upload
+            disabled={isUploading}
           />
           {isUploading ? (
             <>
