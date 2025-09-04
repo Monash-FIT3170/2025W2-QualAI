@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { API_BASE } from '../config/api';
+import { API_ENDPOINTS } from '../config/api';
 
 const ProjectContext = createContext();
 
@@ -19,7 +19,7 @@ export const ProjectProvider = ({ children }) => {
 
   const loadProjects = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/projects`);
+      const res = await fetch(API_ENDPOINTS.PROJECT);
       const data = await res.json();
       setProjects(data);
       if (!activeProjectId && data.length) {
@@ -34,7 +34,7 @@ export const ProjectProvider = ({ children }) => {
 
   const createProject = async (projectData) => {
     try {
-      const res = await fetch(`${API_BASE}/projects`, {
+      const res = await fetch(API_ENDPOINTS.PROJECT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(projectData),

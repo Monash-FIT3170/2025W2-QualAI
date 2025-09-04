@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE } from '../../config/api.jsx';
+import { API_ENDPOINTS } from '../../config/api.jsx';
 
 
 /**
@@ -40,7 +40,7 @@ const NewProjectModal = ({ onClose, onCreated }) => {
     setSubmitting(true);
   
     try {
-      const res = await fetch(`${API_BASE}/projects`, {
+      const res = await fetch(API_ENDPOINTS.PROJECT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

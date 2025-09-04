@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import NewProjectModal from './modals/NewProjectModal';
-import { API_BASE } from '../config/api.jsx';
 import { useProject } from '../contexts/ProjectContext';
 
 /**

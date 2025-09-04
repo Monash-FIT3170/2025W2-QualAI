@@ -5,4 +5,5 @@ export const API_ENDPOINTS = {
   TRANSCRIBE: `${API_BASE}/transcribe/`,
   DOWNLOAD: `${API_BASE}/download/`,
   GENERATE: `${API_BASE}/generate/`,
+  PROJECT: `${API_BASE}/projects`,
 };
