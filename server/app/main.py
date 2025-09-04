@@ -23,6 +23,9 @@ import app.helpers.transcription_converters as trans_conv
 
 # --- Application Setup ---
 
+boot_state = {"status": "booting"}
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,6 +40,8 @@ async def lifespan(app: FastAPI):
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
+    app.state.transcriber = Transcriber(model_size="base")
+
 
     # --- this is just for placeholder data to be filled into vector db ---
     data_path = os.path.abspath(os.path.join(os.path.dirname(
@@ -50,15 +55,18 @@ async def lifespan(app: FastAPI):
     # ------
 
     # Initialize the transcriber model
-    app.state.transcriber = Transcriber(config.VOSK_MODEL_PATH)
+    app.state.transcriber = Transcriber(model_size="base")
     print("Startup complete.")
+    boot_state["status"] = "online"
     yield
     print("Shutting down...")
 
 app = FastAPI(title="QualAI API", lifespan=lifespan)
-whisper_model = load_model("base")
 
 # --- Middleware ---
+
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +76,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
+# --- Back-end Status ---
+
+@app.get("/status")
+async def get_status():
+    return boot_state
+
+
+# --- API Models ---
+
+class PromptRequest(BaseModel):
+    prompt: str
+    project: str = config.DEFAULT_PROJECT  # default for testing
+    mode: str = "offline"  # default = offline
 
 
 
@@ -107,25 +130,29 @@ async def transcribe_endpoint(file: UploadFile = File(..., description="Upload a
 
     try:
         with open(file_path, "wb") as f:
-            f.write(file.file.read())
+            f.write(await file.read())
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to save uploaded file: {e}"
+        )
 
-    # Transcribe the file using Whisper
     try:
-        result = transcribe_audio(whisper_model, str(file_path))
+        transcriber = app.state.transcriber
+        result = await transcriber.transcribe(str(file_path), language="en")
         text_output = result.get("text", "")
 
-        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
+        transcript_filename = (
+            f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
+        )
+
         return {"filename": transcript_filename, "transcription": text_output}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
 
     finally:
-        if os.path.exists(file_path):
+        if file_path.exists():
             os.remove(file_path)
-
 
 
 @app.post("/download/")
@@ -151,6 +178,7 @@ async def download_transcription(final_output: str = Form(...), filename: str = 
         filename=filename,
         media_type='text/plain'
     )
+
 
 
 @app.post("/projects/{project_id}/transcriptions")
