@@ -4,6 +4,7 @@ import NewProjectModal from './modals/NewProjectModal';
 import { useProject } from '../contexts/ProjectContext';
 import DeleteProjectModal from './modals/DeleteProjectModal';
 
+
 /**
  * Main navigation bar component
  * Handles project navigation and creation
