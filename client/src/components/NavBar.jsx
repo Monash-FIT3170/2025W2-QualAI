@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import NewProjectModal from './modals/NewProjectModal';
+import { useEffect } from 'react';
+import { useRef } from 'react';
 
 /**
  * Main navigation bar component
@@ -10,6 +12,48 @@ import NewProjectModal from './modals/NewProjectModal';
 const NavBar = () => {
   // State for controlling modal visibility
   const [showModal, setShowModal] = useState(false);
+  const [status, setStatus] = useState("booting");
+
+useEffect(() => {
+  let intervalId;
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/status");
+      const data = await res.json();
+      setStatus(data.status);
+    } catch {
+      setStatus("booting"); // fallback if server unreachable
+    }
+  };
+
+  if (status === "online") {
+    intervalId = setInterval(fetchStatus, 60000); // 1 min after the boot
+  } else {
+    intervalId = setInterval(fetchStatus, 2000); // 2 sec on system startup
+  }
+
+  fetchStatus();
+
+  return () => clearInterval(intervalId);
+}, [status]);
+
+  const statusConfig = {
+    online: {
+      text: "System Online",
+      classes: "bg-green-50 text-green-800",
+      dot: "bg-green-500"
+    },
+    booting: {
+      text: "System Booting",
+      classes: "bg-yellow-50 text-yellow-800",
+      dot: "bg-yellow-500 animate-pulse" // ✅ pulsing effect
+    }
+  };
+
+  const { text: statusText, classes: statusClasses, dot: dotColor } =
+    statusConfig[status] || statusConfig.booting;
+
 
   /**
    * Handles opening project files
@@ -89,14 +133,15 @@ const NavBar = () => {
           </button>
           
           {/* System status indicator */}
-          <div 
-            className="flex items-center px-3 py-1 bg-green-50 text-green-800 rounded-full text-xs font-medium"
-            role="status"  // Indicates this is a status message
-            aria-live="polite"  // Announces changes politely
+          <div
+            className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusClasses}`}
+            role="status"
+            aria-live="polite"
           >
-            <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-            System Online
+            <span className={`h-2 w-2 rounded-full mr-2 ${dotColor}`}></span>
+            {statusText}
           </div>
+
         </div>
       </div>
       
