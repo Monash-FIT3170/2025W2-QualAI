@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
     print("Starting application...")
     # Initalise SQL Database
     app.state.projects_store = db.Project(config.DB_PATH)
+    app.state.projects_store.insert(config.DEFAULT_PROJECT, config.DEFAULT_PROJECT)
     app.state.transcripts_store = db.Transcription(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
