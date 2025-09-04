@@ -28,7 +28,8 @@ services:
       - ./server:/app # Optional: dev hot reload
       - ./server/cache:/home/app
       - ./papers:/papers
-  ollama:
+      
+  client:
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -40,6 +41,8 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
+    depends_on:
+      - backend
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -49,8 +52,7 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-    # REMOVED the healthcheck block from here
-
+  # REMOVED the healthcheck block from here
   ollama:
     build: ./ollama
     container_name: ollama
