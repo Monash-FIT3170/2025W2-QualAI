@@ -1,3 +1,4 @@
+--extra-index-url https://pypi.org/simple/
 fastapi 
 uvicorn[standard]
 faster-whisper>=0.10.0
