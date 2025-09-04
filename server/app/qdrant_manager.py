@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+from fastapi import HTTPException
 from qdrant_client import QdrantClient, models, AsyncQdrantClient
 from langchain_community.vectorstores import Qdrant
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
