@@ -1,4 +1,4 @@
-fastapi --extra-index-url https://pypi.org/simple/
+fastapi[standard]
 uvicorn[standard]
 faster-whisper>=0.10.0
 torch 
