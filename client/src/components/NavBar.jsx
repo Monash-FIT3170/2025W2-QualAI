@@ -1,8 +1,9 @@
-import React, { useEffect, useState} from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import NewProjectModal from './modals/NewProjectModal';
 import { API_BASE } from '../config/api.jsx';
+import { useProject } from '../contexts/ProjectContext';
 
 /**
  * Main navigation bar component
@@ -11,31 +12,13 @@ import { API_BASE } from '../config/api.jsx';
 const NavBar = () => {
   // State for controlling modal visibility
   const [showModal, setShowModal] = useState(false);
-
-  // newly added - Rohith
-  const [projects, setProjects] = useState([]) ;
-  const [activeProjectId, setActiveProjectId] = useState(null);
-
-  async function loadProjects() {
-    const res = await fetch (`${API_BASE}/projects`);
-    const data = await res.json();
-    setProjects(data);
-    if (!activeProjectId && data.length) {
-      setActiveProjectId(data[0].project_id) // default select first project
-    }
-  }
-
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  // finish newly added - Rohith
+  const { projects, activeProjectId, setActiveProjectId, loadProjects } = useProject();
 
   /**
    * Handles opening project files
    * Creates a hidden file input element programmatically
    */
-  const openProjectFile = () => {
+  const openProjectFile = () => { 
     // Create a hidden file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
