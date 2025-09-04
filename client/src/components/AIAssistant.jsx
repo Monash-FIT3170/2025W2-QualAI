@@ -1,5 +1,6 @@
 import React, { useState,useEffect,useRef  } from 'react';
 import { API_ENDPOINTS } from "../config/api";
+import { useProject } from '../contexts/ProjectContext';
 
 /** Constants **/
 const INITIAL_MESSAGES = [
@@ -20,27 +21,25 @@ const INITIAL_MESSAGES = [
  * Provides interactive chat interface between user and AI assistant
  */
 const AIAssistant = () => {
-  // State for chat messages with initial conversation
-  const [messages, setMessages] = useState([
-    {
-      sender: 'ai', 
-      text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?"
-    },
-    // {
-    //   sender: 'user',
-    //   text: "Can you identify common themes related to user experience in the latest interviews?"
-    // }
-    // {
-    //   sender: 'user',
-    //   text: "Can you identify common themes related to user experience in the latest interviews?"
-    // }
-  ]);
+  const { activeProjectId, activeProject } = useProject();
   
-
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+
   const [mode, setMode] = useState('offline');
   const [template, setTemplate] = useState("default")
   const messagesEndRef = useRef(null);
+
+  // Load messages when a new active project is selected
+  useEffect(() => {
+    if (activeProjectId) {
+      const savedMessages = localStorage.getItem(`aiMessages_${activeProjectId}`);
+      setMessages(savedMessages ? JSON.parse(savedMessages) : INITIAL_MESSAGES);
+    } else {
+      // If no project is selected, show initial messages
+      setMessages(INITIAL_MESSAGES);
+    }
+  }, [activeProjectId]);
 
   // scroll to bottom of chat when there is a new message 
   useEffect(() => {
@@ -56,15 +55,16 @@ const AIAssistant = () => {
     // Don't send empty messages
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage) return;
-    
-    // Add user message to chat history
-    setMessages([
-      ...messages,
-      { sender: 'user', text: trimmedMessage }
-    ]);
 
+    const nextAfterUser = [...messages, { sender: 'user', text: trimmedMessage }];
+    // Add user message to chat history
+    setMessages(nextAfterUser);
     // Clear input field after sending
     setNewMessage('');
+
+    if (activeProjectId) {
+      localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(nextAfterUser));
+    }
 
     try {
       // Make POST request to FastAPI /generate endpoint
@@ -74,7 +74,12 @@ const AIAssistant = () => {
           "Content-Type": "application/json"
         },
 
-        body: JSON.stringify({ prompt: trimmedMessage, mode: mode, template: template})
+
+        body: JSON.stringify({ 
+          prompt: trimmedMessage, 
+          mode: mode,
+          project: activeProject?.name || 'default'
+        })
 
       });
 
@@ -84,19 +89,23 @@ const AIAssistant = () => {
       }
 
       const data = await response.json();
-
       const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
 
-      setMessages(prevMessages => [
-        ...prevMessages,
-        { sender: 'ai', text: aiResponse }
-      ]);
-
+      setMessages(prev => {
+        const next = [...prev, { sender: 'ai', text: aiResponse }];
+        if (activeProjectId) {
+          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
+        }
+          return next;
+        });
     } catch (error) {
-      setMessages(prevMessages => [
-        ...prevMessages,
-        { sender: 'ai', text: `Error: ${error.message}` }
-      ]);
+      setMessages(prev => {
+        const next = [...prev, { sender: 'ai', text: `Error: ${error.message}` }];
+        if (activeProjectId) {
+          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
+        }
+        return next;
+      });
     }
     
     
