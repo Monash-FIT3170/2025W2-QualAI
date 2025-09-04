@@ -150,6 +150,10 @@ async def download_transcription(final_output: str = Form(...), filename: str = 
         media_type='text/plain'
     )
 
+
+
+
+"""START OF FEATURES"""
 # allows for retrieving all documents from the vector database for display
 @app.get("/documents")
 async def get_all_documents(project_name: str):
@@ -220,7 +224,12 @@ async def get_documents_by_collection(collection: str):
         return {"collection": collection, "documents": documents, "full_text": full_text, "total_documents": len(documents)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+"""END OF FEATURES"""
 
+
+
+
+#Probs delete this
 """@app.post("/ingest")
 async def ingest_per_file():
     try:
