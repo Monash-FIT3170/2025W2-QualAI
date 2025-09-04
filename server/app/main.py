@@ -6,14 +6,12 @@ import os
 from pathlib import Path
 from pydantic import BaseModel
 from vosk import Model, KaldiRecognizer
-from .vector import get_db
 
 from app.config import config
 from app.llm_services import generate_online, generate_offline
 from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
 import sys
-from subprocess import run as run_subprocess
 
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 4000
@@ -118,51 +116,14 @@ async def transcribe_audio(file: UploadFile = File(..., description="Upload an a
             status_code=500, detail=f"Transcription failed: {e}")
     finally:
         #Ingest transcription into Vector Database
-        await ingest_transcription(text_output, config.DEFAULT_PROJECT) #for now uses default project, this should change based on project management tools
+        app.state.qdrant_manager.ingest_from_text(config.DEFAULT_PROJECT, text_output) #for now uses default project, this should change based on project management tools
         
 
         # Clean up the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
 
-async def ingest_transcription(text_output: str, project_name: str):
-    """
-    Process transcription and ingests it into the Vector Database
 
-    Args:
-        text_output (str): The text string that has been transcribed by the software
-        project_name (str): The name of the project, used as the collection name.
-    """
-    
-    #create temporary text file in projects folder (this can be replaced with database methodology when complete)
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", project_name, "temporaryTranscriptIngestionFile.txt"))
-
-    if not os.path.exists(data_path):
-        f = open(data_path, "x")
-        
-    try:
-        with open(data_path, "w", encoding="utf-8") as f:
-            f.write(text_output)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to write transcription file: {e}")
-    
-
-
-    #clears qdrant_manager of past project details (we may want to change this at a later date)
-    qdrant_manager = app.state.qdrant_manager
-    qdrant_manager.clear_collection(project_name)
-
-    #ingests new transcript data
-    if os.path.exists(data_path):
-        app.state.qdrant_manager.ingest_from_directory(
-            project_name, data_path)
-        print(f"Ingested data for project: {project_name}")
-
-        #deletes temporary text file *this can be replaced with supplementary database management tools*
-        os.remove(data_path)
-    else:
-        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
         
 
 @app.post("/download/")
@@ -191,17 +152,17 @@ async def download_transcription(final_output: str = Form(...), filename: str = 
 
 # allows for retrieving all documents from the vector database for display
 @app.get("/documents")
-async def get_all_documents():
+async def get_all_documents(project_name: str):
     """
     Retrieves all documents from the vector database for display.
     """
     try:
         # Get all documents from the collection
-        client = get_qdrant_client()
+        client = app.state.qdrant_manager._get_qdrant_client()
         
         # Get all points from the collection
         all_points = client.scroll(
-            collection_name=QDRANT_COLLECTION_NAME,
+            collection_name=project_name,
             limit=1000,  # Adjust this limit as needed
             with_payload=True,
             with_vectors=False
@@ -233,7 +194,7 @@ async def get_all_documents():
 @app.get("/collections")
 async def list_collections():
     try:
-        client = get_qdrant_client()
+        client = app.state.qdrant_manager._get_qdrant_client()
         cols = client.get_collections().collections
         return {"collections": [c.name for c in cols if c.name.startswith("paper_")]}
     except Exception as e:
@@ -242,7 +203,7 @@ async def list_collections():
 @app.get("/documents/{collection}")
 async def get_documents_by_collection(collection: str):
     try:
-        client = get_qdrant_client()
+        client = app.state.qdrant_manager._get_qdrant_client()
         points, _ = client.scroll(
             collection_name=collection,
             limit=1000,
@@ -260,7 +221,7 @@ async def get_documents_by_collection(collection: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/ingest")
+"""@app.post("/ingest")
 async def ingest_per_file():
     try:
         script_path = Path("/app/scripts/ingest.py")
@@ -272,4 +233,4 @@ async def ingest_per_file():
         cols = client.get_collections().collections
         return {"ok": True, "stdout": result.stdout, "collections": [c.name for c in cols if not c.name.startswith('.internal')]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))"""
