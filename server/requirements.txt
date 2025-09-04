@@ -1,6 +1,6 @@
 fastapi[standard]
 uvicorn[standard]
-faster-whisper>=0.10.0
+faster-whisper
 torch 
 torchaudio 
 --index-url https://download.pytorch.org/whl/cpu
