@@ -1,4 +1,4 @@
-import React, { useState}from 'react';
+import React, { useState, useCallback } from 'react';
 import UploadAudioCard from '../components/UploadAudioCard';
 import AnalysisSteps from '../components/AnalysisSteps';
 import TranscriptionSection from '../components/TranscriptionSection';
@@ -15,9 +15,10 @@ import AIAssistant from '../components/AIAssistant';
 const Dashboard = () => {
   const [transcriptionData, setTranscriptionData] = useState(null);
   
-  const handleTranscriptionComplete = (data) => {
+  // Use useCallback to prevent function recreation on every render
+  const handleTranscriptionComplete = useCallback((data) => {
     setTranscriptionData(data);
-  };
+  }, []);
 
   return (
     /* Main container with full height */

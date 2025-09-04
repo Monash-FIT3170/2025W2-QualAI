@@ -277,6 +277,54 @@ def get_transcription(project_id: int, transcription_id: int) -> Dict:
         raise HTTPException(status_code=404, detail="Transcription not found")
 
 
+@app.delete("/projects/{project_id}/transcriptions/{transcription_id}")
+def delete_transcription(project_id: int, transcription_id: int):
+    """
+    Delete a specific transcription by project and transcription ID.
+    """
+    # Ensure project exists
+    try:
+        project_name, _, _ = app.state.projects_store.get_project_by_id(
+            project_id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Get the transcription first to verify it exists and belongs to the project
+    try:
+        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
+            transcription_id)
+
+        # Verify the transcription belongs to the specified project
+        if proj_id != project_id:
+            raise HTTPException(
+                status_code=404, detail="Transcription not found in this project")
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Transcription not found")
+
+    # Delete the transcription from the database
+    try:
+        app.state.transcripts_store.delete(transcription_id)
+        print(
+            f"Deleted transcription {transcription_id} from project {project_id}")
+
+        try:
+            ### TODO
+            ### IMPORTANT - Transcript should be removed from project
+            pass
+            
+        except Exception as vector_error:
+            print(
+                f"Warning: Failed to update vector database for project '{project_name}': {vector_error}")
+            # Don't fail the entire operation if vector update fails
+
+        return {"ok": True, "message": "Transcription deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete transcription: {e}")
+
+
 @app.post("/projects")
 def create_project(payload: api_models.Project):
     """

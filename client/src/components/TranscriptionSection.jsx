@@ -3,7 +3,7 @@
  * * Displays interview transcriptions with editing and export functionality.
  * Provides a workspace for viewing and annotating transcribed text.
  */
-import React, { useState, useEffect } from 'react'; // Make sure React is imported
+import React, { useState, useEffect, useRef } from 'react'; // Make sure React is imported
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from "../contexts/ProjectContext";
 
@@ -24,6 +24,9 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     const [selectedTranscriptionId, setSelectedTranscriptionId] = useState(null);
     const [selectedTranscriptionText, setSelectedTranscriptionText] = useState("");
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const previousProjectId = useRef(activeProjectId);
+    const previousTranscriptionData = useRef(transcriptionData);
 
     const transcriptionDataObject = safeParseJSON(transcriptionData);
 
@@ -54,30 +57,45 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         loadTranscriptions();
     }, [activeProjectId]);
 
-    // Refresh transcriptions when a new one is uploaded
+    // Clear uploaded transcription data when project changes
     useEffect(() => {
-        if (transcriptionDataObject && transcriptionDataObject.transcription_id) {
-            // A new transcription was uploaded, refresh the list
-            const refreshTranscriptions = async () => {
-                if (!activeProjectId) return;
-                
-                try {
-                    const response = await fetch(API_ENDPOINTS.listProjectTranscriptions(activeProjectId));
-                    if (response.ok) {
-                        const data = await response.json();
-                        setTranscriptions(data);
-                        // Auto-select the newly uploaded transcription
-                        setSelectedTranscriptionId(transcriptionDataObject.transcription_id);
-                        setSelectedTranscriptionText(transcriptionDataObject.transcription);
-                    }
-                } catch (error) {
-                    console.error('Error refreshing transcriptions:', error);
-                }
-            };
-            
-            refreshTranscriptions();
+        if (activeProjectId !== previousProjectId.current) {
+            // Project has changed, clear any uploaded transcription data
+            if (onTranscriptionUploaded) {
+                onTranscriptionUploaded(null);
+            }
+            previousProjectId.current = activeProjectId;
         }
-    }, [transcriptionDataObject, activeProjectId]);
+    }, [activeProjectId, onTranscriptionUploaded]);
+
+    // Handle new transcription uploads - only run when transcriptionData actually changes
+    useEffect(() => {
+        if (transcriptionData !== previousTranscriptionData.current) {
+            previousTranscriptionData.current = transcriptionData;
+            
+            if (transcriptionDataObject && transcriptionDataObject.transcription_id) {
+                // A new transcription was uploaded, refresh the list
+                const refreshTranscriptions = async () => {
+                    if (!activeProjectId) return;
+                    
+                    try {
+                        const response = await fetch(API_ENDPOINTS.listProjectTranscriptions(activeProjectId));
+                        if (response.ok) {
+                            const data = await response.json();
+                            setTranscriptions(data);
+                            // Auto-select the newly uploaded transcription
+                            setSelectedTranscriptionId(transcriptionDataObject.transcription_id);
+                            setSelectedTranscriptionText(transcriptionDataObject.transcription);
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing transcriptions:', error);
+                    }
+                };
+                
+                refreshTranscriptions();
+            }
+        }
+    }, [transcriptionData, transcriptionDataObject, activeProjectId]);
 
     // Load selected transcription text
     const loadTranscriptionText = async (transcriptionId) => {
@@ -110,6 +128,49 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
             loadTranscriptionText(parseInt(transcriptionId));
         } else {
             setSelectedTranscriptionText("");
+        }
+    };
+
+    // Handle transcription deletion
+    const handleDeleteTranscription = async () => {
+        if (!selectedTranscriptionId || !activeProjectId) return;
+        
+        const confirmed = window.confirm(
+            `Are you sure you want to delete this transcription? This action cannot be undone.`
+        );
+        
+        if (!confirmed) return;
+        
+        try {
+            setDeleting(true);
+            const response = await fetch(
+                API_ENDPOINTS.deleteProjectTranscription(activeProjectId, selectedTranscriptionId),
+                {
+                    method: 'DELETE',
+                }
+            );
+            
+            if (response.ok) {
+                // Refresh the transcriptions list
+                const refreshResponse = await fetch(API_ENDPOINTS.listProjectTranscriptions(activeProjectId));
+                if (refreshResponse.ok) {
+                    const data = await refreshResponse.json();
+                    setTranscriptions(data);
+                    // Clear selection
+                    setSelectedTranscriptionId(null);
+                    setSelectedTranscriptionText("");
+                }
+                console.log('Transcription deleted successfully');
+            } else {
+                const errorData = await response.json();
+                console.error('Failed to delete transcription:', errorData);
+                alert('Failed to delete transcription. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error deleting transcription:', error);
+            alert('An error occurred while deleting the transcription. Please try again.');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -170,8 +231,14 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     console.log(transcriptionDataObject);
     if (transcriptionDataObject) { console.log(transcriptionDataObject.transcription); }
 
-    // Determine which text to display
-    const displayText = selectedTranscriptionText || (transcriptionDataObject ? transcriptionDataObject.transcription : "Transcribed interview text will go here.");
+    // Determine which text to display - only show uploaded transcription if it belongs to current project
+    const shouldShowUploadedTranscription = transcriptionDataObject && 
+        transcriptionDataObject.project_id && 
+        transcriptionDataObject.project_id.toString() === activeProjectId?.toString();
+    
+    const displayText = selectedTranscriptionText || 
+        (shouldShowUploadedTranscription ? transcriptionDataObject.transcription : "") || 
+        "Transcribed interview text will go here.";
 
     return (
         /* Main container with card styling and flex layout */
@@ -210,6 +277,26 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     // TODO: Implement transcription editing functionality
                     >
                         <i className="bi bi-pencil" aria-hidden="true" />
+                    </button>
+
+                    {/* Delete transcription button */}
+                    <button
+                        className="bg-red-600 text-white text-sm px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Delete transcription"
+                        onClick={handleDeleteTranscription}
+                        disabled={!selectedTranscriptionId || deleting}
+                    >
+                        {deleting ? (
+                            <>
+                                <i className="bi bi-arrow-clockwise spin" aria-hidden="true" />
+                                Deleting...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-trash" aria-hidden="true" />
+                                Delete
+                            </>
+                        )}
                     </button>
 
                     {/* Download transcription button */}

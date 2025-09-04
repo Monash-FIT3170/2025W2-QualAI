@@ -8,5 +8,6 @@ export const API_ENDPOINTS = {
   PROJECT: `${API_BASE}/projects`,
 
   listProjectTranscriptions: (projectId) => `${API_BASE}/projects/${projectId}/transcriptions`,
-  getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`
+  getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
+  deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`
 };
