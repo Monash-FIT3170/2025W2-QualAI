@@ -113,52 +113,12 @@ async def transcribe_audio(file: UploadFile = File(..., description="Upload an a
             status_code=500, detail=f"Transcription failed: {e}")
     finally:
         #Ingest transcription into Vector Database
-        await ingest_transcription(text_output, config.DEFAULT_PROJECT) #for now uses default project, this should change based on project management tools
+        app.state.qdrant_manager.ingest_from_text(config.DEFAULT_PROJECT, text_output) #for now uses default project, this should change based on project management tools
         
 
         # Clean up the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
-
-async def ingest_transcription(text_output: str, project_name: str):
-    """
-    Process transcription and ingests it into the Vector Database
-
-    Args:
-        text_output (str): The text string that has been transcribed by the software
-        project_name (str): The name of the project, used as the collection name.
-    """
-    
-    #create temporary text file in projects folder (this can be replaced with database methodology when complete)
-    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__),  "projects", project_name, "temporaryTranscriptIngestionFile.txt"))
-
-    if not os.path.exists(data_path):
-        f = open(data_path, "x")
-        
-    try:
-        with open(data_path, "w", encoding="utf-8") as f:
-            f.write(text_output)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to write transcription file: {e}")
-    
-
-
-    #clears qdrant_manager of past project details (we may want to change this at a later date)
-    qdrant_manager = app.state.qdrant_manager
-    qdrant_manager.clear_collection(project_name)
-
-    #ingests new transcript data
-    if os.path.exists(data_path):
-        app.state.qdrant_manager.ingest_from_directory(
-            project_name, data_path)
-        print(f"Ingested data for project: {project_name}")
-
-        #deletes temporary text file *this can be replaced with supplementary database management tools*
-        os.remove(data_path)
-    else:
-        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
-
     
         
         
