@@ -15,7 +15,7 @@ from app.qdrant_manager import QdrantManager
 # --- Application Setup ---
 
 boot_state = {"status": "booting"}
-whisper_model = Transcriber(model_size="base")
+
 
 
 @asynccontextmanager
@@ -27,6 +27,8 @@ async def lifespan(app: FastAPI):
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
+    app.state.transcriber = Transcriber(model_size="base")
+
 
     # --- this is just for placeholder data to be filled into vector db ---
     data_path = os.path.abspath(os.path.join(os.path.dirname(
@@ -120,7 +122,8 @@ async def transcribe_endpoint(file: UploadFile = File(..., description="Upload a
         )
 
     try:
-        result = await whisper_model.transcribe(str(file_path), language="en")
+        transcriber = app.state.transcriber
+        result = await transcriber.transcribe(str(file_path), language="en")
         text_output = result.get("text", "")
 
         transcript_filename = (
