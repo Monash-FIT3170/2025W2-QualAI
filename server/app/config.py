@@ -28,8 +28,7 @@ class Config(BaseSettings):
 
     # Transcription settings
     SAMPLE_RATE: int = 16000
-    CHUNK_SIZE: int = 4000
-    VOSK_MODEL_PATH: str = "/app/app/vosk-model-en-us-0.22-lgraph"
+    CHUNK_SIZE: int = 8192
 
 # Create a single instance of the settings to be imported across the application
 config = Config()

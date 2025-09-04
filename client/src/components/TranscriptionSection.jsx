@@ -74,7 +74,10 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
     };
 
     console.log(transcriptionDataObject);
-
+    if (transcriptionDataObject!=null){
+        console.log(transcriptionDataObject[0].transcription);
+    }
+    
     return (
         /* Main container with card styling and flex layout */
         <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col">
@@ -112,7 +115,7 @@ const TranscriptionSection = ({ transcriptionData }) => { // Destructure props d
                 <div className="flex-1 overflow-y-auto">
                     {/* Placeholder transcription text - will be replaced with actual content */}
                     <p className="text-sm text-gray-300 leading-6">
-                        {transcriptionDataObject ? transcriptionDataObject.transcription: "Transcribed interview text will go here."}
+                        {transcriptionDataObject ? transcriptionDataObject[0].transcription: "Transcribed interview text will go here."}
                     </p>
                 </div>
 
