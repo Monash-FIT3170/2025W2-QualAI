@@ -10,6 +10,7 @@ from app.config import config
 from app.llm_services import generate_online, generate_offline
 from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
+from app.transcribe_logic import load_model, transcribe_audio
 
 # --- Application Setup ---
 
@@ -24,6 +25,17 @@ async def lifespan(app: FastAPI):
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
 
+    # --- this is just for placeholder data to be filled into vector db ---
+    data_path = os.path.abspath(os.path.join(os.path.dirname(
+        __file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
+    if os.path.exists(data_path):
+        app.state.qdrant_manager.ingest_from_directory(
+            config.DEFAULT_PROJECT, data_path)
+        print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
+    else:
+        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
+    # ------
+
     # Initialize the transcriber model
     app.state.transcriber = Transcriber(config.VOSK_MODEL_PATH)
     print("Startup complete.")
@@ -31,6 +43,7 @@ async def lifespan(app: FastAPI):
     print("Shutting down...")
 
 app = FastAPI(title="QualAI API", lifespan=lifespan)
+whisper_model = load_model("base")
 
 # --- Middleware ---
 
@@ -42,16 +55,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- API Models ---
 
+# --- API Models ---
 
 class PromptRequest(BaseModel):
     prompt: str
     project: str = config.DEFAULT_PROJECT  # default for testing
     mode: str = "offline"  # default = offline
+    template: str = "default" # Analysis mode
+
 
 # --- API Endpoints ---
-
 
 @app.post("/generate")
 async def generate_text(request: PromptRequest):
@@ -62,10 +76,11 @@ async def generate_text(request: PromptRequest):
     prompt = request.prompt.strip()
     mode = request.mode.lower()
     project = request.project
+    template = request.template.lower()
 
     # Augment the prompt with RAG
     qdrant_manager = app.state.qdrant_manager
-    augmented_prompt = qdrant_manager.augment_prompt(prompt, project)
+    augmented_prompt = qdrant_manager.augment_prompt(prompt, project, template)
     print(f"Augmented Prompt: {augmented_prompt}")
 
     if mode == "online":
@@ -75,53 +90,40 @@ async def generate_text(request: PromptRequest):
 
 
 @app.post("/transcribe/")
-async def transcribe_audio(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
+async def transcribe_endpoint(file: UploadFile = File(..., description="Upload an audio file for transcription.")):
     """
-    Transcribes an uploaded audio file using the Vosk-based Transcriber service.
+    Transcribe an uploaded audio file using Whisper (CPU, base model).
     """
-    # Define paths
+    # Save the uploaded file
     base_path = Path(__file__).resolve().parent
     uploads_path = base_path / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
 
-    # Save the uploaded file
     try:
         with open(file_path, "wb") as f:
             f.write(file.file.read())
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to save uploaded file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
 
-    # Transcribe the audio file
-    transcriber = app.state.transcriber
+    # Transcribe the file using Whisper
     try:
-        transcription_raw = await transcriber.transcribe(str(file_path))
-        text_output = " ".join(
-            segment["text"]
-            for segment in transcription_raw["transcription"]
-            if segment["text"].strip()
-        )
+        result = transcribe_audio(whisper_model, str(file_path))
+        text_output = result.get("text", "")
 
-        # Generate a filename for the transcript
-        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
-            " ", "_")
-
+        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
         return {"filename": transcript_filename, "transcription": text_output}
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Transcription failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+
     finally:
         #Ingest transcription into Vector Database
         app.state.qdrant_manager.ingest_from_text(config.DEFAULT_PROJECT, text_output) #for now uses default project, this should change based on project management tools
         
 
-        # Clean up the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
-    
-        
-        
 
 
 @app.post("/download/")

@@ -1,5 +1,3 @@
-# version: '3.8'
-
 services:
   backend:
     build:
@@ -11,12 +9,12 @@ services:
     env_file:
       - .env
     volumes:
-      # This line is for development hot-reloading.
-      # It mounts your local ./server directory into the container's /app directory.
       - ./server:/app
       - ./papers:/papers
+    # UPDATED: Simplified depends_on
     depends_on:
       - qdrant
+      - ollama
 
   client:
     build:
@@ -26,14 +24,9 @@ services:
     ports:
       - "5173:5173"
     environment:
-      # This tells your Vite frontend where to find the backend API.
-      # It uses the service name 'backend', which works within Docker's network.
       - VITE_API_URL=http://backend:8000
     volumes:
-      # Mounts your local client code into the container for hot-reloading.
       - ./client:/app
-      # This is a trick to prevent your local node_modules from overwriting
-      # the node_modules directory that was installed inside the container.
       - /app/node_modules
     depends_on:
       - backend
@@ -46,6 +39,21 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    # REMOVED the healthcheck block from here
+
+  ollama:
+    build: ./ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./ollama/entrypoint.py:/entrypoint.py  # Mount the new Python script
+      - ollama_setup:/setup                   # This volume remains the same
+    entrypoint: ["python3", "/entrypoint.py"]  # Tell Docker to run the Python script
+            # Set the entrypoint to our script
 
 volumes:
   qdrant_data:
+  ollama_data:
+  ollama_setup: # Add the new volume for the setup marke
