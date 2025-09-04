@@ -1,7 +1,6 @@
 import os
 from typing import List
 
-from fastapi import HTTPException
 from qdrant_client import QdrantClient, models, AsyncQdrantClient
 from langchain_community.vectorstores import Qdrant
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -225,7 +224,7 @@ class QdrantManager:
         <RELEVANT_QUOTES>
         """
 
-    def ingest_from_directory(self, project_name: str, transcription_path: str):
+    def ingest_from_directory(self, project_name: str, transcription_name: str, transcription_path: str):
         """
         Main ingestion pipeline for a project.
 
@@ -235,7 +234,7 @@ class QdrantManager:
         """
         print("splitting chunks")
         collection_name = project_name
-        chunks = self._process_and_split_documents(transcription_path)
+        chunks = self._process_and_split_documents(transcription_path, project_name)
 
         if not chunks:
             print(
@@ -267,7 +266,7 @@ class QdrantManager:
             force_recreate=False  # Set to False to add to an existing collection
         )
 
-    def ingest_from_text(self, project_name: str, text_output: str):
+    def ingest_from_text(self, project_name: str, transcription_name: str, text_output: str):
         """
         Process text and ingests it into the Vector Database
 
@@ -321,11 +320,23 @@ class QdrantManager:
             collection_name = project_name
         )
         print("clear vector end")
+
+
+
+    def clear_filtered_metadata(project_name: str, metadata_type: str, metadata_label):
+        self.client.delete(
+        collection_name=project_name,
+        filter=models.Filter(
+        must=[models.FieldCondition(key=metadata_type, match=models.MatchValue(value=metadata_label))]
+        )
+)
+
+    
     
 
     # --- Private methods to assist with funcitonalities ---
 
-    def _process_and_split_documents(self, transcription_path: str) -> List[Document]:
+    def _process_and_split_documents(self, transcription_path: str, project_name: str, transcript_name: str) -> List[Document]:
         """
         Loads text document from a directory and splits them into chunks.
 
@@ -344,10 +355,14 @@ class QdrantManager:
         try:
             with open(transcription_path, "r") as file:
                 transcription_content = file.read()
+            
 
             documents = Document(
                 page_content=transcription_content,
-                metadata={"source": transcription_path}
+                metadata={
+                    "source": transcription_path,
+                    "transcription_id": transcript_name,
+                    "project_id": project_name}
             )
 
             return self.text_splitter.split_documents([documents])
