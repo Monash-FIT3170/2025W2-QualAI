@@ -34,3 +34,9 @@ __pycache__
 
 # Qdrant persistence
 server/qdrant_data/
+
+# local DB files
+server/app/qualAI.db
+server/app/*.db
+*.sqlite
+*.db
