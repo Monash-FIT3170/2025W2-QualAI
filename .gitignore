@@ -1,6 +1,7 @@
 # enviornment variables
 .env
 .venv
+venv
 
 # Logs
 logs
