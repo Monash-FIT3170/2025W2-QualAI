@@ -12,14 +12,19 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import sqlite3
 from typing import List, Dict
-
+from app.transcription_service import transcribe_audio_with_diarization
 from app.config import config
 import app.api_models as api_models
 from app.api_models import PromptRequest
 from app.llm_services import generate_online, generate_offline
-from app.transcription_service import transcribe_audio_with_diarization
+from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
-
+from app import database_models as db
+from app.helpers.project_converters import (
+    project_row_to_dict,
+    project_full_row_to_dict,
+)
+import app.helpers.transcription_converters as trans_conv
 
 # --- Application Setup ---
 
