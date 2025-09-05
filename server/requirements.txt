@@ -1,9 +1,10 @@
-fastapi
+--index-url https://download.pytorch.org/whl/cpu \
+--extra-index-url https://pypi.org/simple/ \
+fastapi[standard]
 uvicorn[standard]
 faster-whisper
-torch 
-torchaudio 
---index-url https://download.pytorch.org/whl/cpu
+torch
+torchaudio
 python-dotenv
 pydantic
 sqlalchemy
@@ -13,11 +14,10 @@ langchain-core>=0.1.0
 langchain-community>=0.1.0
 langchain-huggingface>=0.1.0
 langchain-text-splitters
---extra-index-url https://download.pytorch.org/whl/cpu
 sentence-transformers
 spacy==3.7.2
 pypdf
 python-multipart
-setuptools #Spacy related
-wheel #Spacy related
+setuptools
+wheel
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0.tar.gz

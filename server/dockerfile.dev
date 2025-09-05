@@ -3,7 +3,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies once - ADDED MISSING DEPENDENCIES
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libsqlite3-dev \
@@ -16,43 +16,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip first
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
+# Create upload directory
 RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
-#uncomment the manual installation if getting not found version error
-#following command would manually install the dependency 
-RUN pip install --no-cache-dir python-dotenv
-RUN pip install --no-cache-dir cython
-RUN pip install --no-cache-dir fastapi uvicorn[standard]
-RUN pip install --no-cache-dir faster-whisper
-RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir qdrant-client
-RUN pip install --no-cache-dir langchain
-RUN pip install --no-cache-dir langchain-core
-RUN pip install --no-cache-dir langchain-community
-RUN pip install --no-cache-dir langchain-huggingface
-RUN pip install --no-cache-dir langchain-text-splitters
-RUN pip install --no-cache-dir sentence-transformers
-RUN pip install --no-cache-dir spacy==3.7.2
-RUN pip install --no-cache-dir pypdf
-RUN pip install --no-cache-dir python-multipart
-RUN pip install --no-cache-dir setuptools #Spacy related
-RUN pip install --no-cache-dir wheel #Spacy related
-RUN pip install --no-cache-dir https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0.tar.gz
 
-# Install pip + requirements 
+# Copy requirements file
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
 
-# Install whisper-diarization requirements - FIXED PATH
+# Install packages with proper index URLs as pip flags
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install whisper-diarization requirements separately if needed
 COPY app/whisper-diarization/requirements.txt ./whisper-requirements.txt
 RUN pip install --no-cache-dir -r whisper-requirements.txt
 
 # Copy application code
 COPY app/ .
 
-RUN useradd app && chown -R app:app /app
+# Create non-root user
+RUN useradd -m app && chown -R app:app /app
 USER app
 
 EXPOSE 8000
