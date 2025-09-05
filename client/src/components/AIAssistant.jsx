@@ -1,5 +1,6 @@
 import React, { useState,useEffect,useRef  } from 'react';
 import { API_ENDPOINTS } from "../config/api";
+import { useProject } from '../contexts/ProjectContext';
 
 /** Constants **/
 const INITIAL_MESSAGES = [
@@ -20,26 +21,25 @@ const INITIAL_MESSAGES = [
  * Provides interactive chat interface between user and AI assistant
  */
 const AIAssistant = () => {
-  // State for chat messages with initial conversation
-  const [messages, setMessages] = useState([
-    {
-      sender: 'ai', 
-      text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?"
-    },
-    // {
-    //   sender: 'user',
-    //   text: "Can you identify common themes related to user experience in the latest interviews?"
-    // }
-    // {
-    //   sender: 'user',
-    //   text: "Can you identify common themes related to user experience in the latest interviews?"
-    // }
-  ]);
+  const { activeProjectId, activeProject } = useProject();
   
-
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+
   const [mode, setMode] = useState('offline');
+  const [template, setTemplate] = useState("default")
   const messagesEndRef = useRef(null);
+
+  // Load messages when a new active project is selected
+  useEffect(() => {
+    if (activeProjectId) {
+      const savedMessages = localStorage.getItem(`aiMessages_${activeProjectId}`);
+      setMessages(savedMessages ? JSON.parse(savedMessages) : INITIAL_MESSAGES);
+    } else {
+      // If no project is selected, show initial messages
+      setMessages(INITIAL_MESSAGES);
+    }
+  }, [activeProjectId]);
 
   // scroll to bottom of chat when there is a new message 
   useEffect(() => {
@@ -55,15 +55,16 @@ const AIAssistant = () => {
     // Don't send empty messages
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage) return;
-    
-    // Add user message to chat history
-    setMessages([
-      ...messages,
-      { sender: 'user', text: trimmedMessage }
-    ]);
 
+    const nextAfterUser = [...messages, { sender: 'user', text: trimmedMessage }];
+    // Add user message to chat history
+    setMessages(nextAfterUser);
     // Clear input field after sending
     setNewMessage('');
+
+    if (activeProjectId) {
+      localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(nextAfterUser));
+    }
 
     try {
       // Make POST request to FastAPI /generate endpoint
@@ -73,7 +74,12 @@ const AIAssistant = () => {
           "Content-Type": "application/json"
         },
 
-        body: JSON.stringify({ prompt: trimmedMessage, mode: mode })
+
+        body: JSON.stringify({ 
+          prompt: trimmedMessage, 
+          mode: mode,
+          project: activeProject?.name || 'default'
+        })
 
       });
 
@@ -83,45 +89,65 @@ const AIAssistant = () => {
       }
 
       const data = await response.json();
-
       const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
 
-      setMessages(prevMessages => [
-        ...prevMessages,
-        { sender: 'ai', text: aiResponse }
-      ]);
-
+      setMessages(prev => {
+        const next = [...prev, { sender: 'ai', text: aiResponse }];
+        if (activeProjectId) {
+          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
+        }
+          return next;
+        });
     } catch (error) {
-      setMessages(prevMessages => [
-        ...prevMessages,
-        { sender: 'ai', text: `Error: ${error.message}` }
-      ]);
+      setMessages(prev => {
+        const next = [...prev, { sender: 'ai', text: `Error: ${error.message}` }];
+        if (activeProjectId) {
+          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
+        }
+        return next;
+      });
     }
     
     
   };
 
-
   return (
     <div className="bg-slate-800 rounded-xl shadow-sm p-4 h-full flex flex-col">
-      {/* Chat header */}
-      <h2 className="text-lg font-semibold text-white mb-4">AI Assistant</h2>
-      
-      {/* Mode selector */}
-      <div className="text-white text-sm mb-2">
-          <label htmlFor="mode" className="mr-2">Mode:</label>
+      <div className="flex justify-between items-center mb-4">
+        {/* Chat header */}
+        <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+        <div className="flex flex-col text-left justify-end">
+          <span className="text-white text-sm font-semibold mb-1">Template:</span>
+
           <select
-            id="mode"
-            value={mode}
-            onChange={(e) => setMode(e.target.value)}
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
             className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white"
           >
-            <option value="offline">Offline</option>
-            <option value="online">Online</option>
+            <option value="default">None</option>
+            <option value="summary">Summarise</option>
+            <option value="code_theme">Find Themes</option>
+            <option value="outlier">Find Outliers</option>
+            <option value="quote">Find Quotes</option>
           </select>
         </div>
-
-
+      </div>
+        {/* Mode selector */}
+        <div className="flex items-center gap-3 text-sm text-white mb-2">
+              <span className="text-slate-300">{mode}</span>
+              <button
+                onClick={() => setMode(mode === "offline" ? "online" : "offline")}
+                className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+                  mode === "online" ? "bg-green-500" : "bg-slate-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                    mode === "online" ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+          </div>
 
       {/* Scrollable messages container */}
       <div className="flex-1 min-h-0 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
