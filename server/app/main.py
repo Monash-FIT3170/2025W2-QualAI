@@ -17,7 +17,6 @@ from app.config import config
 import app.api_models as api_models
 from app.api_models import PromptRequest
 from app.llm_services import generate_online, generate_offline
-from app.transcription_service import Transcriber
 from app.qdrant_manager import QdrantManager
 from app import database_models as db
 from app.helpers.project_converters import (
@@ -43,7 +42,6 @@ async def lifespan(app: FastAPI):
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
-    app.state.transcriber = Transcriber(model_size="base")
 
     # --- this is just for placeholder data to be filled into vector db ---
     data_path = os.path.abspath(os.path.join(os.path.dirname(
@@ -129,7 +127,7 @@ async def transcribe_endpoint(
     """
     # Save the uploaded file
     base_path = Path(__file__).resolve().parent
-    uploads_path = base_path / "Interview_Uploads"
+    uploads_path = base_path / "Interview Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
 
