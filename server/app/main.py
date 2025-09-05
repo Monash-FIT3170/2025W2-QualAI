@@ -277,6 +277,63 @@ def get_transcription(project_id: int, transcription_id: int) -> Dict:
         raise HTTPException(status_code=404, detail="Transcription not found")
 
 
+@app.put("/projects/{project_id}/transcriptions/{transcription_id}")
+def update_transcription(project_id: int, transcription_id: int, payload: api_models.TranscriptionUpdate):
+    """
+    Update a specific transcription by project and transcription ID.
+    """
+    # Ensure project exists
+    try:
+        project_name, _, _ = app.state.projects_store.get_project_by_id(
+            project_id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Get the transcription first to verify it exists and belongs to the project
+    try:
+        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
+            transcription_id)
+
+        # Verify the transcription belongs to the specified project
+        if proj_id != project_id:
+            raise HTTPException(
+                status_code=404, detail="Transcription not found in this project")
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Transcription not found")
+
+    # Update the transcription in the database
+    try:
+        app.state.transcripts_store.update(transcription_id, payload.text)
+        print(
+            f"Updated transcription {transcription_id} in project {project_id}")
+
+        # Update the vector database with the new content
+        try:
+            app.state.qdrant_manager.clear_collection(project_name)
+            app.state.qdrant_manager.ingest_from_text(project_name, payload.text)
+            print(f"Updated vector database for project: {project_name}")
+        except Exception as vector_error:
+            print(
+                f"Warning: Failed to update vector database for project '{project_name}': {vector_error}")
+            # Don't fail the entire operation if vector update fails
+
+        # Return the updated transcription
+        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
+            transcription_id)
+        return {
+            "transcription_id": transcription_id,
+            "project_id": proj_id,
+            "name": name,
+            "text": text,
+            "processed_at": processed_at,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update transcription: {e}")
+
+
 @app.delete("/projects/{project_id}/transcriptions/{transcription_id}")
 def delete_transcription(project_id: int, transcription_id: int):
     """
