@@ -114,7 +114,6 @@ async def generate_text(request: PromptRequest):
         return await generate_online(augmented_prompt)
     else:
         return await generate_offline(augmented_prompt)
-
 @app.post("/transcribe/")
 async def transcribe_endpoint(
     file: UploadFile = File(...,
@@ -133,38 +132,53 @@ async def transcribe_endpoint(
     uploads_path = base_path / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
-   
+
     try:
-        uploads_path = base_path / "Interview Uploads"
-        os.makedirs(f"{uploads_path}")
-        
-        os.chmod(uploads_path, 0o777)
-        file_path = uploads_path / file.filename
-        os.chmod(file_path, 0o777)
-        with open(file_path, "wb") as f:
-            f.write(file.file.read())
-    except FileExistsError:
-        file_path = uploads_path / file.filename
-        os.chmod(file_path, 0o777)
-        os.chmod(uploads_path, 0o777)
         with open(file_path, "wb") as f:
             f.write(await file.read())
     except Exception as e:
-        print (f"Invalid file format provided")
-    
-    
-    output_filename = f"{file.filename.rsplit('.', 1)[0]}.txt".replace(" ","_")
-    output_file_path= uploads_path/output_filename
-    #print("run diarize")
-    res = await transcribe_audio_with_diarization(file_path)
-    #print(res)
-    with open(output_file_path, 'r', encoding='utf-8') as ouput_file:
-        transcription = ouput_file.read()
-        
-    # Save the transcription to a .txt file
-    # print(output_file_path)
-    # print(transcription)
-    return {"output_path":output_file_path,"transcription":transcription},
+        raise HTTPException(
+            status_code=500, detail=f"Failed to save uploaded file: {e}"
+        )
+
+    # Transcribe the file using Whisper
+    text_output = ""
+
+    try:
+        output_filename = f"{file.filename.rsplit('.', 1)[0]}.txt".replace(" ","_")
+        output_file_path= uploads_path/output_filename
+        #print("run diarize")
+        res = await transcribe_audio_with_diarization(file_path)
+        #print(res)
+        with open(output_file_path, 'r', encoding='utf-8') as ouput_file:
+            text_output = ouput_file.read()
+
+        transcript_filename = output_filename
+
+        # Save transcription to the database
+        transcription_id = app.state.transcripts_store.insert(
+            project_id, transcript_filename, text_output
+        )
+
+        # Ingest transcription into Vector Database
+        app.state.qdrant_manager.clear_collection(config.DEFAULT_PROJECT)
+        # for now uses default project, this should change based on project management tools
+        app.state.qdrant_manager.ingest_from_text(
+            project_name, text_output)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        return {
+            "filename": transcript_filename,
+            "transcription": text_output,
+            "transcription_id": transcription_id,
+            "project_id": project_id
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Transcription failed: {e}")
 
 @app.post("/download/")
 async def download_transcription(final_output: str = Form(...), filename: str = Form(...)):
