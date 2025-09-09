@@ -1,7 +1,8 @@
 import unittest
 from os import remove
+
 # Make sure these are correctly imported
-from app.database_models import Project, Transcription
+from server.app.database_models import Project, Transcription
 from sqlite3 import IntegrityError
 
 DB_NAME = "qualAI_test.db"
@@ -40,7 +41,8 @@ class Test_Project(unittest.TestCase):
     def test_get_project_by_id_not_found(self):
         project_name = "unique_project_3"
         inserted_id = self.project_manager.insert(
-            project_name, "Yet another description")
+            project_name, "Yet another description"
+        )
         self.assertIsNotNone(inserted_id)
         non_existent_id = inserted_id + 100
         with self.assertRaises(LookupError):
@@ -48,8 +50,7 @@ class Test_Project(unittest.TestCase):
 
     def test_delete_project(self):
         project_name = "unique_project_4"
-        inserted_id = self.project_manager.insert(
-            project_name, "To be deleted")
+        inserted_id = self.project_manager.insert(project_name, "To be deleted")
         self.assertIsNotNone(inserted_id)
         self.project_manager.delete(inserted_id)
 
@@ -69,6 +70,19 @@ class Test_Project(unittest.TestCase):
         self.assertIn("unique_project_5", names)
         self.assertIn("unique_project_6", names)
 
+    def test_update_exisiting_project(self):
+        project_name = "unique_project_3"
+        inserted_id = self.project_manager.insert(
+            project_name, "Yet another description"
+        )
+        self.assertIsNotNone(inserted_id)
+
+        new_project_name = "new_project"
+        new_inserted_id = self.project_manager.update(
+            project_name, new_project_name, "Yet another description"
+        )
+        self.assertIsNotNone(new_inserted_id)
+
 
 class Test_Transcription(unittest.TestCase):
     def setUp(self):
@@ -83,17 +97,19 @@ class Test_Transcription(unittest.TestCase):
 
         # Ensure there is atleast one project for transcription tests
         self.test_project_id = self.project_manager.insert(
-            "base_project_for_transcriptions", "Base project")
+            "base_project_for_transcriptions", "Base project"
+        )
         self.assertIsNotNone(
-            self.test_project_id, "Failed to create a base project for transcription tests")
+            self.test_project_id,
+            "Failed to create a base project for transcription tests",
+        )
 
     """Test to check if you can insert a transcription to the table"""
 
     def test_insert_transcription(self):
         name = "test_transcription_1"
         content = "This is a test transcription."
-        res = self.transcription_manager.insert(
-            self.test_project_id, name, content)
+        res = self.transcription_manager.insert(self.test_project_id, name, content)
         self.assertIsInstance(res, int)
 
     def test_invalid_insert_transcription_values(self):
@@ -112,10 +128,10 @@ class Test_Transcription(unittest.TestCase):
         name = "test_transcription_2"
         content = "Some content"
         inserted_id = self.transcription_manager.insert(
-            self.test_project_id, name, content)
+            self.test_project_id, name, content
+        )
         self.assertIsNotNone(inserted_id)
-        transcription = self.transcription_manager.get_transcription_by_id(
-            inserted_id)
+        transcription = self.transcription_manager.get_transcription_by_id(inserted_id)
         self.assertIsNotNone(transcription)
         # Check project_id (index 0)
         self.assertEqual(transcription[0], self.test_project_id)
@@ -135,7 +151,8 @@ class Test_Transcription(unittest.TestCase):
         name = "test_transcription_3"
         content = "To be deleted."
         inserted_id = self.transcription_manager.insert(
-            self.test_project_id, name, content)
+            self.test_project_id, name, content
+        )
         self.assertIsNotNone(inserted_id)
         self.transcription_manager.delete(inserted_id)
         with self.assertRaises(LookupError):
@@ -143,30 +160,30 @@ class Test_Transcription(unittest.TestCase):
 
     def test_get_all_project_transcriptions_empty(self):
         transcriptions = self.transcription_manager.get_all_project_transcriptions(
-            9999)  # Non-existent project
+            9999
+        )  # Non-existent project
         self.assertEqual(transcriptions, [])
 
     def test_get_all_project_transcriptions_multiple(self):
-        self.transcription_manager.insert(
-            self.test_project_id, "trans_a", "Content A")
-        self.transcription_manager.insert(
-            self.test_project_id, "trans_b", "Content B")
+        self.transcription_manager.insert(self.test_project_id, "trans_a", "Content A")
+        self.transcription_manager.insert(self.test_project_id, "trans_b", "Content B")
         transcriptions = self.transcription_manager.get_all_project_transcriptions(
-            self.test_project_id)
+            self.test_project_id
+        )
         self.assertEqual(len(transcriptions), 2)
         names = {trans[1] for trans in transcriptions}
         self.assertIn("trans_a", names)
         self.assertIn("trans_b", names)
 
     def test_cascading_delete(self):
-        project_id = self.project_manager.insert(
-            "unique_project_1", "A test project")
+        project_id = self.project_manager.insert("unique_project_1", "A test project")
         self.transcription_manager.insert(project_id, "trans_a", "Content A")
         self.transcription_manager.insert(project_id, "trans_b", "Content B")
 
         # checking for succesful insert
         transcriptions = self.transcription_manager.get_all_project_transcriptions(
-            project_id)
+            project_id
+        )
         self.assertEqual(len(transcriptions), 2)
         names = {trans[1] for trans in transcriptions}
         self.assertIn("trans_a", names)
@@ -176,10 +193,9 @@ class Test_Transcription(unittest.TestCase):
 
         # transcriptions should be deleted when project is deleted
 
-        res = self.transcription_manager.get_all_project_transcriptions(
-            project_id)
+        res = self.transcription_manager.get_all_project_transcriptions(project_id)
         self.assertEqual(res, [])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

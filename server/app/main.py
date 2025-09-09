@@ -41,27 +41,33 @@ async def lifespan(app: FastAPI):
     app.state.transcriber = Transcriber(model_size="base")
 
     # --- this is just for placeholder data to be filled into vector db ---
-    data_path = os.path.abspath(os.path.join(os.path.dirname(
-        __file__),  "projects", config.DEFAULT_PROJECT, "data.txt"))
+    data_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__), "projects", config.DEFAULT_PROJECT, "data.txt"
+        )
+    )
     if os.path.exists(data_path):
         app.state.qdrant_manager.ingest_from_directory(
-            config.DEFAULT_PROJECT, data_path)
+            config.DEFAULT_PROJECT, data_path
+        )
         print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
     else:
         print(f"Warning: Data path not found, skipping ingestion: {data_path}")
 
     try:
         project_id = app.state.projects_store.insert(
-            config.DEFAULT_PROJECT, config.DEFAULT_PROJECT)
+            config.DEFAULT_PROJECT, config.DEFAULT_PROJECT
+        )
 
-        with open(data_path, 'r', encoding='utf-8') as file:
+        with open(data_path, "r", encoding="utf-8") as file:
             data_content = file.read()
             app.state.transcripts_store.insert(
                 project_id, config.DEFAULT_PROJECT, data_content
             )
     except sqlite3.IntegrityError:
         print(
-            f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation")
+            f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
+        )
     # ------
 
     # Initialize the transcriber model
@@ -70,6 +76,7 @@ async def lifespan(app: FastAPI):
     boot_state["status"] = "online"
     yield
     print("Shutting down...")
+
 
 app = FastAPI(title="QualAI API", lifespan=lifespan)
 
@@ -85,6 +92,7 @@ app.add_middleware(
 
 
 # --- Back-end Status ---
+
 
 @app.get("/status")
 async def get_status():
@@ -116,12 +124,9 @@ async def generate_text(request: PromptRequest):
 
 @app.post("/transcribe/")
 async def transcribe_endpoint(
-    file: UploadFile = File(...,
-                            description="Upload an audio file for transcription."),
-    project_id: int = Form(...,
-                           description="Project ID to save transcription to"),
-    project_name: str = Form(...,
-                             description="Project name for the transcription")
+    file: UploadFile = File(..., description="Upload an audio file for transcription."),
+    project_id: int = Form(..., description="Project ID to save transcription to"),
+    project_name: str = Form(..., description="Project name for the transcription"),
 ):
     """
     Transcribe an uploaded audio file using Whisper (CPU, base model).
@@ -149,8 +154,8 @@ async def transcribe_endpoint(
         result = await transcriber.transcribe(str(file_path), language="en")
         text_output = result.get("text", "")
 
-        transcript_filename = (
-            f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
+        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
+            " ", "_"
         )
 
         # Save transcription to the database
@@ -161,8 +166,7 @@ async def transcribe_endpoint(
         # Ingest transcription into Vector Database
         app.state.qdrant_manager.clear_collection(config.DEFAULT_PROJECT)
         # for now uses default project, this should change based on project management tools
-        app.state.qdrant_manager.ingest_from_text(
-            project_name, text_output)
+        app.state.qdrant_manager.ingest_from_text(project_name, text_output)
 
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -171,16 +175,17 @@ async def transcribe_endpoint(
             "filename": transcript_filename,
             "transcription": text_output,
             "transcription_id": transcription_id,
-            "project_id": project_id
+            "project_id": project_id,
         }
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Transcription failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
 
 
 @app.post("/download/")
-async def download_transcription(final_output: str = Form(...), filename: str = Form(...)):
+async def download_transcription(
+    final_output: str = Form(...), filename: str = Form(...)
+):
     """
     Saves the final transcription text to a file and provides it for download.
     """
@@ -195,13 +200,10 @@ async def download_transcription(final_output: str = Form(...), filename: str = 
             f.write(final_output)
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to write transcription file: {e}")
+            status_code=500, detail=f"Failed to write transcription file: {e}"
+        )
 
-    return FileResponse(
-        path=file_path,
-        filename=filename,
-        media_type='text/plain'
-    )
+    return FileResponse(path=file_path, filename=filename, media_type="text/plain")
 
 
 @app.post("/projects/{project_id}/transcriptions")
@@ -215,11 +217,11 @@ def add_transcription(project_id: int, payload: api_models.Transcription) -> Dic
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    new_id = app.state.transcripts_store.insert(
-        project_id, payload.name, payload.text)
+    new_id = app.state.transcripts_store.insert(project_id, payload.name, payload.text)
     # Optionally return minimal info with id, or the full record:
-    proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
-        new_id)
+    proj_id, name, text, processed_at = (
+        app.state.transcripts_store.get_transcription_by_id(new_id)
+    )
     return {
         "transcription_id": new_id,
         "project_id": proj_id,
@@ -240,8 +242,7 @@ def list_transcriptions(project_id: int) -> List[Dict]:
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    rows = app.state.transcripts_store.get_all_project_transcriptions(
-        project_id)
+    rows = app.state.transcripts_store.get_all_project_transcriptions(project_id)
     return [trans_conv.transcription_meta_row_to_dict(r) for r in rows]
 
 
@@ -258,13 +259,15 @@ def get_transcription(project_id: int, transcription_id: int) -> Dict:
 
     # Get the transcription
     try:
-        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
-            transcription_id)
+        proj_id, name, text, processed_at = (
+            app.state.transcripts_store.get_transcription_by_id(transcription_id)
+        )
 
         # Verify the transcription belongs to the specified project
         if proj_id != project_id:
             raise HTTPException(
-                status_code=404, detail="Transcription not found in this project")
+                status_code=404, detail="Transcription not found in this project"
+            )
 
         return {
             "transcription_id": transcription_id,
@@ -284,37 +287,38 @@ def delete_transcription(project_id: int, transcription_id: int):
     """
     # Ensure project exists
     try:
-        project_name, _, _ = app.state.projects_store.get_project_by_id(
-            project_id)
+        project_name, _, _ = app.state.projects_store.get_project_by_id(project_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
     # Get the transcription first to verify it exists and belongs to the project
     try:
-        proj_id, name, text, processed_at = app.state.transcripts_store.get_transcription_by_id(
-            transcription_id)
+        proj_id, name, text, processed_at = (
+            app.state.transcripts_store.get_transcription_by_id(transcription_id)
+        )
 
         # Verify the transcription belongs to the specified project
         if proj_id != project_id:
             raise HTTPException(
-                status_code=404, detail="Transcription not found in this project")
+                status_code=404, detail="Transcription not found in this project"
+            )
     except LookupError:
         raise HTTPException(status_code=404, detail="Transcription not found")
 
     # Delete the transcription from the database
     try:
         app.state.transcripts_store.delete(transcription_id)
-        print(
-            f"Deleted transcription {transcription_id} from project {project_id}")
+        print(f"Deleted transcription {transcription_id} from project {project_id}")
 
         try:
             ### TODO
             ### IMPORTANT - Transcript should be removed from project
             pass
-            
+
         except Exception as vector_error:
             print(
-                f"Warning: Failed to update vector database for project '{project_name}': {vector_error}")
+                f"Warning: Failed to update vector database for project '{project_name}': {vector_error}"
+            )
             # Don't fail the entire operation if vector update fails
 
         return {"ok": True, "message": "Transcription deleted successfully"}
@@ -322,7 +326,8 @@ def delete_transcription(project_id: int, transcription_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to delete transcription: {e}")
+            status_code=500, detail=f"Failed to delete transcription: {e}"
+        )
 
 
 @app.post("/projects")
@@ -332,11 +337,11 @@ def create_project(payload: api_models.Project):
     """
     try:
         new_id = app.state.projects_store.insert(
-            payload.name, payload.description or "")
+            payload.name, payload.description or ""
+        )
     except sqlite3.IntegrityError:
         # UNIQUE(name) violated
-        raise HTTPException(
-            status_code=400, detail="Project name already exists.")
+        raise HTTPException(status_code=400, detail="Project name already exists.")
 
     # fetch and return canonical row
     name, desc, created_at = app.state.projects_store.get_project_by_id(new_id)
@@ -352,10 +357,10 @@ def list_projects() -> List[Dict]:
     if not rows:
         # auto-create default to keep UX consistent with your current app
         try:
-            default_id = app.state.projects_store.insert(
-                "Project 1", "Default project")
+            default_id = app.state.projects_store.insert("Project 1", "Default project")
             name, desc, created_at = app.state.projects_store.get_project_by_id(
-                default_id)
+                default_id
+            )
             return project_row_to_dict(default_id, (name, desc, created_at))
         except sqlite3.IntegrityError:
             # extremely unlikely race; just refetch all
@@ -370,8 +375,7 @@ def get_project(project_id: int) -> Dict:
     Get a single project by id.
     """
     try:
-        name, desc, created_at = app.state.projects_store.get_project_by_id(
-            project_id)
+        name, desc, created_at = app.state.projects_store.get_project_by_id(project_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -387,8 +391,7 @@ def delete_project(project_id: int):
     try:
         # Get project name before deleting (needed for Qdrant collection deletion)
         try:
-            project_name, _, _ = app.state.projects_store.get_project_by_id(
-                project_id)
+            project_name, _, _ = app.state.projects_store.get_project_by_id(project_id)
         except LookupError:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -401,12 +404,51 @@ def delete_project(project_id: int):
             print(f"Deleted Qdrant collection for project: {project_name}")
         except Exception as qdrant_error:
             print(
-                f"Warning: Failed to delete Qdrant collection for project '{project_name}': {qdrant_error}")
+                f"Warning: Failed to delete Qdrant collection for project '{project_name}': {qdrant_error}"
+            )
             # Don't fail the entire operation if Qdrant deletion fails
 
         return {"ok": True, "message": "Project deleted successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete project: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
+
+
+@app.put("/projects/{project_id}")
+def update_project(project_id: int, payload: api_models.Project):
+    """
+    Update a project by id.
+    """
+
+    try:
+        # Get project name
+        try:
+            project_name, _, _ = app.state.projects_store.get_project_by_id(project_id)
+        except LookupError:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        new_id = app.state.projects_store.insert(payload.name, payload.description)
+
+        # Delete the corresponding Qdrant collection
+        try:
+            app.state.qdrant_manager.clear_collection(project_name)
+            print(f"Deleted Qdrant collection for project: {project_name}")
+        except Exception as qdrant_error:
+            print(
+                f"Warning: Failed to delete Qdrant collection for project '{project_name}': {qdrant_error}"
+            )
+            # Don't fail the entire operation if Qdrant deletion fails
+
+        return {"ok": True, "message": "Project deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
+    try:
+        projects_store.delete(project_id)
+        return {"ok": True, "message": "Project deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
