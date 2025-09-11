@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi import HTTPException
 from typing import List, Dict
 
-import app.api.helpers.transcription_converters as trans_conv
+import app.api.converters.transcription_converters as trans_conv
 from app.api.models import TranscriptionRequest
 
 transcription_router = APIRouter()

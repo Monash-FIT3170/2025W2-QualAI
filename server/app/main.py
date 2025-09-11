@@ -8,10 +8,10 @@ from app.config import config
 from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
 from app.database import Project, Transcription
-from app.api.project_api import project_router
-from app.api.transcription_api import transcription_router
-from app.api.transcribe_api import transcribe_router
-from app.api.qdrant_api import qdrant_router
+from app.api.project_endpoints import project_router
+from app.api.transcription_endpoints import transcription_router
+from app.api.transcribe_endpoints import transcribe_router
+from app.api.qdrant_endpoints import qdrant_router
 
 
 # --- Application Setup ---
