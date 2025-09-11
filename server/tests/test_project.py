@@ -15,6 +15,7 @@ class Test_Project(unittest.TestCase):
         self.db.close()
         self.project_manager = Project(self.db_name)
 
+    # TODO: fix teardown - temp files should not stay
     # def tearDown(self):
     #     if os.path.exists(self.db_name):
     #         os.remove(self.db_name)

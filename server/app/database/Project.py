@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List, Tuple
 
-from app.database.const import PROJECT_TABLE_NAME
+from app.config import config
 
 
 class Project:
@@ -26,7 +26,7 @@ class Project:
 
             cur.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {PROJECT_TABLE_NAME} (
+                CREATE TABLE IF NOT EXISTS {config.DB_PROJECT_TABLE_NAME} (
                     project_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     description TEXT NOT NULL,
@@ -54,7 +54,7 @@ class Project:
 
             cur.execute(
                 f"""
-                INSERT INTO {PROJECT_TABLE_NAME} (name, description) VALUES (?, ?)
+                INSERT INTO {config.DB_PROJECT_TABLE_NAME} (name, description) VALUES (?, ?)
             """,
                 (project_name, description),
             )
@@ -80,7 +80,7 @@ class Project:
 
             cur.execute(
                 f"""
-                DELETE FROM {PROJECT_TABLE_NAME}
+                DELETE FROM {config.DB_PROJECT_TABLE_NAME}
                 WHERE project_id = ? 
             """,
                 (project_id,),
@@ -112,7 +112,7 @@ class Project:
 
             cur.execute(
                 f"""
-                SELECT name, description, created_at FROM {PROJECT_TABLE_NAME}
+                SELECT name, description, created_at FROM {config.DB_PROJECT_TABLE_NAME}
                 WHERE project_id = ?
             """,
                 (project_id,),
@@ -140,7 +140,7 @@ class Project:
 
             cur.execute(
                 f"""
-                SELECT project_id, name, description, created_at FROM {PROJECT_TABLE_NAME}
+                SELECT project_id, name, description, created_at FROM {config.DB_PROJECT_TABLE_NAME}
             """
             )
 

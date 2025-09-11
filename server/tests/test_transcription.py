@@ -24,6 +24,7 @@ class Test_Transcription(unittest.TestCase):
             "Failed to create a base project for transcription tests",
         )
 
+    # TODO: fix teardown - temp files should not stay
     # def tearDown(self):
     #     if os.path.exists(self.db_name):
     #         os.remove(self.db_name)

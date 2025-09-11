@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List, Tuple, Optional
 
-from app.database.const import PROJECT_TABLE_NAME, TRANS_TABLE_NAME
+from app.config import config
 
 
 class Transcription:
@@ -26,13 +26,13 @@ class Transcription:
 
             cur.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {TRANS_TABLE_NAME} (
+                CREATE TABLE IF NOT EXISTS {config.DB_TRANS_TABLE_NAME} (
                     transcription_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     project_id INTEGER,
                     name TEXT NOT NULL,
                     transcription TEXT NOT NULL,
                     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES {PROJECT_TABLE_NAME}(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES {config.DB_PROJECT_TABLE_NAME}(project_id) ON DELETE CASCADE
                 )
             """
             )
@@ -57,7 +57,7 @@ class Transcription:
 
             cur.execute(
                 f"""
-                INSERT INTO {TRANS_TABLE_NAME} (project_id, name, transcription) VALUES (?, ?, ?)
+                INSERT INTO {config.DB_TRANS_TABLE_NAME} (project_id, name, transcription) VALUES (?, ?, ?)
             """,
                 (project_id, name, transcription),
             )
@@ -83,7 +83,7 @@ class Transcription:
 
             cur.execute(
                 f"""
-                DELETE FROM {TRANS_TABLE_NAME}
+                DELETE FROM {config.DB_TRANS_TABLE_NAME}
                 WHERE transcription_id = ?
             """,
                 (transcription_id,),
@@ -114,7 +114,7 @@ class Transcription:
 
             cur.execute(
                 f"""
-                SELECT project_id, name, transcription, processed_at FROM {TRANS_TABLE_NAME}
+                SELECT project_id, name, transcription, processed_at FROM {config.DB_TRANS_TABLE_NAME}
                 WHERE transcription_id = ?
             """,
                 (transcription_id,),
@@ -147,7 +147,7 @@ class Transcription:
 
             cur.execute(
                 f"""
-                SELECT transcription_id, name, processed_at FROM {TRANS_TABLE_NAME}
+                SELECT transcription_id, name, processed_at FROM {config.DB_TRANS_TABLE_NAME}
                 WHERE project_id = ?
             """,
                 (project_id,),
@@ -179,7 +179,7 @@ class Transcription:
 
             cur.execute(
                 f"""
-                UPDATE {TRANS_TABLE_NAME}
+                UPDATE {config.DB_TRANS_TABLE_NAME}
                 SET transcription = ?, processed_at = CURRENT_TIMESTAMP
                 WHERE transcription_id = ?
             """,

@@ -9,10 +9,10 @@ from app.api.helpers.project_converters import (
 )
 from app.api.models import ProjectRequest
 
-router = APIRouter()
+project_router = APIRouter()
 
 
-@router.post("/projects")
+@project_router.post("/projects")
 def create_project(request: Request, payload: ProjectRequest):
     """
     Create a new project. Name must be unique (sqlite UNIQUE constraint).
@@ -30,7 +30,7 @@ def create_project(request: Request, payload: ProjectRequest):
     return project_row_to_dict(new_id, (name, desc, created_at))
 
 
-@router.get("/projects")
+@project_router.get("/projects")
 def list_projects(request: Request) -> List[Dict]:
     """
     List all projects. If DB is empty, create a default 'Project 1' and return it.
@@ -53,7 +53,7 @@ def list_projects(request: Request) -> List[Dict]:
     return [project_full_row_to_dict(r) for r in rows]
 
 
-@router.get("/projects/{project_id}")
+@project_router.get("/projects/{project_id}")
 def get_project(request: Request, project_id: int) -> Dict:
     """
     Get a single project by id.
@@ -68,7 +68,7 @@ def get_project(request: Request, project_id: int) -> Dict:
     return project_row_to_dict(project_id, (name, desc, created_at))
 
 
-@router.delete("/projects/{project_id}")
+@project_router.delete("/projects/{project_id}")
 def delete_project(request: Request, project_id: int):
     """
     Delete a project by id.

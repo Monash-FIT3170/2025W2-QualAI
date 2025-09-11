@@ -5,10 +5,10 @@ from typing import List, Dict
 import app.api.helpers.transcription_converters as trans_conv
 from app.api.models import TranscriptionRequest
 
-router = APIRouter()
+transcription_router = APIRouter()
 
 
-@router.post("/projects/{project_id}/transcriptions")
+@transcription_router.post("/projects/{project_id}/transcriptions")
 def add_transcription(
     request: Request, project_id: int, payload: TranscriptionRequest
 ) -> Dict:
@@ -37,7 +37,7 @@ def add_transcription(
     }
 
 
-@router.get("/projects/{project_id}/transcriptions")
+@transcription_router.get("/projects/{project_id}/transcriptions")
 def list_transcriptions(request: Request, project_id: int) -> List[Dict]:
     """
     List transcription metadata for a project (no full text).
@@ -54,7 +54,7 @@ def list_transcriptions(request: Request, project_id: int) -> List[Dict]:
     return [trans_conv.transcription_meta_row_to_dict(r) for r in rows]
 
 
-@router.get("/projects/{project_id}/transcriptions/{transcription_id}")
+@transcription_router.get("/projects/{project_id}/transcriptions/{transcription_id}")
 def get_transcription(request: Request, project_id: int, transcription_id: int) -> Dict:
     """
     Get a specific transcription by project and transcription ID.
@@ -90,7 +90,7 @@ def get_transcription(request: Request, project_id: int, transcription_id: int) 
         raise HTTPException(status_code=404, detail="Transcription not found")
 
 
-@router.put("/projects/{project_id}/transcriptions/{transcription_id}")
+@transcription_router.put("/projects/{project_id}/transcriptions/{transcription_id}")
 def update_transcription(
     request: Request,
     project_id: int,
@@ -163,7 +163,7 @@ def update_transcription(
         )
 
 
-@router.delete("/projects/{project_id}/transcriptions/{transcription_id}")
+@transcription_router.delete("/projects/{project_id}/transcriptions/{transcription_id}")
 def delete_transcription(request: Request, project_id: int, transcription_id: int):
     """
     Delete a specific transcription by project and transcription ID.
