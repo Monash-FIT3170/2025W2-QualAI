@@ -3,7 +3,7 @@ from fastapi import HTTPException
 import sqlite3
 from typing import List, Dict
 
-from app.api.helpers.project_converters import (
+from app.api.converters.project_converters import (
     project_row_to_dict,
     project_full_row_to_dict,
 )

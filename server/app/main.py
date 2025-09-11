@@ -11,7 +11,7 @@ from app.database import Project, Transcription
 from app.api.project_endpoints import project_router
 from app.api.transcription_endpoints import transcription_router
 from app.api.transcribe_endpoints import transcribe_router
-from app.api.qdrant_endpoints import qdrant_router
+from app.api.prompt_endpoints import prompt_router
 
 
 # --- Application Setup ---
@@ -87,7 +87,7 @@ app.add_middleware(
 app.include_router(project_router)
 app.include_router(transcription_router)
 app.include_router(transcribe_router)
-app.include_router(qdrant_router)
+app.include_router(prompt_router)
 
 
 # --- Back-end Status ---
