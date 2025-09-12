@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi import HTTPException
-from typing import List, Dict
 
-import app.api.converters.transcription_converters as trans_conv
+import app.api.helpers.transcription_converters as trans_conv
 from app.api.models import TranscriptionRequest
 
 transcription_router = APIRouter()
@@ -11,7 +10,7 @@ transcription_router = APIRouter()
 @transcription_router.post("/projects/{project_id}/transcriptions")
 def add_transcription(
     request: Request, project_id: int, payload: TranscriptionRequest
-) -> Dict:
+) -> dict:
     """
     Attach a transcription to a specific project.
     """
@@ -38,7 +37,7 @@ def add_transcription(
 
 
 @transcription_router.get("/projects/{project_id}/transcriptions")
-def list_transcriptions(request: Request, project_id: int) -> List[Dict]:
+def list_transcriptions(request: Request, project_id: int) -> list[dict]:
     """
     List transcription metadata for a project (no full text).
     """
@@ -55,7 +54,7 @@ def list_transcriptions(request: Request, project_id: int) -> List[Dict]:
 
 
 @transcription_router.get("/projects/{project_id}/transcriptions/{transcription_id}")
-def get_transcription(request: Request, project_id: int, transcription_id: int) -> Dict:
+def get_transcription(request: Request, project_id: int, transcription_id: int) -> dict:
     """
     Get a specific transcription by project and transcription ID.
     """

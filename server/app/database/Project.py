@@ -1,5 +1,4 @@
 import sqlite3
-from typing import List, Tuple
 
 from app.config import config
 
@@ -91,7 +90,7 @@ class Project:
         if rows_deleted < 1:
             raise ValueError("There is no row associated with this project id!")
 
-    def get_project_by_id(self, project_id: int) -> Tuple[str, str, str]:
+    def get_project_by_id(self, project_id: int) -> tuple[str, str, str]:
         """
         Method to get project data by its id.
 
@@ -99,7 +98,7 @@ class Project:
             transcription_id (int): The id of the project
 
         Returns:
-            Tuple[str, str, str]: The project name, description and creation date
+            tuple[str, str, str]: The project name, description and creation date
 
         Raises:
             LookupError: If there is no project with the given id, raises LookupError
@@ -125,12 +124,12 @@ class Project:
 
         return project
 
-    def get_all_projects(self) -> List[Tuple[int, str, str, str]]:
+    def get_all_projects(self) -> list[tuple[int, str, str, str]]:
         """
         Method to get all projects that exist.
 
         Returns:
-            List[Tuple[int, str, str, str]]: The project id, name description and creation date for each project
+            list[tuple[int, str, str, str]]: The project id, name description and creation date for each project
         """
         projects = None
 

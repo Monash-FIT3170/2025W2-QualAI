@@ -1,6 +1,5 @@
 import os
 import tempfile
-from typing import List
 
 from fastapi import HTTPException
 from qdrant_client import QdrantClient, models
@@ -169,7 +168,7 @@ class QdrantManager:
 
     # --- Private methods to assist with funcitonalities ---
 
-    def _process_and_split_documents(self, transcription_path: str) -> List[Document]:
+    def _process_and_split_documents(self, transcription_path: str) -> list[Document]:
         """
         Loads text document from a directory and splits them into chunks.
 
@@ -177,7 +176,7 @@ class QdrantManager:
             directory_path (str): The path to the txt file
 
         Returns:
-            List[Document]: A list of document chunks.
+            list[Document]: A list of document chunks.
         """
         print(f"Loading file: '{transcription_path}'...")
         if not os.path.exists(transcription_path):
@@ -237,7 +236,7 @@ class QdrantManager:
 
     def _get_context(
         self, prompt: str, project_name: str, k: int = 4
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Performs a similarity search for a given project (collection).
         """

@@ -1,6 +1,4 @@
-from typing import Dict, Tuple
-
-def transcription_meta_row_to_dict(row: tuple) -> Dict:
+def transcription_meta_row_to_dict(row: tuple) -> dict:
     # row: (transcription_id, name, processed_at)
     return {
         "transcription_id": row[0],
@@ -8,7 +6,8 @@ def transcription_meta_row_to_dict(row: tuple) -> Dict:
         "processed_at": row[2],
     }
 
-def transcription_full_row_to_dict(project_id: int, row: tuple) -> Dict:
+
+def transcription_full_row_to_dict(project_id: int, row: tuple) -> dict:
     return {
         "project_id": project_id,
         "name": row[1],

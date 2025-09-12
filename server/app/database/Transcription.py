@@ -1,5 +1,4 @@
 import sqlite3
-from typing import List, Tuple, Optional
 
 from app.config import config
 
@@ -37,7 +36,7 @@ class Transcription:
             """
             )
 
-    def insert(self, project_id: int, name: str, transcription: str) -> Optional[int]:
+    def insert(self, project_id: int, name: str, transcription: str) -> int | None:
         """
         Method to insert transcription into the table. Returns the id of the transcription on success, and None on failure.
 
@@ -96,7 +95,7 @@ class Transcription:
 
     def get_transcription_by_id(
         self, transcription_id: int
-    ) -> Tuple[int, str, str, str]:
+    ) -> tuple[int, str, str, str]:
         """
         Method to get transcriptions data by its id.
 
@@ -104,7 +103,7 @@ class Transcription:
             transcription_id (int): The id of the transcription
 
         Returns:
-            Tuple[int, str, str, str]: The transcription id, name, transcription text and process date
+            tuple[int, str, str, str]: The transcription id, name, transcription text and process date
         """
         transcription = None
 
@@ -129,7 +128,7 @@ class Transcription:
 
     def get_all_project_transcriptions(
         self, project_id: int
-    ) -> List[Tuple[int, str, str]]:
+    ) -> list[tuple[int, str, str]]:
         """
         Method to get all transcriptions associated with a project. Crucially, it does not return the transcription text itself.
 
@@ -137,7 +136,7 @@ class Transcription:
             project_id (int): The id of the project
 
         Returns:
-            List[Tuple[int, str, str]]: The transcription id, name and process date for each transcription associated with the project
+            list[tuple[int, str, str]]: The transcription id, name and process date for each transcription associated with the project
         """
         transcriptions = None
 

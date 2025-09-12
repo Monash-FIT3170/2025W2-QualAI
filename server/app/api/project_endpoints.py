@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Request
 from fastapi import HTTPException
 import sqlite3
-from typing import List, Dict
 
-from app.api.converters.project_converters import (
+from app.api.helpers.project_converters import (
     project_row_to_dict,
     project_full_row_to_dict,
 )
@@ -31,7 +30,7 @@ def create_project(request: Request, payload: ProjectRequest):
 
 
 @project_router.get("/projects")
-def list_projects(request: Request) -> List[Dict]:
+def list_projects(request: Request) -> list[dict]:
     """
     List all projects. If DB is empty, create a default 'Project 1' and return it.
     """
@@ -54,7 +53,7 @@ def list_projects(request: Request) -> List[Dict]:
 
 
 @project_router.get("/projects/{project_id}")
-def get_project(request: Request, project_id: int) -> Dict:
+def get_project(request: Request, project_id: int) -> dict:
     """
     Get a single project by id.
     """
