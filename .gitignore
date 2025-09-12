@@ -41,3 +41,9 @@ server/app/qualAI.db
 server/app/*.db
 *.sqlite
 *.db
+
+# audio file stored locally
+*.srt
+*.wav
+*.mp3
+*.m4a
