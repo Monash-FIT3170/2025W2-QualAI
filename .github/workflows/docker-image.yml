@@ -8,7 +8,7 @@ on:
 
 env:
   DOCKER_COMPOSE_VERSION: v2.23.0
-  PYTHON_VERSION: 3.8
+  PYTHON_VERSION: 3.9
 
 jobs:
   build-test:

@@ -271,6 +271,39 @@ class Transcription:
             transcriptions = cur.fetchall()
 
         return transcriptions
+
+    def update(self, transcription_id: int, transcription_text: str) -> bool:
+        """
+        Method to update transcription text by its id.
+
+        Args:
+            transcription_id (int): The id of the transcription to update
+            transcription_text (str): The new transcription text
+
+        Returns:
+            bool: True if update was successful, False otherwise
+
+        Raises:
+            ValueError: If there is no row associated with the transcription id
+        """
+        rows_updated = 0
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+
+            cur.execute(f"""
+                UPDATE {TRANS_TABLE_NAME}
+                SET transcription = ?, processed_at = CURRENT_TIMESTAMP
+                WHERE transcription_id = ?
+            """, (transcription_text, transcription_id))
+
+            rows_updated = cur.rowcount
+
+        if rows_updated < 1:
+            raise ValueError("There is no row associated with this transcription id!")
+
+        return True
     
 if __name__ == "__main__":
     project_manager = Project("qualAI_test.db")

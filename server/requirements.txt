@@ -1,6 +1,21 @@
 fastapi[standard]
 uvicorn[standard]
-sqlalchemy
-pydantic
-qdrant-client
 python-dotenv
+pydantic
+sqlalchemy
+qdrant-client
+langchain
+langchain-core>=0.1.0
+langchain-community>=0.1.0
+langchain-huggingface>=0.1.0
+langchain-text-splitters
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers
+spacy==3.7.2
+pypdf
+python-multipart
+setuptools #Spacy related
+wheel #Spacy related
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0.tar.gz
+openai-whisper

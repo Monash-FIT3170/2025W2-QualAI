@@ -21,3 +21,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# can delete later
+#node_modules
+#.git
+#.DS_Store

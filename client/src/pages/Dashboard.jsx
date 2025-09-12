@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import UploadAudioCard from '../components/UploadAudioCard';
 import AnalysisSteps from '../components/AnalysisSteps';
 import TranscriptionSection from '../components/TranscriptionSection';
@@ -13,6 +13,13 @@ import AIAssistant from '../components/AIAssistant';
  * - Right sidebar for AI assistant chat
  */
 const Dashboard = () => {
+  const [transcriptionData, setTranscriptionData] = useState(null);
+  
+  // Use useCallback to prevent function recreation on every render
+  const handleTranscriptionComplete = useCallback((data) => {
+    setTranscriptionData(data);
+  }, []);
+
   return (
     /* Main container with full height */
     <div className="flex h-full">
@@ -24,7 +31,7 @@ const Dashboard = () => {
         */}
         <div className="flex flex-col gap-4 h-full min-h-0">
           {/* File upload card */}
-          <UploadAudioCard />
+          <UploadAudioCard onTranscriptionComplete={handleTranscriptionComplete}/>
           
           {/* Analysis workflow steps */}
           <AnalysisSteps />
@@ -35,7 +42,10 @@ const Dashboard = () => {
           Primary workspace for transcription editing 
         */}
         <div className="flex flex-col h-full min-h-0">
-          <TranscriptionSection />
+          <TranscriptionSection 
+            transcriptionData={transcriptionData}
+            onTranscriptionUploaded={handleTranscriptionComplete}
+          />
         </div>
         
         {/* 

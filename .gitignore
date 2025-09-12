@@ -1,6 +1,7 @@
 # enviornment variables
 .env
 .venv
+venv
 
 # Logs
 logs
@@ -26,6 +27,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+/server/app/Interview Uploads
 
 # Python cache
 __pycache__
+
+# Qdrant persistence
+server/qdrant_data/
+
+# local DB files
+server/app/qualAI.db
+server/app/*.db
+*.sqlite
+*.db
