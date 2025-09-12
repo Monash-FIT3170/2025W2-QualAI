@@ -28,7 +28,6 @@ This project is managed using a [Notion](https://www.notion.so/Product-Backlog-Q
 ➡️ You can view it here: [QualAI Product Backlog](https://www.notion.so/Product-Backlog-Qual-AI-1c2a077291a4801ab085ffc3b73abb7e)
 
 ---
-
 # QualAI – Docker Setup Guide
 
 This project uses **Docker** to containerize the full QualAI stack, including:
@@ -38,6 +37,27 @@ This project uses **Docker** to containerize the full QualAI stack, including:
 - **React frontend**
 
 ---
+## Required Software and hardware
+
+Docker Desktop (https://docs.docker.com/desktop/)
+
+In terms of hardware requirements, we recommend a device with at least 16GB of RAM to ensure smooth project performance and at least 5GB of available hard drive space for installation of required libraries.
+
+## ✨ Setting up the Project
+
+Firstly clone the project Git repository locally with commandt:
+ `git clone https://github.com/Monash-FIT3170/2025W2-QualAI`
+
+It will have a .env file which contains the following:
+```
+QDRANT_HOST=http://qdrant:6333
+DATABASE_URL=sqlite:///./app/db/qualai.db
+GEMINI_API_KEY=ENTER_YOUR_API_KEY
+```
+The project will not run properly if the .env file doesn’t contain a valid Gemini API Key. A valid key can be obtained [here](https://aistudio.google.com/welcome?utm_source=google&utm_medium=cpc&utm_campaign=FY25-global-DR-gsem-BKWS-1710442&utm_content=text-ad-none-any-DEV_c-CRE_731129942539-ADGP_Hybrid%20%7C%20BKWS%20-%20EXA%20%7C%20Txt-Gemini-Gemini%20API%20Docs-KWID_43700081668090798-kwd-2088805677811&utm_term=KW_gemini%20api%20documentation-ST_gemini%20api%20documentation&gclsrc=aw.ds&gad_source=1&gad_campaignid=22184668741&gbraid=0AAAAACn9t64GgMjJfg3pYLY4LWrE2kzJu&gclid=CjwKCAjwlOrFBhBaEiwAw4bYDe25lOw-Limmf7HGDgV5QAD6OtU9aiMg3VI_kLUCKwA2Q8MIYlKqLRoC8FgQAvD_BwE)
+
+After obtaining a valid Gemini API Key replace the ENTER_YOUR_API_KEY in the `.env` file with the actual key.
+
 
 ## 🚀 Running the Project with Docker
 
@@ -80,3 +100,23 @@ You can access each service in your browser:
 whisper-diarization by MahmoudAshraf97
 - used for diarization
 - Location: 2025W2-QualAI/server/app
+
+## FAQ (common problems)
+<details>
+<summary>Changes I just made have not been updated when I run docker compose</summary>
+   This is usually because docker build hasn’t been run and the new changes are not pushed to docker
+</details>
+<details>
+<summary>Docker is taking a long time to load</summary>
+If in terminal, if it doesn't say application start up complete, then backend is still loading
+The colour of the terminal command will be green if Docker has successfully updated
+</details>
+<details>
+<summary>If the terminal is stuck on `pulling manifest`</summary>
+   This is expected as Ollam takes a while to install. Please wait for the installation to complete.
+</details>
+<details>
+<summary>Offline chatbot is not responding to queries</summary>
+	This is expected, the offline model is much slower so please allow it more time to generate a response
+</details>
+

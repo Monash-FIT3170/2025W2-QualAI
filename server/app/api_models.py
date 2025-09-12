@@ -11,6 +11,9 @@ class Transcription(BaseModel):
     name: str
     text: str
 
+class TranscriptionUpdate(BaseModel):
+    text: str
+
 
 # === Prompt Management ===
 
