@@ -9,8 +9,8 @@ from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
 from app.database import Project, Transcription
 from app.api.project_endpoints import project_router
-from app.api.transcription_endpoints import transcription_router
-from app.api.transcribe_endpoints import transcribe_router
+from app.api.project_transcription_endpoints import transcription_router
+from app.api.media_transcriber_endpoints import transcribe_router
 from app.api.prompt_endpoints import prompt_router
 
 
