@@ -1,15 +1,15 @@
 import os
-import json
 import asyncio
 from datetime import timedelta
 from fastapi import HTTPException
 import whisper
-from .config import config
+
 
 class Transcriber:
     """
     A service class for handling audio transcription using Vosk.
     """
+
     def __init__(self, model_size: str = "base"):
         print(f"Loading Whisper model: {model_size} ...")
         self.model = whisper.load_model(model_size)
@@ -25,8 +25,6 @@ class Transcriber:
             "end": str(timedelta(seconds=end)),
             "text": segment.get("text", "").strip(),
         }
-    
-
 
     async def transcribe(self, recording_path: str, language: str = None) -> dict:
         """
