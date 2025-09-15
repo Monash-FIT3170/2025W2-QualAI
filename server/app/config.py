@@ -13,7 +13,8 @@ class Config(BaseSettings):
     Central location for server settings and data. Also loads values from environment variables.
     """
 
-    BASE_PATH: str = Path(__file__).resolve().parent
+    # base path
+    BASE_PATH: Path = Path(__file__).resolve().parent
 
     # SQL Databse settings
     DB_PATH: str = str((BASE_PATH / "qualAI.db"))
