@@ -13,15 +13,13 @@ async def transcribe_endpoint(
     request: Request,
     file: UploadFile = File(..., description="Upload an audio file for transcription."),
     project_id: int = Form(..., description="Project ID to save transcription to"),
-    project_name: str = Form(..., description="Project name for the transcription"),
 ):
     """
     Transcribe an uploaded audio file using Whisper (CPU, base model).
     Saves the transcription to the specified project.
     """
     # Save the uploaded file
-    base_path = Path(__file__).resolve().parent
-    uploads_path = base_path / "Interview_Uploads"
+    uploads_path = config.BASE_PATH / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
 
@@ -51,9 +49,9 @@ async def transcribe_endpoint(
         )
 
         # Ingest transcription into Vector Database
-        request.app.state.qdrant_manager.clear_collection(config.DEFAULT_PROJECT)
+        request.app.state.qdrant_manager.clear_collection(project_id)
         # for now uses default project, this should change based on project management tools
-        request.app.state.qdrant_manager.ingest_from_text(project_name, text_output)
+        request.app.state.qdrant_manager.ingest_from_text(project_id, text_output)
 
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -76,8 +74,7 @@ async def download_transcription(
     """
     Saves the final transcription text to a file and provides it for download.
     """
-    base_path = Path(__file__).resolve().parent
-    download_path = base_path / "Transcripts"
+    download_path = config.BASE_PATH / "Transcripts"
     download_path.mkdir(exist_ok=True)
 
     file_path = download_path / filename
