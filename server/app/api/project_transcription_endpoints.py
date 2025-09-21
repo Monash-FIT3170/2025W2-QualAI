@@ -125,11 +125,13 @@ def update_transcription(
 
     # Update the transcription in the database
     try:
+        # TODO: allow update transcription name
         request.app.state.transcripts_store.update(transcription_id, payload.text)
         print(f"Updated transcription {transcription_id} in project {project_id}")
 
         # Update the vector database with the new content
         try:
+            # TODO: don't clear collection, only update transcription
             request.app.state.qdrant_manager.clear_collection(proj_id)
             request.app.state.qdrant_manager.ingest_from_text(proj_id, payload.text)
             print(f"Updated vector database for project: {project_name}")
