@@ -207,7 +207,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ text: editedText }),
+                    body: JSON.stringify({ name: selectedTranscriptionId, text: editedText }),
                 }
             );
             

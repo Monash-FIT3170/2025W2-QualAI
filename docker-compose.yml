@@ -25,6 +25,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=http://backend:8000
+      - CHOKIDAR_USEPOLLING=true   # important for file watching inside Docker
     volumes:
       - ./client:/app
       - /app/node_modules

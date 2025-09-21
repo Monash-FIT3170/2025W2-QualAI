@@ -115,7 +115,7 @@ def update_transcription(
             )
         )
 
-        # Verify the transcription belongs to the specified project
+        # Verify the transcription belongs to the spescified project
         if proj_id != project_id:
             raise HTTPException(
                 status_code=404, detail="Transcription not found in this project"
@@ -130,10 +130,8 @@ def update_transcription(
 
         # Update the vector database with the new content
         try:
-            request.app.state.qdrant_manager.clear_collection(project_name)
-            request.app.state.qdrant_manager.ingest_from_text(
-                project_name, payload.text
-            )
+            request.app.state.qdrant_manager.clear_collection(proj_id)
+            request.app.state.qdrant_manager.ingest_from_text(proj_id, payload.text)
             print(f"Updated vector database for project: {project_name}")
         except Exception as vector_error:
             print(
