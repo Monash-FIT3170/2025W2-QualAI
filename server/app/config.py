@@ -32,6 +32,6 @@ class Config(BaseSettings):
     # Transcription settings
     SAMPLE_RATE: int = 16000
     CHUNK_SIZE: int = 4000
-
+    DIAZARIZATION_TIMEOUT_SECOND = 30000
 # Create a single instance of the settings to be imported across the application
 config = Config()

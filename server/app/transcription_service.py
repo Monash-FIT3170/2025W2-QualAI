@@ -1,5 +1,5 @@
 import asyncio
-DIAZARIZATION_TIMEOUT_SECOND = 30000
+from config import config
 async def transcribe_audio_with_diarization(recording_path: str):
     """
     Function to generate transcription from the audio file with whisper-diarization
@@ -28,7 +28,7 @@ async def transcribe_audio_with_diarization(recording_path: str):
         
         # Wait for process to complete with timeout
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=DIAZARIZATION_TIMEOUT_SECOND)
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout= config.DIAZARIZATION_TIMEOUT_SECOND)
         except asyncio.TimeoutError:
             try:
                 process.terminate()
@@ -47,7 +47,7 @@ async def transcribe_audio_with_diarization(recording_path: str):
         return {
             "returncode": -2,
             "stdout": "",
-            "stderr": f"Process timed out after {DIAZARIZATION_TIMEOUT_SECOND} seconds"
+            "stderr": f"Process timed out after { config.DIAZARIZATION_TIMEOUT_SECOND} seconds"
         }
     except Exception as e:
         return e
