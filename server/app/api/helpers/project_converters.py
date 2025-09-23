@@ -1,7 +1,4 @@
-# server/app/helpers/project_converters.py
-from typing import Dict, Tuple
-
-def project_row_to_dict(row_id: int, row: Tuple) -> Dict:
+def project_row_to_dict(row_id: int, row: tuple) -> dict:
     # row: (name, description, created_at)
     return {
         "project_id": row_id,
@@ -10,7 +7,8 @@ def project_row_to_dict(row_id: int, row: Tuple) -> Dict:
         "created_at": row[2],
     }
 
-def project_full_row_to_dict(row: Tuple) -> Dict:
+
+def project_full_row_to_dict(row: tuple) -> dict:
     # row: (project_id, name, description, created_at)
     return {
         "project_id": row[0],
