@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-
+from app.service.transcription_service import transcribe_audio_with_diarization
 from app.config import config
 
 transcribe_router = APIRouter()
@@ -35,27 +35,42 @@ async def transcribe_endpoint(
     text_output = ""
 
     try:
-        transcriber = request.app.state.transcriber
-        result = await transcriber.transcribe(str(file_path), language="en")
-        text_output = result.get("text", "")
+        result = await transcribe_audio_with_diarization(str(file_path))
+        # Define the original transcript path (produced by the function)
+        original_transcript_path = uploads_path / f"{Path(file.filename).stem}.txt"
 
-        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
-            " ", "_"
-        )
+        # Define the renamed transcript filename and path
+        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
+        output_file_path = uploads_path / transcript_filename
 
+        # Rename the file
+        if original_transcript_path.exists():
+            os.rename(original_transcript_path, output_file_path)
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Expected output file not found: {original_transcript_path}"
+            )
+
+        print("Renamed transcript file to:", output_file_path)
+       
+        print("reading output")
+        with open(output_file_path, 'r', encoding='utf-8') as ouput_file:
+            text_output = ouput_file.read()
+            print("read output")
         # Save transcription to the database
         transcription_id = request.app.state.transcripts_store.insert(
             project_id, transcript_filename, text_output
         )
-
+        print("1")
         # Ingest transcription into Vector Database
         request.app.state.qdrant_manager.clear_collection(project_id)
         # for now uses default project, this should change based on project management tools
         request.app.state.qdrant_manager.ingest_from_text(project_id, text_output)
-
+        print("2")
         if os.path.exists(file_path):
             os.remove(file_path)
-
+        print("3")
         return {
             "filename": transcript_filename,
             "transcription": text_output,

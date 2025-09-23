@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 import sqlite3
-
+from contextlib import asynccontextmanager
 from app.config import config
-from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
 from app.database import Project, Transcription
 from app.api.project_endpoints import project_router
