@@ -29,7 +29,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install whisper-diarization requirements separately if needed
-COPY app/service/whisper-diarization/requirements.txt ./whisper-requirements.txt
+COPY app/service/whisper_diarization/requirements.txt ./whisper-requirements.txt
 RUN pip install --no-cache-dir -r whisper-requirements.txt
 
 # Copy application code
