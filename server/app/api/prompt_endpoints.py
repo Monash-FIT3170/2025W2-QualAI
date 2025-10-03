@@ -13,12 +13,12 @@ async def generate_text(request: Request, payload: PromptRequest):
     """
     prompt = payload.prompt.strip()
     mode = payload.mode.lower()
-    project_name = payload.project
+    project_id = payload.project
     template = payload.template.lower()
 
     # Augment the prompt with RAG
     qdrant_manager = request.app.state.qdrant_manager
-    augmented_prompt = qdrant_manager.augment_prompt(prompt, project_name, template)
+    augmented_prompt = qdrant_manager.augment_prompt(prompt, project_id, template)
     print(f"Augmented Prompt: {augmented_prompt}")
 
     if mode == "online":

@@ -4,11 +4,6 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 
 # Install build-essential for compiling some Python packages
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential
-
-RUN apt-get update && apt-get install -y ffmpeg
-
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     libsqlite3-dev \
@@ -21,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     
 # Copy requirements file
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 
 # This command downloads all wheels and source distributions into /app/wheels.
@@ -31,7 +26,7 @@ RUN pip download --dest /app/wheels -r requirements.txt
 
 # This installs the packages from the /app/wheels directory without re-downloading.
 # This step is very fast and makes 'spacy' available for the next command.
-RUN pip install --no-cache-dir --no-index --find-links=/app/wheels -r requirements.txt
+# RUN pip install --no-cache-dir --no-index --find-links=/app/wheels -r requirements.txt
 
 # Now that spacy is installed, download the model
 # RUN python -m spacy download en_core_web_sm
@@ -43,9 +38,6 @@ FROM python:3.11-slim
 
 # Create a non-root user and group for security
 RUN groupadd -r app && useradd -r -g app app
-
-# Set the working directory
-WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
@@ -61,8 +53,6 @@ COPY --from=builder /app/requirements.txt .
 
 # Install the Python dependencies from the local wheels. This is very fast.
 RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
-
-
 
 # Copy the entire 'app' directory
 COPY app ./app
@@ -80,9 +70,7 @@ RUN mkdir -p $HF_HOME && chown -R app:app /home/app
 # Switch to the non-root user
 USER app
 
-
 # Expose the port the app runs on
 EXPOSE 8000
-
 
 CMD ["python", "/app/start.py"]
