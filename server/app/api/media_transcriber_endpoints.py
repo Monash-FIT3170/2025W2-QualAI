@@ -62,15 +62,15 @@ async def transcribe_endpoint(
         transcription_id = request.app.state.transcripts_store.insert(
             project_id, transcript_filename, text_output
         )
-        print("1")
+
         # Ingest transcription into Vector Database
         request.app.state.qdrant_manager.clear_collection(project_id)
         # for now uses default project, this should change based on project management tools
         request.app.state.qdrant_manager.ingest_from_text(project_id, text_output)
-        print("2")
+
         if os.path.exists(file_path):
             os.remove(file_path)
-        print("3")
+      
         return {
             "filename": transcript_filename,
             "transcription": text_output,
