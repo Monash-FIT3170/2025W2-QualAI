@@ -144,8 +144,6 @@ class QdrantManager:
             raise HTTPException(
                 status_code=500, detail=f"Failed to write transcription file: {e}"
             )
-
-        print("3")
         # clears qdrant_manager of past project details (we may want to change this at a later date)
 
         # ingests new transcript data
