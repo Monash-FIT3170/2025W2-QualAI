@@ -29,9 +29,24 @@ class Project:
                     project_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     description TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    chat_history TEXT DEFAULT ''
                 )
-            """
+                """
+            )
+
+            # New normalized table for chat messages per project
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS project_chat_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER NOT NULL,
+                    sender TEXT NOT NULL CHECK (sender IN ('user','ai')),
+                    text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES project(project_id) ON DELETE CASCADE
+                )
+                """
             )
 
     def insert(self, project_name: str, description: str = "") -> int:
@@ -88,7 +103,79 @@ class Project:
             rows_deleted = cur.rowcount
 
         if rows_deleted < 1:
-            raise ValueError("There is no row associated with this project id!")
+            raise ValueError(
+                "There is no row associated with this project id!")
+
+    def add_chat_message(self, project_id: int, sender: str, message_text: str):
+        """
+        Method to add a chat message row for the given project.
+
+        Args:
+            project_id (int): project id for the associated project
+            sender (str): who sent the message, one of 'user' or 'ai'
+            message_text (str): the chat message text
+        """
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+            cur.execute(
+                """
+                INSERT INTO project_chat_messages (project_id, sender, text)
+                VALUES (?, ?, ?)
+                """,
+                (project_id, sender, message_text),
+            )
+
+    def get_chat_messages(self, project_id: int) -> list[tuple[str, str, str]]:
+        """
+        Method to list chat messages for a project, ordered by time.
+
+        Returns:
+            list[tuple[str, str, str]]: (sender, text, created_at)
+        """
+        messages: list[tuple[str, str, str]] = []
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+            cur.execute(
+                """
+                SELECT sender, text, created_at
+                FROM project_chat_messages
+                WHERE project_id = ?
+                ORDER BY created_at ASC, id ASC
+                """,
+                (project_id,),
+            )
+            messages = cur.fetchall()
+
+        return messages
+
+    def get_chat_history(self, project_id: int):
+        """
+        Method to get project chat history
+
+        Args:
+            project_id (int): project id to get history from
+
+        Returns:
+            str: The project's chat history
+        """
+        chat_history = ""
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+            cur.execute(
+                f"""
+                SELECT chat_history FROM {config.DB_PROJECT_TABLE_NAME}
+                WHERE project_id = ?
+            """,
+                (project_id,),
+            )
+            chat_history = cur.fetchone()[0]
+
+        return chat_history
 
     def get_project_by_id(self, project_id: int) -> tuple[str, str, str]:
         """
