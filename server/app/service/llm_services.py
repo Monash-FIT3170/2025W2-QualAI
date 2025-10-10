@@ -1,7 +1,26 @@
 import httpx
+import re
 from fastapi import HTTPException
 
 from app.config import config
+
+
+def clean_response(text: str) -> str:
+    """
+    Clean AI response by removing XML-like tags.
+    Removes tags like </ANSWER>, </think>, etc.
+
+    Args:
+        text: The raw AI response text
+
+    Returns:
+        Cleaned text without XML-like tags
+    """
+    # Remove closing XML-like tags (e.g., </ANSWER>, </think>, etc.)
+    text = re.sub(r'</[A-Z_]+>', '', text, flags=re.IGNORECASE)
+    # Remove opening XML-like tags with attributes (e.g., <ANSWER>, <think>, etc.)
+    text = re.sub(r'<[A-Z_]+[^>]*>', '', text, flags=re.IGNORECASE)
+    return text.strip()
 
 
 async def generate_online(prompt: str) -> dict:
@@ -15,7 +34,8 @@ async def generate_online(prompt: str) -> dict:
         A dictionary containing the model's response.
     """
     if not config.GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured.")
+        raise HTTPException(
+            status_code=500, detail="GEMINI_API_KEY is not configured.")
 
     url = f"{config.GEMINI_API_URL}?key={config.GEMINI_API_KEY}"
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -38,7 +58,7 @@ async def generate_online(prompt: str) -> dict:
                 .get("parts", [{}])[0]
                 .get("text", "")
             )
-            return {"response": reply.strip()}
+            return {"response": clean_response(reply)}
 
     except httpx.HTTPStatusError as e:
         print(f"Gemini API Error: {e.response.text}")
@@ -68,17 +88,17 @@ async def generate_offline(prompt: str) -> dict:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 config.OLLAMA_URL,
-                json={"model": config.OLLAMA_MODEL, "prompt": prompt, "stream": False},
+                json={"model": config.OLLAMA_MODEL,
+                      "prompt": prompt, "stream": False},
                 timeout=config.OLLAMA_TIMEOUT,
             )
             response.raise_for_status()
 
             json_response = response.json()
-            return {
-                "response": json_response.get(
-                    "response", "No 'response' field in Ollama reply"
-                )
-            }
+            raw_response = json_response.get(
+                "response", "No 'response' field in Ollama reply"
+            )
+            return {"response": clean_response(raw_response)}
 
     except httpx.HTTPStatusError as e:
         print(f"OLLAMA Error: {e.response.text}")
