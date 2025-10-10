@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import Dashboard from './pages/Dashboard';
+import Setting from './pages/Setting';
 import { ProjectProvider } from './contexts/ProjectContext';
 
 /**
@@ -20,6 +21,14 @@ function App() {
                 element={
                   <div className="h-full flex flex-col">
                     <Dashboard />
+                  </div>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <div className="h-full flex flex-col">
+                    <Setting />
                   </div>
                 } 
               />
