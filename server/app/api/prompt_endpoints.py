@@ -33,8 +33,8 @@ async def generate_text(request: Request, payload: PromptRequest):
     ai_response = result.get("response", "")
     if ai_response and project_id:
         try:
-            request.app.state.projects_store.add_chat_message(
-                project_id, "ai", ai_response
+            request.app.state.chat_history_store.insert(
+                project_id=project_id, sender="ai", message=ai_response
             )
             print(f"Saved AI response to project {project_id}")
         except Exception as e:
