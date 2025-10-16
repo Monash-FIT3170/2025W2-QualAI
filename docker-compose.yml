@@ -38,6 +38,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=http://backend:8000
+      - CHOKIDAR_USEPOLLING=true # important for file watching inside Docker
     volumes:
       - ./client:/app
       - /app/node_modules
@@ -52,7 +53,6 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-  # REMOVED the healthcheck block from here
   ollama:
     build: ./ollama
     container_name: ollama
@@ -60,10 +60,9 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-      - ./ollama/entrypoint.py:/entrypoint.py  # Mount the new Python script
-      - ollama_setup:/setup                   # This volume remains the same
-    entrypoint: ["python3", "/entrypoint.py"]  # Tell Docker to run the Python script
-            # Set the entrypoint to our script
+      - ./ollama/entrypoint.py:/entrypoint.py # Mount the new Python script
+      - ollama_setup:/setup # This volume remains the same
+    entrypoint: ["python3", "/entrypoint.py"] # Set the entrypoint to our script
 
 volumes:
   qdrant_data:

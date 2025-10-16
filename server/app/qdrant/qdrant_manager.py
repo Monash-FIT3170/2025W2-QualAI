@@ -45,12 +45,15 @@ class QdrantManager:
     # --- Main methods to interact with vector database ---
 
     def augment_prompt(
-        self, prompt: str, project_name: str, analysis_mode: str = "default"
+        self, prompt: str, project_id: int, analysis_mode: str = "default"
     ) -> str:
         """
         Augments a prompt with context from a specific project's collection.
         """
-        context_documents = self._get_context(prompt, project_name)
+        print("gettin context")
+        context_documents = self._get_context(prompt, project_id)
+
+        print(context_documents)
 
         prompt_context = "No context found."
         if len(context_documents):
@@ -74,20 +77,20 @@ class QdrantManager:
 
         return QDrantTemplates.default_template(prompt, prompt_context)
 
-    def ingest_from_directory(self, project_name: str, transcription_path: str):
+    def ingest_from_directory(self, project_id: int, transcription_path: str):
         """
         Main ingestion pipeline for a project.
 
         Args:
-            project_name (str): The name of the project, used as the collection name.
+            project_id (int): The id of the project, used as the collection name.
             transcription_path (str): The directory containing documents to ingest.
         """
         print("splitting chunks")
-        collection_name = project_name
+        collection_name = project_id
         chunks = self._process_and_split_documents(transcription_path)
 
         if not chunks:
-            print(f"No new document chunks to process for project '{project_name}'.")
+            print(f"No new document chunks to process for project '{project_id}'.")
             return
 
         print("creating ids")
@@ -115,13 +118,13 @@ class QdrantManager:
             force_recreate=False,  # Set to False to add to an existing collection
         )
 
-    def ingest_from_text(self, project_name: str, text_output: str):
+    def ingest_from_text(self, project_id: int, text_output: str):
         """
         Process text and ingests it into the Vector Database
 
         Args:
             text_output (str): The text string that has been transcribed by the software
-            project_name (str): The name of the project, used as the collection name.
+            project_id (int): The id of the project, used as the collection name.
         """
 
         """
@@ -141,29 +144,27 @@ class QdrantManager:
             raise HTTPException(
                 status_code=500, detail=f"Failed to write transcription file: {e}"
             )
-
-        print("3")
         # clears qdrant_manager of past project details (we may want to change this at a later date)
 
         # ingests new transcript data
         if os.path.exists(data_path):
-            self.ingest_from_directory(project_name, data_path)
-            print(f"Ingested data for project: {project_name}")
+            self.ingest_from_directory(project_id, data_path)
+            print(f"Ingested data for project: {project_id}")
 
             # deletes temporary text file *this can be replaced with supplementary database management tools*
             os.remove(data_path)
         else:
             print(f"Warning: Data path not found, skipping ingestion: {data_path}")
 
-    def clear_collection(self, project_name: str):
+    def clear_collection(self, project_id: int):
         """
         clears the vector database of the project data
 
         Args:
-            project_name (str): The name of the project, used as the collection name.
+            project_id (int): The id of the project, used as the collection name.
         """
         print("clear vector start")
-        self.client.delete_collection(collection_name=project_name)
+        self.client.delete_collection(collection_name=project_id)
         print("clear vector end")
 
     # --- Private methods to assist with funcitonalities ---
@@ -213,15 +214,15 @@ class QdrantManager:
         print(f"Connecting to Qdrant at '{self.qdrant_url}'...")
         return QdrantClient(url=self.qdrant_url, prefer_grpc=False)
 
-    def _get_collection(self, collection_name: str):
+    def _get_collection(self, collection_name: int):
         """
         Checks if a collection exists, and creates it if it doesn't.
         """
         try:
-            collections_list = self.client.get_collections().collections
-            collection_names = [c.name for c in collections_list]
+            _ = self.client.get_collection(collection_name=collection_name)
 
-            if collection_name not in collection_names:
+        except Exception:
+            try:
                 print(f"Collection '{collection_name}' not found. Creating...")
                 self.client.create_collection(
                     collection_name=collection_name,
@@ -230,18 +231,20 @@ class QdrantManager:
                     ),
                 )
                 print(f"Collection '{collection_name}' created.")
-        except Exception as e:
-            print(f"Error checking/creating collection '{collection_name}': {e}")
-            raise
 
-    def _get_context(
-        self, prompt: str, project_name: str, k: int = 4
-    ) -> list[Document]:
+            except Exception as e:
+                print(f"Error checking/creating collection '{collection_name}': {e}")
+                raise
+
+    def _get_context(self, prompt: str, project_id: int, k: int = 4) -> list[Document]:
         """
         Performs a similarity search for a given project (collection).
         """
-        collection_name = project_name
+        collection_name = project_id
         self._get_collection(collection_name)
+
+        print(self.client)
+        print(collection_name)
 
         vector_store = Qdrant(
             client=self.client,
