@@ -125,17 +125,6 @@ useEffect(() => {
               </button>
             ))}
           </div>
-
-          
-          {/* Open project button */}
-          <button 
-            className="flex items-center px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-            onClick={openProjectFile}
-            aria-label="Open project file"
-          >
-            <i className="bi bi-folder2-open mr-2" aria-hidden="true"/>
-            Open Project
-          </button>
         </div>
 
         {/* Action buttons section */}
