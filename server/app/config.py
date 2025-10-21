@@ -20,6 +20,7 @@ class Config(BaseSettings):
     DB_PATH: str = str((BASE_PATH / "qualAI.db"))
     DB_PROJECT_TABLE_NAME: str = "project"
     DB_TRANS_TABLE_NAME: str = "transcription"
+    DB_HIGHLIGHTER_TABLE_NAME: str = "highlighter"
 
     # Project settings
     DEFAULT_PROJECT: str = "default project"
