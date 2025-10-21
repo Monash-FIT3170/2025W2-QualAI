@@ -1,16 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import ProjectDetail from "../components/ProjectDetail";
 import AIPromptDetail from "../components/AIPromptDetail";
 import HighlightDetail from "../components/HighlightDetail";
 import { useProject } from "../contexts/ProjectContext";
 
-
-
 const Setting = () => {
   const { activeProject, loading } = useProject();
+  const projectDetailRef = useRef(null);
 
   const [additionalInstructions, setAdditionalInstructions] = useState("");
-
   const [highlightColors, setHighlightColors] = useState([ // default highlight colours
     { id: 1, color: "#E895D6", label: "Important", weight: 3 },
   ]);
@@ -39,6 +37,14 @@ const Setting = () => {
     setHighlightColors((prev) => prev.filter((h) => h.id !== id));
   };
 
+  const handleInstructionsChange = useCallback((field, value) => {
+    setAdditionalInstructions(value);
+  }, []);
+
+  const handleSaveAll = async () => {
+    await projectDetailRef.current?.saveProject();
+  };
+
   if (loading) {
     return <div className="p-6">Loading project...</div>;
   }
@@ -46,11 +52,7 @@ const Setting = () => {
   if (!activeProject) {
     return <div className="p-6">No project selected</div>;
   }
-
-  const handleInstructionsChange = useCallback((field, value) => {
-    setAdditionalInstructions(value);
-  }, []);
-
+  
   return (
     <div className="max-w-7xl mx-auto p-6 bg-slate-800 rounded-lg">
       <div className="flex items-start justify-between mb-8">
@@ -62,9 +64,8 @@ const Setting = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
         <div className="md:col-span-2">
-          <ProjectDetail project={activeProject} />
+          <ProjectDetail ref={projectDetailRef} project={activeProject} />
         </div>
-
 
         <div className="md:col-span-3">
           <HighlightDetail
@@ -76,13 +77,16 @@ const Setting = () => {
         </div>
 
         <div className="md:col-span-2">
-          <AIPromptDetail additionalInstructions={additionalInstructions} onInputChange={handleInstructionsChange} />
+          <AIPromptDetail
+            additionalInstructions={additionalInstructions}
+            onInputChange={handleInstructionsChange}
+          />
         </div>
-       
       </div>
+
       <div className="flex justify-center mt-10">
         <button
-          onClick={() => console.log("Saving changes...")} 
+          onClick={handleSaveAll}
           className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
         >
           Save Changes
