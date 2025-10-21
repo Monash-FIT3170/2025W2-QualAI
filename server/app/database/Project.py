@@ -70,6 +70,8 @@ class Project:
 
         Args:
             project_id (int): The id of the project.
+            project_name (str): The name of the project. Must be unique or else it will fail on insert
+            description (str): The description of the project
         """
 
         with sqlite3.connect(self.db_name) as conn:

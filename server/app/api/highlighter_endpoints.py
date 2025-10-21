@@ -32,7 +32,6 @@ def get_highlighters_by_project(request: Request, project_id: int):
     """
     Get all highlighters for a specific project.
     """
-
     try:
         request.app.state.projects_store.get_project_by_id(project_id)
     except LookupError:
@@ -63,7 +62,6 @@ def update_highlighter_label(
     """
     Update an existing highlighter.
     """
-
     try:
         request.app.state.projects_store.get_project_by_id(project_id)
     except LookupError:
