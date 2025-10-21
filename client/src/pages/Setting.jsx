@@ -1,16 +1,13 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import ProjectDetail from "../components/ProjectDetail";
 import AIPromptDetail from "../components/AIPromptDetail";
 import HighlightDetail from "../components/HighlightDetail";
 import { useProject } from "../contexts/ProjectContext";
-import { Link, useNavigate } from 'react-router-dom';
 
 
 
 const Setting = () => {
   const { activeProject, loading } = useProject();
-
-  const navigate = useNavigate();
 
   const [additionalInstructions, setAdditionalInstructions] = useState("");
 
@@ -61,26 +58,6 @@ const Setting = () => {
           <h1 className="text-3xl font-bold text-slate-200 mb-2">Settings</h1>
           <p className="text-slate-500">Configure your project settings</p>
         </div>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center justify-center p-3 rounded-lg text-white transition hover:bg-indigo-700"
-        >
-
-          <svg
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
-            width="25px"
-            height="25px"
-            viewBox="0 0 52 52"
-          >
-            <path d="M30.3,12.6c10.4,0,18.9,8.4,18.9,18.9s-8.5,18.9-18.9,18.9h-8.2c-0.8,0-1.3-0.6-1.3-1.4v-3.2
-              c0-0.8,0.6-1.5,1.4-1.5h8.1c7.1,0,12.8-5.7,12.8-12.8s-5.7-12.8-12.8-12.8H16.4c0,0-0.8,0-1.1,0.1c-0.8,0.4-0.6,1,0.1,1.7l4.9,4.9
-              c0.6,0.6,0.5,1.5-0.1,2.1L18,29.7c-0.6,0.6-1.3,0.6-1.9,0.1l-13-13c-0.5-0.5-0.5-1.3,0-1.8L16,2.1c0.6-0.6,1.6-0.6,2.1,0l2.1,2.1
-              c0.6,0.6,0.6,1.6,0,2.1l-4.9,4.9c-0.6,0.6-0.6,1.3,0.4,1.3c0.3,0,0.7,0,0.7,0L30.3,12.6z"/>
-          </svg>
-
-        </button>
-
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
