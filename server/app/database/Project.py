@@ -62,6 +62,32 @@ class Project:
 
         return project_id
 
+    def update(
+        self, project_id: int, project_name: str, project_description: str
+    ) -> int:
+        """
+        Method to update existing propject in the table.
+
+        Args:
+            project_id (int): The id of the project.
+        """
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+
+            cur.execute(
+                f"""
+                UPDATE {config.DB_PROJECT_TABLE_NAME}
+                SET name = ?, description = ?
+                WHERE project_id = ?
+            """,
+                (project_name, project_description, project_id),
+            )
+
+            if cur.rowcount < 1:
+                raise ValueError("There is no row associated with this project id!")
+
     def delete(self, project_id: int):
         """
         Method to delete project from table. Will also delete all associated transcriptions
