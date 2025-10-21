@@ -31,8 +31,9 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
         // Create FormData object (as the endpoint expects form data)
         const formData = new FormData();
         formData.append('file', selectedFile);
-        formData.append('project_id', activeProjectId.toString());
+        formData.append('project_id', activeProjectId);
         formData.append('project_name', activeProject.name);
+        console.log(formData);
 
         // POST request to FastAPI endpoint
         const response = await fetch(API_ENDPOINTS.TRANSCRIBE, {

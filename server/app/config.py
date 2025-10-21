@@ -23,7 +23,17 @@ class Config(BaseSettings):
     DB_HIGHLIGHTER_TABLE_NAME: str = "highlighter"
 
     # Project settings
-    DEFAULT_PROJECT: str = "project_1"
+    DEFAULT_PROJECT: str = "default project"
+    DEFAULT_TRANSCRIPTION_NAME: str = "FIT3170 Software Engineering Practice"
+
+    DEFAULT_TRANSCRIPTION_PATH: str = os.path.abspath(
+        os.path.join(
+            BASE_PATH,
+            "projects",
+            "project_1",
+            "data.txt",
+        )
+    )
 
     # CORS settings
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
