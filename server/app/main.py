@@ -7,11 +7,12 @@ import sqlite3
 from app.config import config
 from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
-from app.database import Project, Transcription
+from app.database import Project, Transcription, Highlight
 from app.api.project_endpoints import project_router
 from app.api.project_transcription_endpoints import transcription_router
 from app.api.media_transcriber_endpoints import transcribe_router
 from app.api.prompt_endpoints import prompt_router
+from app.api.highlight_endpoints import highlight_router
 
 
 # --- Application Setup ---
@@ -88,6 +89,7 @@ app.include_router(project_router)
 app.include_router(transcription_router)
 app.include_router(transcribe_router)
 app.include_router(prompt_router)
+app.include_router(highlight_router)
 
 
 # --- Back-end Status ---
