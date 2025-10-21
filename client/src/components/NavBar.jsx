@@ -110,20 +110,32 @@ useEffect(() => {
               <span className="px-3 py-2 text-sm text-slate-300">No projects yet</span>
             )}
             {projects.map((p) => (
-              <button
-                key={p.project_id}
-                onClick={() => setActiveProjectId(p.project_id)}
-                className={
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors " +
-                  (activeProjectId === p.project_id
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                    : "bg-slate-600 text-white/80 hover:bg-slate-500")
-                }
-                title={p.description || ""}
-              >
-                {p.name}
-              </button>
+              <div key={p.project_id} className="relative group">
+                <button
+                  onClick={() => setActiveProjectId(p.project_id)}
+                  className={
+                    "px-4 py-2 rounded-md text-sm font-medium transition-colors " +
+                    (activeProjectId === p.project_id
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-slate-600 text-white/80 hover:bg-slate-500")
+                  }
+                >
+                  {p.name}
+                </button>
+
+                {/* Tooltip */} 
+                {p.description && (
+                  <div
+                    className="absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 
+                              transition-all duration-300 bg-slate-900 text-slate-100 text-xs 
+                              rounded-md px-3 py-2 left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs"
+                  >
+                    {p.description}
+                  </div>
+                )}
+              </div>
             ))}
+
           </div>
         </div>
 
