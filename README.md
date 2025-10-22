@@ -96,6 +96,11 @@ You can access each service in your browser:
 - Backend (FastAPI): http://localhost:8000
 - Frontend (React): http://localhost:5173
 
+## citation (External application used)
+whisper-diarization by MahmoudAshraf97
+Github link: https://github.com/MahmoudAshraf97/whisper-diarization 
+- used for diarization
+- Location: 2025W2-QualAI/server/app
 
 ## FAQ (common problems)
 <details>

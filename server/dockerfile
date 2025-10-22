@@ -7,10 +7,27 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     libsqlite3-dev \
-    libasound-dev\
-    ffmpeg\
+    libasound-dev \
+    ffmpeg \
     curl \
     git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create upload directory with proper quoting for spaces
+RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
+
+
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy requirements and install main dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt --extra-index-url https://pypi.org/simple
+
+COPY app/whisper-diarization/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+# Copy the entire application code
+COPY . .
     wget \
     && rm -rf /var/lib/apt/lists/*
     
@@ -28,8 +45,7 @@ RUN pip download --dest /app/wheels -r requirements.txt
 # This step is very fast and makes 'spacy' available for the next command.
 # RUN pip install --no-cache-dir --no-index --find-links=/app/wheels -r requirements.txt
 
-# Now that spacy is installed, download the model
-# RUN python -m spacy download en_core_web_sm
+
 
 
 # --- Stage 2: Final Production Image ---

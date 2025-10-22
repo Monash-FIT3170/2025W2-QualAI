@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-
+from app.service.transcription_service import transcribe_audio_with_diarization
 from app.config import config
 
 transcribe_router = APIRouter()
@@ -13,6 +13,8 @@ async def transcribe_endpoint(
     request: Request,
     file: UploadFile = File(..., description="Upload an audio file for transcription."),
     project_id: int = Form(..., description="Project ID to save transcription to"),
+    project_name: str = Form(..., description="Project name to save transcription to"),
+    diarization: bool = Form(..., description="boolean to indicate if enable diarization")
 ):
     """
     Transcribe an uploaded audio file using Whisper (CPU, base model).
@@ -22,7 +24,8 @@ async def transcribe_endpoint(
     uploads_path = config.BASE_PATH / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
-
+    print("diarization here")
+    print(diarization)
     try:
         with open(file_path, "wb") as f:
             f.write(await file.read())
@@ -35,14 +38,29 @@ async def transcribe_endpoint(
     text_output = ""
 
     try:
-        transcriber = request.app.state.transcriber
-        result = await transcriber.transcribe(str(file_path), language="en")
-        text_output = result.get("text", "")
+        result = await transcribe_audio_with_diarization(str(file_path),diarization)
+        # Define the original transcript path (produced by the function)
+        original_transcript_path = uploads_path / f"{Path(file.filename).stem}.txt"
 
-        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
-            " ", "_"
-        )
+        # Define the renamed transcript filename and path
+        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(" ", "_")
+        output_file_path = uploads_path / transcript_filename
 
+        # Rename the file
+        if original_transcript_path.exists():
+            os.rename(original_transcript_path, output_file_path)
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Expected output file not found: {original_transcript_path}"
+            )
+
+        print("Renamed transcript file to:", output_file_path)
+       
+        print("reading output")
+        with open(output_file_path, 'r', encoding='utf-8') as ouput_file:
+            text_output = ouput_file.read()
+            print("read output")
         # Save transcription to the database
         transcription_id = request.app.state.transcripts_store.insert(
             project_id, transcript_filename, text_output
@@ -55,7 +73,7 @@ async def transcribe_endpoint(
 
         if os.path.exists(file_path):
             os.remove(file_path)
-
+      
         return {
             "filename": transcript_filename,
             "transcription": text_output,

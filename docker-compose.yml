@@ -8,14 +8,27 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    volumes:
-      - ./server:/app
-      - ./papers:/papers
-    # UPDATED: Simplified depends_on
     depends_on:
       - qdrant
       - ollama
+    environment:
+      # Hugging Face / Transformers
+      HF_HOME: /tmp/huggingface
+      TRANSFORMERS_CACHE: /tmp/huggingface
+      TORCH_HOME: /tmp/torch
 
+      # Matplotlib
+      MPLCONFIGDIR: /tmp/matplotlib
+
+      # NeMo + Lhotse
+      NEMO_HOME: /tmp/nemo
+      LHOTSE_CACHE_DIR: /tmp/lhotse
+      LHOTSE_TOOLS_CACHE: /tmp/lhotse/tools 
+    volumes:
+      - ./server:/app # Optional: dev hot reload
+      - ./server/cache:/home/app
+      - ./papers:/papers
+      
   client:
     build:
       context: ./client
@@ -40,7 +53,6 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-
   ollama:
     build: ./ollama
     container_name: ollama

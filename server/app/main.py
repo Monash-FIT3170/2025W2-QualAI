@@ -1,18 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
+import httpx
 import os
 import sqlite3
-
+from contextlib import asynccontextmanager
 from app.config import config
-from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
 from app.database import Project, Transcription
 from app.api.project_endpoints import project_router
 from app.api.project_transcription_endpoints import transcription_router
 from app.api.media_transcriber_endpoints import transcribe_router
 from app.api.prompt_endpoints import prompt_router
-
 
 # --- Application Setup ---
 
@@ -31,7 +29,6 @@ async def lifespan(app: FastAPI):
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
-    app.state.transcriber = Transcriber(model_size="base")
 
     # --- this is just for placeholder data to be filled into vector db ---
     project_id = None
@@ -43,7 +40,6 @@ async def lifespan(app: FastAPI):
         print(
             f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
         )
-        return
 
     data_path = config.DEFAULT_TRANSCRIPTION_PATH
     if os.path.exists(data_path) and project_id is not None:
@@ -68,8 +64,6 @@ async def lifespan(app: FastAPI):
         print(f"Warning: Data path not found, skipping ingestion: {data_path}")
     # ------
 
-    # Initialize the transcriber model
-    app.state.transcriber = Transcriber(model_size="base")
     print("Startup complete.")
     boot_state["status"] = "online"
     yield
@@ -77,7 +71,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="QualAI API", lifespan=lifespan)
-
 
 # --- Middleware ---
 app.add_middleware(

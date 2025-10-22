@@ -3,7 +3,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies once
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libsqlite3-dev \
@@ -12,14 +12,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     wget \
+    ca-certificates \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pip + requirements
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+# Upgrade pip first
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install fastapi --no-cache-dir 
+# Create upload directory
+RUN mkdir -p "/app/Interview Uploads" && chmod 777 "/app/Interview Uploads"
 
-# Default: mount code with volumes (no COPY here!)
+# Copy requirements file
+COPY requirements.txt .
+
+# Install packages with proper index URLs as pip flags
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install whisper-diarization requirements separately if needed
+COPY app/service/whisper_diarization/requirements.txt ./whisper-requirements.txt
+RUN pip install --no-cache-dir -r whisper-requirements.txt
+
+# Copy application code
+COPY app/ .
+
+# Create non-root user
+RUN useradd -m app && chown -R app:app /app
+USER app
+
 EXPOSE 8000
 
 CMD ["python", "start.py"]
