@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from app.api.models import HighlighterRequest
 
-
 highlighter_router = APIRouter(prefix="/projects/{project_id}/highlighters")
 
 
@@ -17,14 +16,19 @@ def create_highlighter(request: Request, data: HighlighterRequest, project_id: i
 
     try:
         highlighter_id = request.app.state.highlighter_store.insert(
-            data.project_id, data.label, data.colour, data.weight
+            project_id,
+            data.label,
+            data.colour,
+            str(data.weight),  # stored as text
         )
+
         return {
             "highlighter_id": highlighter_id,
             "message": "Highlighter created successfully.",
         }
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Failed to create highlighter: {e}")
 
 
 @highlighter_router.get("/")
@@ -38,9 +42,7 @@ def get_highlighters_by_project(request: Request, project_id: int):
         raise HTTPException(status_code=404, detail="Project not found")
 
     try:
-        rows = request.app.state.highlighter_store.get_highlighters_by_project(
-            project_id
-        )
+        rows = request.app.state.highlighter_store.get_highlighters_by_project(project_id)
         return [
             {
                 "highlighter_id": r[0],
@@ -48,15 +50,16 @@ def get_highlighters_by_project(request: Request, project_id: int):
                 "colour": r[2],
                 "weight": r[3],
                 "created_at": r[4],
+                "updated_at": r[5],
             }
             for r in rows
         ]
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Failed to fetch highlighters: {e}")
 
 
 @highlighter_router.put("/{highlighter_id}")
-def update_highlighter_label(
+def update_highlighter(
     request: Request, data: HighlighterRequest, project_id: int, highlighter_id: int
 ):
     """
@@ -68,14 +71,18 @@ def update_highlighter_label(
         raise HTTPException(status_code=404, detail="Project not found")
 
     try:
-        request.app.state.highlighter_store.update_colour(
-            highlighter_id, data.project_id, data.label, data.colour, data.weight
+        request.app.state.highlighter_store.update(
+            highlighter_id,
+            label=data.label,
+            colour=data.colour,
+            weight=str(data.weight),
         )
-        return {"message": "Highlighter colour updated successfully."}
+        return {"message": "Highlighter updated successfully."}
+
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Failed to update highlighter: {e}")
 
 
 @highlighter_router.delete("/{highlighter_id}")
@@ -94,4 +101,4 @@ def delete_highlighter(request: Request, project_id: int, highlighter_id: int):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Failed to delete highlighter: {e}")

@@ -4,17 +4,18 @@ import { API_ENDPOINTS } from '../config/api';
 const ProjectContext = createContext();
 
 export const useProject = () => {
-    const context = useContext(ProjectContext);
-    if (!context) {
-      throw new Error('useProject must be used within a ProjectProvider');
-    }
-    return context;
-  };
-
+  const context = useContext(ProjectContext);
+  if (!context) {
+    throw new Error('useProject must be used within a ProjectProvider');
+  }
+  return context;
+};
 
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
-  const [activeProjectId, setActiveProjectId] = useState(null);
+  const [activeProjectId, setActiveProjectId] = useState(
+    () => Number(localStorage.getItem('activeProjectId')) || null 
+  );
   const [loading, setLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
@@ -22,8 +23,11 @@ export const ProjectProvider = ({ children }) => {
       const res = await fetch(API_ENDPOINTS.PROJECT);
       const data = await res.json();
       setProjects(data);
-      if (!activeProjectId && data.length) {
-        setActiveProjectId(data[0].project_id);
+
+      if (!activeProjectId && data.length > 0) {
+        const savedId = Number(localStorage.getItem('activeProjectId'));
+        const savedProject = data.find(p => p.project_id === savedId);
+        setActiveProjectId(savedProject ? savedProject.project_id : data[0].project_id);
       }
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -31,6 +35,16 @@ export const ProjectProvider = ({ children }) => {
       setLoading(false);
     }
   }, [activeProjectId]);
+
+  useEffect(() => {
+    if (activeProjectId !== null) {
+      localStorage.setItem('activeProjectId', activeProjectId);
+    }
+  }, [activeProjectId]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const createProject = async (projectData) => {
     try {
@@ -41,7 +55,7 @@ export const ProjectProvider = ({ children }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        await loadProjects(); // Refresh the list
+        await loadProjects(); // refresh list
         return data;
       }
       throw new Error(data.error || 'Failed to create project');
@@ -51,10 +65,6 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
-
   const value = {
     projects,
     activeProjectId,
@@ -62,7 +72,7 @@ export const ProjectProvider = ({ children }) => {
     loadProjects,
     createProject,
     loading,
-    activeProject: projects.find(p => p.project_id === activeProjectId)
+    activeProject: projects.find(p => p.project_id === activeProjectId) || null,
   };
 
   return (
