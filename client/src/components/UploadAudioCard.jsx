@@ -7,7 +7,7 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const { activeProjectId, activeProject } = useProject();
-  const [diarization, setDiarization] = useState('off');
+
   /**
    * Handles file selection
    * @param {React.ChangeEvent<HTMLInputElement>} e - File input change event
@@ -33,7 +33,6 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
         formData.append('file', selectedFile);
         formData.append('project_id', activeProjectId);
         formData.append('project_name', activeProject.name);
-        formData.append('diarization',diarization==='on'? true:false);
         console.log(formData);
 
         // POST request to FastAPI endpoint
@@ -78,23 +77,7 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
             Project: {activeProject.name}
           </p>
         )}
-        {/* diarization selector */}
-        <div className="flex items-center gap-3 text-sm text-white mb-2">
-              <span className="text-slate-300">Diarization {diarization}</span>
-              <button
-                onClick={() => setDiarization(diarization === "off" ? "on" : "off")}
-                className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
-                  diarization === "on" ? "bg-green-500" : "bg-slate-600"
-                }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                    diarization === "on" ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-          </div>
-        
+
         {/* Upload button with conditional spinner and text */}
         <label
           className={`bg-indigo-600 text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer transition-colors ${

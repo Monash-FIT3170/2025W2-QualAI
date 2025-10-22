@@ -6,7 +6,7 @@ from app.config import config
 from app.service.whisper_diarization.diarize import transcribe_and_diarize
 
 
-async def transcribe_audio_with_diarization(recording_path: str,diarization: bool):
+async def transcribe_audio_with_diarization(recording_path: str):
     if not os.path.exists(recording_path):
         return {
             "returncode": -3,
@@ -14,14 +14,14 @@ async def transcribe_audio_with_diarization(recording_path: str,diarization: boo
             "stderr": f"Audio file not found at {recording_path}"
         }
 
-    print("Initializing ...")
+    print("Initializing diarization...")
     print(f"Recording path: {recording_path}")
 
     timeout = config.DIAZARIZATION_TIMEOUT_SECOND
 
     try:
         result = await asyncio.wait_for(
-            asyncio.to_thread(transcribe_and_diarize,recording_path,diarization),
+            asyncio.to_thread(transcribe_and_diarize,recording_path),
             timeout=timeout
         )
 

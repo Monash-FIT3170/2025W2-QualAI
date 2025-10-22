@@ -34,7 +34,6 @@ mtypes = {"cpu": "int8", "cuda": "float16"}
 
 def transcribe_and_diarize(
     audio_path: str,
-    diarizaion_mode: bool,
     stemming: bool = True,
     suppress_numerals: bool = False,
     model_name: str = "base.en",
@@ -102,19 +101,6 @@ def transcribe_and_diarize(
     del whisper_model, whisper_pipeline
     torch.cuda.empty_cache()
 
-    #added early exit to only generate transcription 
-    if not diarizaion_mode:
-        txt_output_path = f"{os.path.splitext(audio_path)[0]}.txt"
-
-        with open(txt_output_path, "w", encoding="utf-8-sig") as f:
-            f.write(full_transcript.strip())
-
-        return {
-            "transcript_path": txt_output_path,
-            "language": info.language,
-            "segments": transcript_segments,
-        }
-        
     alignment_model, alignment_tokenizer = load_alignment_model(
         device,
         dtype=torch.float16 if device == "cuda" else torch.float32,
