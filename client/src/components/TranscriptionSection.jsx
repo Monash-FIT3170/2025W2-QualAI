@@ -256,6 +256,10 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                 setIsEditing(false);
                 setEditedText("");
                 console.log('Transcription saved successfully');
+                
+                // Clean up highlights that no longer fit the updated text
+                await adjustHighlightsAfterEdit(selectedTranscriptionId, selectedTranscriptionText, editedText);
+
             } else {
                 const errorData = await response.json();
                 console.error('Failed to save transcription:', errorData);
@@ -614,6 +618,35 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
         return parts.map((p, idx) => renderPiece(p, `p-${idx}`));
     };
+
+    // Adjust highlights after text edit (no external library)
+    // Safely adjust highlights after edit: preserve those whose range text didn't change
+    const adjustHighlightsAfterEdit = async (transcriptionId, oldText, newText) => {
+        const updated = [];
+
+        for (const h of highlights) {
+            const oldSegment = oldText.slice(h.startOffset, h.endOffset);
+            const newSegment = newText.slice(h.startOffset, h.endOffset);
+
+            // If the text under highlight is identical, keep it
+            if (oldSegment === newSegment && h.endOffset <= newText.length) {
+            updated.push(h);
+            continue;
+            }
+
+            // Otherwise, remove the highlight (text was changed or deleted)
+            try {
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            } catch (e) {
+            console.error("Failed to delete outdated highlight:", e);
+            }
+        }
+
+        setHighlights(updated);
+    };
+
+
+
 
     return (
         /* Main container with card styling and flex layout */
