@@ -4,7 +4,6 @@ import NavBar from './components/NavBar';
 import SettingsNavbar from './components/SettingsNavbar';
 import Dashboard from './pages/Dashboard';
 import Setting from './pages/Setting';
-import Setting from './pages/Setting';
 import { ProjectProvider } from './contexts/ProjectContext';
 
 function AppContent() {
