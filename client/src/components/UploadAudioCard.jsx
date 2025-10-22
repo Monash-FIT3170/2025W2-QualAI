@@ -91,7 +91,7 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
             type="file"
             id="audio-upload-input"
             className="hidden"
-            accept=".mp3,.m4a,.wav,.mp4,audio/*,video/*"
+            accept=".mp3,.m4a,.wav,.mp4,audio/*,video/*,.txt"
             onChange={handleFileChange}
             disabled={isUploading || !activeProjectId} // Disables file selection during upload or when no project selected
           />

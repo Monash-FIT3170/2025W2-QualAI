@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
         print(
             f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
         )
-        return
+        
 
     data_path = config.DEFAULT_TRANSCRIPTION_PATH
     if os.path.exists(data_path) and project_id is not None:
