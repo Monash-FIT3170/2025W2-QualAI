@@ -82,11 +82,11 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                 // fallback block if no highlighters exist
                 if (data.length === 0) {
                 setProjectHighlighters([
-                    { highlighter_id: "default-yellow", label: "Highlight", colour: "yellow", weight: 1 },
-                    { highlighter_id: "default-blue", label: "Note", colour: "lightblue", weight: 1 },
-                    { highlighter_id: "default-green", label: "Context", colour: "lightgreen", weight: 1 },
-                    { highlighter_id: "default-pink", label: "Context", colour: "pink", weight: 1 },
-                    { highlighter_id: "default-orange", label: "Context", colour: "orange", weight: 1 }
+                    { highlighter_id: "default-yellow", label: "Highlight", colour: "yellow", weight: 3 },
+                    { highlighter_id: "default-blue", label: "Note", colour: "lightblue", weight: 3 },
+                    { highlighter_id: "default-green", label: "Context", colour: "lightgreen", weight: 3},
+                    { highlighter_id: "default-pink", label: "Context", colour: "pink", weight: 3 },
+                    { highlighter_id: "default-orange", label: "Context", colour: "orange", weight: 3 }
                 ]);
                 } else {
                 setProjectHighlighters(data);
