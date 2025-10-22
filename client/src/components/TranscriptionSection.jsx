@@ -685,14 +685,14 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
       {showPopup && (
         <div
-          className="absolute bg-slate-700 text-white text-xs px-2 py-1 rounded shadow-md border border-slate-600 flex gap-2"
+          className="absolute bg-indigo-600 text-white text-xs px-2 py-[2px] rounded shadow-md border border-indigo-600 flex gap-2"
           style={{ position: "absolute", top: `${buttonPosition.y}px`, left: `${buttonPosition.x}px`, zIndex: 50 }}
         >
-          <button className="px-2 py-0.5 rounded hover:bg-slate-600" onClick={handleSummarise} aria-label="Summarise selection">Summarise</button>
-          <span className="text-slate-500">•</span>
-          <button className="px-2 py-0.5 rounded hover:bg-slate-600" onClick={handleExplain} aria-label="Explain selection">Explain</button>
-          <span className="text-slate-500">•</span>
-          <button className="px-2 py-0.5 rounded hover:bg-slate-600" onClick={handleRewrite} aria-label="Rewrite selection">Rewrite</button>
+          <button className="px-2 py-[3px] text-xs leading-none flex items-center justify-center rounded hover:bg-indigo-700" onClick={handleSummarise} aria-label="Summarise selection">Summarise</button>
+          <span className="text-white">•</span>
+          <button className="px-2 py-[3px] text-xs leading-none flex items-center justify-center rounded hover:bg-indigo-700" onClick={handleExplain} aria-label="Explain selection">Explain</button>
+          <span className="text-white">•</span>
+          <button className="px-2 py-[3px] text-xs leading-none flex items-center justify-center rounded hover:bg-indigo-700" onClick={handleRewrite} aria-label="Rewrite selection">Rewrite</button>
         </div>
       )}
     </div>
