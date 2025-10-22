@@ -136,7 +136,16 @@ const HighlightDetail = forwardRef(({ projectId }, ref) => {
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div
+        style={{
+          maxHeight: '20rem',
+          overflowY: 'auto',
+          paddingRight: '0.5rem',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(148,163,184,0.6) transparent',
+        }}
+        className="space-y-3"
+      >
         {highlightColors.map((highlight) => (
           <HighlightItem
             key={highlight.id || highlight.label}
