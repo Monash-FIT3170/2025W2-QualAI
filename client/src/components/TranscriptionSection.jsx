@@ -287,24 +287,90 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         const overlaps = highlights.filter(
             (h) => h.startOffset < end && h.endOffset > start
         );
-
         if (overlaps.length === 0) return;
 
-        // Optimistically remove from local state first (so UI doesn't re-render duplicates)
-        setHighlights((prev) =>
-            prev.filter((h) => !overlaps.some((o) => o.highlight_id === h.highlight_id))
-        );
+        const fragmentsToKeep = [];
 
         for (const h of overlaps) {
-            try {
-            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, {
-                method: 'DELETE',
-            });
-            } catch (e) {
-            console.error('Failed to delete overlapping highlight:', e);
+            // Full overlap – delete completely
+            if (start <= h.startOffset && end >= h.endOffset) {
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            continue;
             }
+
+            // New highlight fully inside old one → split into left + right
+            if (start > h.startOffset && end < h.endOffset) {
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: h.startOffset,
+                end: start,
+                color: h.color,
+            });
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: end,
+                end: h.endOffset,
+                color: h.color,
+            });
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            continue;
+            }
+
+            // Overlap only on left edge (new starts before, ends inside old)
+            if (start < h.startOffset && end > h.startOffset && end < h.endOffset) {
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: end,
+                end: h.endOffset,
+                color: h.color,
+            });
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            continue;
+            }
+
+            // Overlap only on right edge (new starts inside old and ends after)
+            if (start > h.startOffset && start < h.endOffset && end >= h.endOffset) {
+                // keep only the left part before the new selection
+                fragmentsToKeep.push({
+                    transcriptionId,
+                    start: h.startOffset,
+                    end: start,
+                    color: h.color,
+                });
+                await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+                continue;
+                }
+
+                // 🆕 New highlight ends exactly where the old one ends (like "World" case)
+                if (start > h.startOffset && end === h.endOffset) {
+                fragmentsToKeep.push({
+                    transcriptionId,
+                    start: h.startOffset,
+                    end: start,
+                    color: h.color,
+                });
+                await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+                continue;
+                }
         }
-    };
+
+        // Update state + persist new fragments
+        setHighlights((prev) =>
+            prev.filter((h) => !overlaps.some((o) => o.highlight_id === h.highlight_id))
+            .concat(fragmentsToKeep)
+        );
+
+        for (const frag of fragmentsToKeep) {
+            const url = new URL(`${API_ENDPOINTS.HIGHLIGHTS}/`);
+            url.searchParams.set("transcription_id", frag.transcriptionId);
+            url.searchParams.set("start", frag.start);
+            url.searchParams.set("end", frag.end);
+            url.searchParams.set("color", frag.color);
+            await fetch(url.toString(), { method: "POST" });
+        }
+        };
+
+
 
 
     const addHighlight = async ({ transcriptionId, start, end, color }) => {
@@ -341,7 +407,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         if (!selectedTranscriptionId || !textContainerRef.current) return;
 
         const offsets = getSelectionOffsets(textContainerRef.current);
-        if (!offsets || !offsets.text.trim()) return;
+        if (!offsets || offsets.text.length === 0) return;
 
         const transcriptionId = parseInt(selectedTranscriptionId, 10);
 
@@ -436,20 +502,58 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         (shouldShowUploadedTranscription ? transcriptionDataObject.transcription : "") || 
         "Transcribed interview text will go here.";
 
+    const mergeAndDeduplicateHighlights = (ranges) => {
+        if (!Array.isArray(ranges)) return [];
+        if (ranges.length <= 1) return ranges;
+
+        // Sort by start offset
+        const sorted = [...ranges].sort((a, b) => a.startOffset - b.startOffset);
+
+        const merged = [];
+        for (const current of sorted) {
+            const last = merged[merged.length - 1];
+
+            // if overlapping or identical range, replace with the most recent color (current)
+            if (last && current.startOffset < last.endOffset) {
+            merged[merged.length - 1] = {
+                ...last,
+                endOffset: Math.max(last.endOffset, current.endOffset),
+                color: current.color, // keep newest color
+            };
+            } else {
+            merged.push(current);
+            }
+        }
+
+        // Deduplicate exact duplicates (same start, end)
+        const unique = [];
+        const seen = new Set();
+        for (const h of merged) {
+            const key = `${h.startOffset}-${h.endOffset}`;
+            if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(h);
+            }
+        }
+
+        return unique;
+    };
+
     const renderWithHighlights = (text, ranges) => {
         if (!text) return null;
-        if (!Array.isArray(ranges) || ranges.length === 0) {
-        // Render plain text preserving newlines
-        return text.split('\n').map((line, i) => (
+        const mergedRanges = mergeAndDeduplicateHighlights(ranges);
+        if (mergedRanges.length === 0) {
+            // Render plain text preserving newlines
+            return text.split('\n').map((line, i) => (
             <React.Fragment key={`line-${i}`}>
-            {line}
-            {i < text.split('\n').length - 1 ? <br /> : null}
+                {line}
+                {i < text.split('\n').length - 1 ? <br /> : null}
             </React.Fragment>
-        ));
+            ));
         }
 
         // Sort highlights by start; do not mutate original
-        const sorted = [...ranges].sort((a, b) => a.startOffset - b.startOffset);
+        const sorted = [...mergedRanges].sort((a, b) => a.startOffset - b.startOffset);
 
         const parts = [];
         let cursor = 0;

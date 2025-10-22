@@ -24,3 +24,11 @@ def get_highlights(transcription_id: int):
     if not highlights:
         raise HTTPException(status_code=404, detail="No highlights found")
     return highlights
+
+# delete highlight
+@highlight_router.delete("/{highlight_id}")
+def delete_highlight(highlight_id: int):
+    success = highlight_db.delete(highlight_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Highlight not found")
+    return {"message": f"Highlight {highlight_id} deleted successfully"}

@@ -71,13 +71,16 @@ class Highlight:
                 for r in rows
             ]
 
-    def delete(self, highlight_id: int) -> None:
+    def delete(self, highlight_id: int) -> bool:
         with sqlite3.connect(self.db_name) as conn:
             cur = conn.cursor()
             cur.execute(
                 f"DELETE FROM {config.DB_HIGHLIGHT_TABLE_NAME} WHERE highlight_id = ?",
                 (highlight_id,),
             )
+            conn.commit()
+            deleted = cur.rowcount > 0  # True if something was deleted
+        return deleted
 
     def delete_all_for_transcription(self, transcription_id: int) -> None:
         with sqlite3.connect(self.db_name) as conn:
