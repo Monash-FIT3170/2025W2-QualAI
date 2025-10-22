@@ -3,6 +3,7 @@
  * Displays interview transcriptions with editing, download,
  * and ChatPDF-style highlights (offset-based & persisted).
  */
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from "../contexts/ProjectContext";
@@ -18,13 +19,16 @@ const safeParseJSON = (json) => {
   }
 };
 
-/* ---------- Highlight helpers (offset-based, robust) ---------- */
+/* ---------- Highlight helpers ---------- */
 const toPlainText = (htmlOrText) => {
   const temp = document.createElement("div");
   temp.innerHTML = htmlOrText || "";
   return temp.textContent || temp.innerText || "";
 };
 
+/**
+ * Compute plain-text offsets for the current selection within containerEl.
+ */
 const getSelectionOffsets = (containerEl, fullPlainText) => {
   const sel = window.getSelection?.();
   if (!sel || sel.rangeCount === 0) return null;
@@ -47,52 +51,104 @@ const getSelectionOffsets = (containerEl, fullPlainText) => {
   };
 };
 
+/**
+ * Normalize backend highlight rows to a consistent shape.
+ * Backend likely returns:
+ *   { highlight_id, startOffset, endOffset, color, comment }
+ */
 const normalizeHighlights = (rows) =>
   (rows || []).map((r) => ({
-    id: r.id ?? r.highlight_id ?? r.ID ?? undefined,
-    start_idx: r.start_idx ?? r.start ?? 0,
-    end_idx: r.end_idx ?? r.end ?? 0,
+    id:
+      r.highlight_id ??
+      r.id ??
+      r.ID ??
+      (r.startOffset !== undefined && r.endOffset !== undefined
+        ? `${r.startOffset}-${r.endOffset}-${r.color || "yellow"}`
+        : undefined),
+    start: r.startOffset ?? r.start ?? r.start_idx ?? 0,
+    end: r.endOffset ?? r.end ?? r.end_idx ?? 0,
     color: r.color ?? r.colour ?? "yellow",
     comment: r.comment ?? r.note ?? "",
   }));
 
-const renderWithHighlights = (text, highlights) => {
-  const hs = normalizeHighlights(highlights).filter(
-    (h) =>
-      Number.isFinite(h.start_idx) &&
-      Number.isFinite(h.end_idx) &&
-      h.start_idx < h.end_idx
-  );
-  if (!hs.length) return text;
+/**
+ * Overlap-safe renderer:
+ * - Sort ranges by start.
+ * - Maintain a "cursor" of already-rendered text end.
+ * - For each highlight, clamp its start to max(start, cursor).
+ *   - If end <= cursor => fully covered => skip (prevents duplicate text).
+ *   - Else render the uncovered tail (cursor..end), mark as highlight.
+ * - Render any non-highlight text between cursor and next start as plain text.
+ *
+ * Also supports clicking a highlight to select it for deletion.
+ */
+const renderWithHighlights = (text, rawHighlights, onClickHighlight, selectedId) => {
+  if (!text) return null;
 
-  const sorted = [...hs].sort((a, b) => a.start_idx - b.start_idx);
-  const out = [];
-  let i = 0;
-  for (const h of sorted) {
-    const s = Math.max(0, h.start_idx);
-    const e = Math.min(text.length, h.end_idx);
-    if (s > i) out.push({ t: "txt", v: text.slice(i, s) });
-    out.push({ t: "hl", v: text.slice(s, e), color: h.color || "yellow" });
-    i = e;
+  const highlights = normalizeHighlights(rawHighlights)
+    .filter((h) => Number.isFinite(h.start) && Number.isFinite(h.end) && h.start < h.end)
+    .sort((a, b) => a.start - b.start);
+
+  if (!highlights.length) return text;
+
+  const parts = [];
+  let cursor = 0;
+
+  for (const h of highlights) {
+    const s0 = Math.max(0, Math.min(h.start, text.length));
+    const e0 = Math.max(0, Math.min(h.end, text.length));
+    if (s0 >= e0) continue;
+
+    // Emit plain text before the highlight (if any left)
+    if (s0 > cursor) {
+      parts.push({ t: "txt", text: text.slice(cursor, s0) });
+      cursor = s0;
+    }
+
+    // Clamp to uncovered portion only (prevents duplication on overlaps)
+    const s = Math.max(s0, cursor);
+    if (e0 <= s) {
+      // fully covered by previous highlight; skip
+      continue;
+    }
+    parts.push({ t: "hl", text: text.slice(s, e0), id: h.id, color: h.color });
+    cursor = e0;
   }
-  if (i < text.length) out.push({ t: "txt", v: text.slice(i) });
 
-  return out.map((chunk, idx) =>
-    chunk.t === "hl" ? (
+  // Emit trailing text
+  if (cursor < text.length) {
+    parts.push({ t: "txt", text: text.slice(cursor) });
+  }
+
+  return parts.map((p, i) =>
+    p.t === "hl" ? (
       <span
-        key={idx}
-        style={{ background: chunk.color, padding: "2px 4px", borderRadius: 3 }}
+        key={p.id || i}
+        data-hid={p.id}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClickHighlight?.(p.id);
+        }}
+        style={{
+          background: p.color,
+          padding: "2px 4px",
+          borderRadius: 3,
+          outline: p.id && selectedId === p.id ? "2px solid rgba(255,255,255,0.6)" : "none",
+          cursor: "pointer",
+        }}
+        title="Click to select highlight, then use 'Delete highlight'"
       >
-        {chunk.v}
+        {p.text}
       </span>
     ) : (
-      <span key={idx}>{chunk.v}</span>
+      <span key={i}>{p.text}</span>
     )
   );
 };
 
 const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) => {
   const { activeProjectId } = useProject();
+
   const [transcriptions, setTranscriptions] = useState([]);
   const [selectedTranscriptionId, setSelectedTranscriptionId] = useState(null);
   const [selectedTranscriptionText, setSelectedTranscriptionText] = useState("");
@@ -105,6 +161,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
   const [highlightColor, setHighlightColor] = useState("yellow");
   const [savedHighlights, setSavedHighlights] = useState([]);
+  const [selectedHighlightId, setSelectedHighlightId] = useState(null);
 
   const previousProjectId = useRef(activeProjectId);
   const previousTranscriptionData = useRef(transcriptionData);
@@ -124,6 +181,8 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
           setTranscriptions(data);
           setSelectedTranscriptionId(null);
           setSelectedTranscriptionText("");
+          setSavedHighlights([]);
+          setSelectedHighlightId(null);
         } else {
           console.error("Failed to load transcriptions");
         }
@@ -161,6 +220,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
               setTranscriptions(data);
               setSelectedTranscriptionId(transcriptionDataObject.transcription_id);
               setSelectedTranscriptionText(transcriptionDataObject.transcription);
+              setSelectedHighlightId(null);
             }
           } catch (error) {
             console.error("Error refreshing transcriptions:", error);
@@ -201,17 +261,25 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
       return;
     }
     try {
-      const url =
-        (API_ENDPOINTS.HIGHLIGHTS_LIST &&
-          API_ENDPOINTS.HIGHLIGHTS_LIST(selectedTranscriptionId)) ||
-        `/highlights/${selectedTranscriptionId}`;
+      const url = `${API_ENDPOINTS.HIGHLIGHTS}/${selectedTranscriptionId}`;
       const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setSavedHighlights(Array.isArray(data) ? data : []);
-      } else {
-        setSavedHighlights([]);
+
+      if (res.status === 404) {
+        setSavedHighlights([]); // none yet
+        return;
       }
+      if (!res.ok) {
+        console.error("Failed to load highlights", await res.text());
+        return;
+      }
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        setSavedHighlights([]);
+        return;
+      }
+
+      const data = await res.json();
+      setSavedHighlights(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("Failed to load highlights", e);
       setSavedHighlights([]);
@@ -226,10 +294,13 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
   const handleTranscriptionChange = (event) => {
     const transcriptionId = event.target.value;
     setSelectedTranscriptionId(transcriptionId);
+    setSelectedHighlightId(null);
     if (transcriptionId) {
       loadTranscriptionText(parseInt(transcriptionId, 10));
+      // highlights will load via effect
     } else {
       setSelectedTranscriptionText("");
+      setSavedHighlights([]);
     }
   };
 
@@ -251,12 +322,14 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
           API_ENDPOINTS.listProjectTranscriptions(activeProjectId)
         );
         if (refreshResponse.ok) {
-          const data = await refreshResponse.json();
+          const data = await response.json();
           setTranscriptions(data);
           setSelectedTranscriptionId(null);
           setSelectedTranscriptionText("");
           setEditedText("");
           setIsEditing(false);
+          setSavedHighlights([]);
+          setSelectedHighlightId(null);
         }
         console.log("Transcription deleted successfully");
       } else {
@@ -291,7 +364,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: editedText }), // API expects TranscriptionRequest
+          body: JSON.stringify({ text: editedText }),
         }
       );
       if (response.ok) {
@@ -322,37 +395,25 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     if (!selInfo) return;
 
     try {
-      // Your /highlights endpoint takes primitive params (no Pydantic model),
-      // so send as form or query-params. We'll use form-encoded here.
-      const body = new URLSearchParams({
+      // POST expects query params
+      const qs = new URLSearchParams({
         transcription_id: String(selectedTranscriptionId),
         start: String(selInfo.start),
         end: String(selInfo.end),
         color: highlightColor,
         comment: "",
       });
+      const postUrl = `${API_ENDPOINTS.HIGHLIGHTS}/?${qs.toString()}`;
+      const res = await fetch(postUrl, { method: "POST" });
 
-      const url = API_ENDPOINTS.HIGHLIGHTS_ADD || "/highlights/";
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
+      if (!res.ok) {
+        console.error("Failed to save highlight", await res.text());
+        throw new Error("Failed");
+      }
 
-      if (!res.ok) throw new Error(await res.text());
-      // Optimistic: append the new highlight
-      setSavedHighlights((prev) => [
-        {
-          id: crypto.randomUUID?.() ?? String(Date.now()),
-          start: selInfo.start,
-          end: selInfo.end,
-          color: highlightColor,
-          comment: "",
-        },
-        ...prev,
-      ]);
-
-      // Clear selection
+      // Always pull server truth (no optimistic insert)
+      await loadHighlights();
+      setSelectedHighlightId(null);
       const sel = window.getSelection?.();
       sel?.removeAllRanges?.();
     } catch (e) {
@@ -362,6 +423,25 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
   };
 
   const handleHighlightColorChange = (color) => setHighlightColor(color);
+
+  const handleDeleteSelectedHighlight = async () => {
+    if (!selectedHighlightId) return;
+    try {
+      const res = await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${selectedHighlightId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        console.error("Failed to delete highlight", await res.text());
+        alert("Failed to delete highlight.");
+        return;
+      }
+      await loadHighlights();
+      setSelectedHighlightId(null);
+    } catch (e) {
+      console.error("Failed to delete highlight", e);
+      alert("Failed to delete highlight.");
+    }
+  };
 
   const handleDownloadTranscription = async () => {
     const textToDownload =
@@ -511,6 +591,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
       {/* Content */}
       <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col min-h-0">
+        {/* Highlight toolbar */}
         {!isEditing && selectedTranscriptionId && (
           <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-600">
             <span className="text-xs text-slate-400">Highlight:</span>
@@ -524,9 +605,11 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                   style={{ backgroundColor: color }}
                   onClick={() => setHighlightColor(color)}
                   aria-label={`Select ${color} highlight color`}
+                  title={`Use ${color} color`}
                 />
               ))}
             </div>
+
             <button
               className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
               aria-label="Save highlight for selected text"
@@ -535,10 +618,33 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
             >
               <i className="bi bi-highlighter" aria-hidden="true"></i>
             </button>
+
+            {/* Delete selected highlight */}
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                className={`text-xs px-2 py-1 rounded ${
+                  selectedHighlightId
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "bg-slate-600 text-slate-300 cursor-not-allowed"
+                }`}
+                onClick={handleDeleteSelectedHighlight}
+                disabled={!selectedHighlightId}
+                title={
+                  selectedHighlightId
+                    ? "Delete selected highlight"
+                    : "Click a highlighted segment to select it"
+                }
+              >
+                Delete highlight
+              </button>
+            </div>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto max-h-[200px] transcription-text">
+        <div
+          className="flex-1 overflow-y-auto max-h-[200px] transcription-text"
+          onClick={() => setSelectedHighlightId(null)} // click outside to clear selection
+        >
           {isEditing ? (
             <textarea
               className="w-full h-full bg-transparent text-sm text-gray-300 leading-6 resize-none border-none outline-none"
@@ -551,7 +657,12 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
               id="transcription-display"
               className="text-sm text-gray-300 leading-6 whitespace-pre-wrap"
             >
-              {renderWithHighlights(toPlainText(displayText), savedHighlights)}
+              {renderWithHighlights(
+                toPlainText(displayText),
+                savedHighlights,
+                (hid) => setSelectedHighlightId(hid),
+                selectedHighlightId
+              )}
             </div>
           )}
         </div>
@@ -560,7 +671,6 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
           <button
             className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
             aria-label="Toggle code view"
-            // TODO: Implement code view toggle functionality
           >
             <i className="bi bi-code" aria-hidden="true"></i>
           </button>
