@@ -264,7 +264,15 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     if (!selectedText) return;
     const cleaned = cleanForAction(selectedText);
     if (!cleaned) return;
-    sendMessage(cleaned, "offline", tpl);
+
+    const prefixMap = {
+        summary_direct: "Summarise",
+        explain: "Explain",
+        rewrite: "Rewrite"
+    };
+    const prefix = prefixMap[tpl] || "Action";
+
+    sendMessage(`${prefix}: ${cleaned}`, "offline", tpl);
     setShowPopup(false);
   };
 
