@@ -13,6 +13,8 @@ async def transcribe_endpoint(
     request: Request,
     file: UploadFile = File(..., description="Upload an audio file for transcription."),
     project_id: int = Form(..., description="Project ID to save transcription to"),
+    project_name: str = Form(..., description="Project name to save transcription to"),
+    diarization: bool = Form(..., description="boolean to indicate if enable diarization")
 ):
     """
     Transcribe an uploaded audio file using Whisper (CPU, base model).
@@ -22,7 +24,8 @@ async def transcribe_endpoint(
     uploads_path = config.BASE_PATH / "Interview_Uploads"
     uploads_path.mkdir(exist_ok=True)
     file_path = uploads_path / (file.filename or "default_filename")
-
+    print("diarization here")
+    print(diarization)
     try:
         with open(file_path, "wb") as f:
             f.write(await file.read())
@@ -35,7 +38,7 @@ async def transcribe_endpoint(
     text_output = ""
 
     try:
-        result = await transcribe_audio_with_diarization(str(file_path))
+        result = await transcribe_audio_with_diarization(str(file_path),diarization)
         # Define the original transcript path (produced by the function)
         original_transcript_path = uploads_path / f"{Path(file.filename).stem}.txt"
 
