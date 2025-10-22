@@ -1,7 +1,6 @@
 class QDrantTemplates:
     @staticmethod
     def default_template(prompt: str, prompt_context: str) -> str:
-        """Returns the default metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -36,7 +35,6 @@ class QDrantTemplates:
 
     @staticmethod
     def summary_template(prompt_context: str) -> str:
-        """Returns the summary mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -64,8 +62,35 @@ class QDrantTemplates:
         """
 
     @staticmethod
+    def summary_direct_template(target_text: str) -> str:
+        """
+        Summarise the provided text directly (no external context/RAG).
+        """
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are an expert at concise summaries.
+            </ROLE>
+            <TASK>
+                Summarise the following text in 2-4 sentences, capturing the main point(s) without adding new facts.
+            </TASK>
+            <RULES>
+                <RULE id="1">Base the summary ONLY on <TARGET_TEXT>.</RULE>
+                <RULE id="2">Be clear, neutral, and concise.</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <TARGET_TEXT>
+                {target_text.strip()}
+            </TARGET_TEXT>
+        </DATA>
+
+        <SUMMARY>
+        """
+
+    @staticmethod
     def code_theme_template(prompt_context: str) -> str:
-        """Returns the code/theme mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -99,7 +124,6 @@ class QDrantTemplates:
 
     @staticmethod
     def outlier_template(prompt_context: str) -> str:
-        """Returns the outlier mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -133,7 +157,6 @@ class QDrantTemplates:
 
     @staticmethod
     def quote_template(prompt: str, prompt_context: str) -> str:
-        """Returns the quote mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -165,4 +188,59 @@ class QDrantTemplates:
         </DATA>
 
         <RELEVANT_QUOTES>
+        """
+
+    @staticmethod
+    def explain_template(target_text: str) -> str:
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are an expert explainer.
+            </ROLE>
+            <TASK>
+                Explain the following text clearly for a non-expert audience.
+                Use plain language, short paragraphs, and brief bullet points if helpful.
+                Do NOT add new facts beyond what the text provides.
+            </TASK>
+            <RULES>
+                <RULE id="1">Base your explanation ONLY on <TARGET_TEXT>.</RULE>
+                <RULE id="2">Avoid jargon unless you also define it simply.</RULE>
+                <RULE id="3">Be concise and clear.</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <TARGET_TEXT>
+                {target_text.strip()}
+            </TARGET_TEXT>
+        </DATA>
+
+        <EXPLANATION>
+        """
+
+    @staticmethod
+    def rewrite_template(target_text: str) -> str:
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are a precise editor.
+            </ROLE>
+            <TASK>
+                Rewrite the following text to improve clarity and concision.
+                Preserve the original meaning. Output only the rewritten text.
+            </TASK>
+            <RULES>
+                <RULE id="1">Base your rewrite ONLY on <TARGET_TEXT>.</RULE>
+                <RULE id="2">Keep tone neutral and professional unless tone is explicitly embedded in the text.</RULE>
+                <RULE id="3">Remove filler, redundancy, and convoluted phrasing.</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <TARGET_TEXT>
+                {target_text.strip()}
+            </TARGET_TEXT>
+        </DATA>
+
+        <REWRITE>
         """

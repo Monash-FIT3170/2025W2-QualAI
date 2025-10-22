@@ -8,34 +8,39 @@ export const ChatProvider = ({ children }) => {
   const { activeProjectId } = useProject();
   const [messages, setMessages] = useState([]);
 
-  const sendMessage = async (text, mode = "offline", template = "default") => {
-    const trimmed = text.trim();
+  /**
+   * Send a message to the model.
+   * @param {string} text - The actual prompt sent to the backend.
+   * @param {("offline"|"online")} mode
+   * @param {string} template
+   * @param {string|null} displayText - Optional: what to show in the user's bubble (if different from `text`)
+   */
+  const sendMessage = async (text, mode = "offline", template = "default", displayText = null) => {
+    const trimmed = (text ?? "").trim();
     if (!trimmed) return;
 
-    setMessages((prev) => [...prev, { sender: "user", text: trimmed }]);
-
-    console.log("🟡 Sending fetch to:", API_ENDPOINTS.GENERATE);
+    // What the UI will show for the user's message
+    const shown = (displayText ?? trimmed).trim();
+    setMessages((prev) => [...prev, { sender: "user", text: shown }]);
 
     try {
-      console.log("🟡 Sending fetch to:", API_ENDPOINTS.GENERATE);
+      // Build request body
+      const body = {
+        prompt: trimmed,                          // actual prompt sent to backend
+        mode,
+        project: Number.isInteger(activeProjectId) ? activeProjectId : 0,
+        template,
+      };
+      console.log("POST /generate payload:", body);
 
       const res = await fetch(API_ENDPOINTS.GENERATE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: trimmed,
-          mode,
-          project: activeProjectId || "default",
-          template,
-        }),
+        body: JSON.stringify(body),
       });
 
-      console.log("🔵 Response status:", res.status);
-
-      // Log raw response body text before parsing JSON
+      // Read raw text first (helps debugging non-JSON responses)
       const textResponse = await res.text();
-      console.log("🟣 Raw body:", textResponse);
-
       let data;
       try {
         data = JSON.parse(textResponse);
@@ -43,8 +48,6 @@ export const ChatProvider = ({ children }) => {
         console.error("❌ Could not parse JSON, using fallback object");
         data = { response: "Invalid JSON response from backend" };
       }
-
-      console.log("AI raw response:", data);
 
       const aiResponse =
         data.response ??
@@ -62,7 +65,6 @@ export const ChatProvider = ({ children }) => {
       ]);
     }
   };
-
 
   return (
     <ChatContext.Provider value={{ messages, sendMessage, setMessages }}>
