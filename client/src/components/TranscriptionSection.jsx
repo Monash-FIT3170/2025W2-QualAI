@@ -382,7 +382,110 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         }
         };
 
+    // Remove highlight(s) from the selected text range
+    // Remove only the selected portion of highlight(s)
+    const handleClearHighlight = async () => {
+        if (!selectedTranscriptionId || !textContainerRef.current) return;
 
+        const offsets = getSelectionOffsets(textContainerRef.current);
+        if (!offsets || offsets.text.length === 0) return;
+
+        const transcriptionId = parseInt(selectedTranscriptionId, 10);
+        const { start, end } = offsets;
+
+        const overlaps = highlights.filter(
+            (h) => h.startOffset < end && h.endOffset > start
+        );
+
+        const fragmentsToKeep = [];
+
+        for (const h of overlaps) {
+            // Entire overlap – delete completely
+            if (start <= h.startOffset && end >= h.endOffset) {
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            continue;
+            }
+
+            // Partial overlap on left side
+            if (start > h.startOffset && start < h.endOffset && end >= h.endOffset) {
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: h.startOffset,
+                end: start,
+                color: h.color,
+            });
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            continue;
+            }
+
+            // Partial overlap on right side
+            if (start <= h.startOffset && end > h.startOffset && end < h.endOffset) {
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: end,
+                end: h.endOffset,
+                color: h.color,
+            });
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            continue;
+            }
+
+            // Middle portion (split highlight into two)
+            if (start > h.startOffset && end < h.endOffset) {
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: h.startOffset,
+                end: start,
+                color: h.color,
+            });
+            fragmentsToKeep.push({
+                transcriptionId,
+                start: end,
+                end: h.endOffset,
+                color: h.color,
+            });
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            }
+        }
+
+        // Persist new fragments
+        for (const frag of fragmentsToKeep) {
+            const url = new URL(`${API_ENDPOINTS.HIGHLIGHTS}/`);
+            url.searchParams.set("transcription_id", frag.transcriptionId);
+            url.searchParams.set("start", frag.start);
+            url.searchParams.set("end", frag.end);
+            url.searchParams.set("color", frag.color);
+            await fetch(url.toString(), { method: "POST" });
+        }
+
+        // Refresh highlights
+        setTimeout(() => fetchHighlights(transcriptionId), 100);
+
+        // Clear selection
+        const sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
+    };
+
+
+    // Remove ALL highlights for the current transcription
+    const handleClearAllHighlights = async () => {
+        if (!selectedTranscriptionId) return;
+
+        try {
+            // Delete every highlight from backend
+            for (const h of highlights) {
+            await fetch(`${API_ENDPOINTS.HIGHLIGHTS}/${h.highlight_id}`, { method: "DELETE" });
+            }
+
+            // Clear highlights in state
+            setHighlights([]);
+
+            console.log("All highlights cleared successfully");
+        } catch (e) {
+            console.error("Error clearing all highlights:", e);
+            alert("Failed to remove all highlights. Please try again.");
+        }
+    };
 
 
     const addHighlight = async ({ transcriptionId, start, end, color }) => {
@@ -770,12 +873,32 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                                 />
                             ))}
                         </div>
+                        {/* Clear highlight button */}
+                        <button
+                            className="w-4 h-4 rounded border-2 border-slate-500 flex items-center justify-center text-slate-400 hover:text-white hover:border-white"
+                            onClick={handleClearHighlight}
+                            aria-label="Clear selected highlights"
+                            title='Clear selected highlight'
+                        >
+                            <i className="bi bi-eraser-fill text-xs" aria-hidden="true"></i>
+                        </button>
+
                         <button
                             className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
                             aria-label="Highlight selected text"
                             onClick={handleHighlightText}
+                            title='Select text and click to highlight'
                         >
                             <i className="bi bi-highlighter" aria-hidden="true"></i>
+                        </button>
+
+                        {/* Clear all highlights button */}
+                        <button
+                            className="bg-transparent border border-slate-500 text-slate-400 text-xs px-2 py-1 rounded hover:border-white hover:text-white transition-colors ml-2"
+                            onClick={handleClearAllHighlights}
+                            aria-label="Remove all highlights"
+                        >
+                            Clear All
                         </button>
                     </div>
                 )}
