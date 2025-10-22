@@ -7,6 +7,7 @@ from app.api.helpers.project_converters import (
     project_full_row_to_dict,
 )
 from app.api.models import ProjectRequest
+from app.config import config
 
 project_router = APIRouter()
 
@@ -38,9 +39,7 @@ def list_projects(request: Request) -> list[dict]:
     if not rows:
         # auto-create default to keep UX consistent with your current app
         try:
-            default_id = request.app.state.projects_store.insert(
-                "Project 1", "Default project"
-            )
+            default_id = request.app.state.projects_store.insert(config.DEFAULT_PROJECT)
             name, desc, created_at = request.app.state.projects_store.get_project_by_id(
                 default_id
             )
@@ -74,24 +73,16 @@ def delete_project(request: Request, project_id: int):
     Also deletes the corresponding Qdrant collection.
     """
     try:
-        # Get project name before deleting (needed for Qdrant collection deletion)
-        try:
-            project_name, _, _ = request.app.state.projects_store.get_project_by_id(
-                project_id
-            )
-        except LookupError:
-            raise HTTPException(status_code=404, detail="Project not found")
-
         # Delete the project from the database (this will also delete associated transcriptions due to foreign key cascade)
         request.app.state.projects_store.delete(project_id)
 
         # Delete the corresponding Qdrant collection
         try:
-            request.app.state.qdrant_manager.clear_collection(project_name)
-            print(f"Deleted Qdrant collection for project: {project_name}")
+            request.app.state.qdrant_manager.clear_collection(project_id)
+            print(f"Deleted Qdrant collection for project: {project_id}")
         except Exception as qdrant_error:
             print(
-                f"Warning: Failed to delete Qdrant collection for project '{project_name}': {qdrant_error}"
+                f"Warning: Failed to delete Qdrant collection for project '{project_id}': {qdrant_error}"
             )
             # Don't fail the entire operation if Qdrant deletion fails
 
@@ -100,3 +91,20 @@ def delete_project(request: Request, project_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
+
+
+@project_router.put("/projects/{project_id}")
+def update_project(request: Request, payload: ProjectRequest, project_id: int):
+    """
+    Create a new project. Name must be unique (sqlite UNIQUE constraint).
+    """
+    try:
+        request.app.state.projects_store.update(
+            project_id, payload.name, payload.description
+        )
+
+        return {"message": "Project updated successfully."}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

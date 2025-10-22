@@ -7,11 +7,12 @@ import sqlite3
 from app.config import config
 from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
-from app.database import Project, Transcription, Highlight
+from app.database import Project, Transcription, Highlighter, Highlight
 from app.api.project_endpoints import project_router
 from app.api.project_transcription_endpoints import transcription_router
 from app.api.media_transcriber_endpoints import transcribe_router
 from app.api.prompt_endpoints import prompt_router
+from app.api.highlighter_endpoints import highlighter_router
 from app.api.highlight_endpoints import highlight_router
 
 
@@ -29,39 +30,44 @@ async def lifespan(app: FastAPI):
     # Initalise SQL Database
     app.state.projects_store = Project(config.DB_PATH)
     app.state.transcripts_store = Transcription(config.DB_PATH)
+    app.state.highlighter_store = Highlighter(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
     app.state.transcriber = Transcriber(model_size="base")
 
     # --- this is just for placeholder data to be filled into vector db ---
-    data_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), "projects", config.DEFAULT_PROJECT, "data.txt"
-        )
-    )
-    if os.path.exists(data_path):
-        app.state.qdrant_manager.ingest_from_directory(
-            config.DEFAULT_PROJECT, data_path
-        )
-        print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
-    else:
-        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
-
+    project_id = None
     try:
         project_id = app.state.projects_store.insert(
-            config.DEFAULT_PROJECT, config.DEFAULT_PROJECT
+            project_name=config.DEFAULT_PROJECT
         )
-
-        with open(data_path, "r", encoding="utf-8") as file:
-            data_content = file.read()
-            app.state.transcripts_store.insert(
-                project_id, config.DEFAULT_PROJECT, data_content
-            )
     except sqlite3.IntegrityError:
         print(
             f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
         )
+
+    data_path = config.DEFAULT_TRANSCRIPTION_PATH
+    if os.path.exists(data_path) and project_id is not None:
+        app.state.qdrant_manager.ingest_from_directory(
+            project_id=project_id, transcription_path=data_path
+        )
+        print(f"Ingested data for project: {config.DEFAULT_PROJECT}")
+
+        try:
+            with open(data_path, "r", encoding="utf-8") as file:
+                data_content = file.read()
+                app.state.transcripts_store.insert(
+                    project_id=project_id,
+                    name=config.DEFAULT_TRANSCRIPTION_NAME,
+                    transcription=data_content,
+                )
+        except sqlite3.IntegrityError:
+            print(
+                f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
+            )
+    else:
+        print(f"Warning: Data path not found, skipping ingestion: {data_path}")
     # ------
 
     # Initialize the transcriber model
@@ -89,6 +95,7 @@ app.include_router(project_router)
 app.include_router(transcription_router)
 app.include_router(transcribe_router)
 app.include_router(prompt_router)
+app.include_router(highlighter_router)
 app.include_router(highlight_router)
 
 

@@ -68,17 +68,17 @@ const AIAssistant = () => {
 
     try {
       // Make POST request to FastAPI /generate endpoint
+      console.log(activeProjectId);
       const response = await fetch(API_ENDPOINTS.GENERATE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
 
-
         body: JSON.stringify({ 
           prompt: trimmedMessage, 
           mode: mode,
-          project: activeProject?.name || 'default'
+          project: activeProjectId || 'default'
         })
 
       });
