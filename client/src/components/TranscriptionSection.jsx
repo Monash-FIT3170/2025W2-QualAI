@@ -232,6 +232,11 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         
         try {
             setSaving(true);
+
+            const currentTranscription = transcriptions.find(
+                (t) => t.transcription_id === parseInt(selectedTranscriptionId)
+                );
+
             const response = await fetch(
                 API_ENDPOINTS.updateProjectTranscription(activeProjectId, selectedTranscriptionId),
                 {
@@ -239,7 +244,10 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ text: editedText }),
+                    body: JSON.stringify({
+                        name: currentTranscription?.name || 'Edited transcription',
+                        text: editedText,
+                    }),
                 }
             );
             
