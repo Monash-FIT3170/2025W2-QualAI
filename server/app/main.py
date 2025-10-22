@@ -14,7 +14,7 @@ from app.api.media_transcriber_endpoints import transcribe_router
 from app.api.prompt_endpoints import prompt_router
 from app.api.highlighter_endpoints import highlighter_router
 from app.api.highlight_endpoints import highlight_router
-
+from app.api.pdf_ingest_endpoints import pdf_router
 
 # --- Application Setup ---
 
@@ -97,7 +97,7 @@ app.include_router(transcribe_router)
 app.include_router(prompt_router)
 app.include_router(highlighter_router)
 app.include_router(highlight_router)
-
+app.include_router(pdf_router)
 
 # --- Back-end Status ---
 @app.get("/status")
