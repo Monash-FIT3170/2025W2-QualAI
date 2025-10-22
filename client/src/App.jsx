@@ -5,6 +5,7 @@ import SettingsNavbar from './components/SettingsNavbar';
 import Dashboard from './pages/Dashboard';
 import Setting from './pages/Setting';
 import { ProjectProvider } from './contexts/ProjectContext';
+import { ChatProvider } from './contexts/ChatContext';
 
 function AppContent() {
   const location = useLocation();
@@ -26,9 +27,11 @@ function AppContent() {
 export default function App() {
   return (
     <ProjectProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <ChatProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </ChatProvider>
     </ProjectProvider>
   );
 }

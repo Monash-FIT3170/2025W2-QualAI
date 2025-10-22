@@ -1,6 +1,7 @@
-import React, { useState,useEffect,useRef  } from 'react';
+import React, { useState, useEffect,useRef  } from 'react';
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from '../contexts/ProjectContext';
+import { useChat } from "../contexts/ChatContext";
 
 /** Constants **/
 const INITIAL_MESSAGES = [
@@ -23,8 +24,8 @@ const INITIAL_MESSAGES = [
 const AIAssistant = () => {
   const { activeProjectId, activeProject } = useProject();
   
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const { messages, sendMessage, setMessages } = useChat();
+  const [newMessage, setNewMessage] = useState("");
 
   const [mode, setMode] = useState('offline');
   const [template, setTemplate] = useState("default")
@@ -49,66 +50,10 @@ const AIAssistant = () => {
    * Handles sending a new message
    * @param {Event} e - Form submit event
    */
-  const handleSendMessage = async(e) => {
+  const handleSendMessage = (e) => {
     e.preventDefault();
-    
-    // Don't send empty messages
-    const trimmedMessage = newMessage.trim();
-    if (!trimmedMessage) return;
-
-    const nextAfterUser = [...messages, { sender: 'user', text: trimmedMessage }];
-    // Add user message to chat history
-    setMessages(nextAfterUser);
-    // Clear input field after sending
-    setNewMessage('');
-
-    if (activeProjectId) {
-      localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(nextAfterUser));
-    }
-
-    try {
-      // Make POST request to FastAPI /generate endpoint
-      console.log(activeProjectId);
-      const response = await fetch(API_ENDPOINTS.GENERATE, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({ 
-          prompt: trimmedMessage, 
-          mode: mode,
-          project: activeProjectId || 'default'
-        })
-
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Error fetching response from AI');
-      }
-
-      const data = await response.json();
-      const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
-
-      setMessages(prev => {
-        const next = [...prev, { sender: 'ai', text: aiResponse }];
-        if (activeProjectId) {
-          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
-        }
-          return next;
-        });
-    } catch (error) {
-      setMessages(prev => {
-        const next = [...prev, { sender: 'ai', text: `Error: ${error.message}` }];
-        if (activeProjectId) {
-          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
-        }
-        return next;
-      });
-    }
-    
-    
+    sendMessage(newMessage, mode, template);
+    setNewMessage("");
   };
 
   return (

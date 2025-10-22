@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react'; // Make sure React i
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from "../contexts/ProjectContext";
 import "../assets/styles/TranscriptionSection.css";
+import { useChat } from "../contexts/ChatContext";
 
 
 /** Safely parse JSON, returns null on failure */
@@ -42,6 +43,15 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     const textContainerRef = useRef(null);
 
     const transcriptionDataObject = safeParseJSON(transcriptionData);
+
+    // AI assisted analysis hooks
+    const [selectedText, setSelectedText] = useState("");
+    const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+    const [showSummarise, setShowSummarise] = useState(false);
+
+    // connecting to chatbot
+    const { sendMessage } = useChat();
+
 
     // Load transcriptions when project changes
     useEffect(() => {
@@ -329,6 +339,51 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         const end = start + selectedText.length;
 
         return { start, end, text: selectedText };
+    };
+
+    const handleTextSelection = () => {
+        const selection = window.getSelection();
+          console.log("Selection detected:", selection?.toString());
+        if (!selection || selection.rangeCount === 0) {
+            setShowSummarise(false);
+            return;
+        }
+
+        const selected = selection.toString().trim();
+        if (selected.length === 0) {
+            setShowSummarise(false);
+            return;
+        }
+
+        // Get cursor position for the popup button
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setButtonPosition({ x: rect.left + window.scrollX, y: rect.top + window.scrollY - 30 });
+
+        setSelectedText(selected);
+        setShowSummarise(true);
+    };
+
+    useEffect(() => {
+        const handleMouseUp = () => {
+            // Delay slightly so selection registers before reading
+            setTimeout(() => handleTextSelection(), 0);
+        };
+
+        document.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+        }, []);
+
+
+    const handleSummarise = () => {
+        if (!selectedText) return;
+        const prompt = `Summarise: ${selectedText}`;
+        console.log("📤 Sending to chat:", prompt);
+        sendMessage(prompt, "offline", "summary");
+        setShowSummarise(false);
     };
     
     // remove existing highlights overlapping the new one
@@ -1005,6 +1060,17 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     </button>
                 </div>
             </div>
+
+            {showSummarise && (
+                <button
+                    onClick={handleSummarise}
+                    className="absolute bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow-md hover:bg-indigo-700 transition"
+                    style={{ position: "absolute", top: `${buttonPosition.y}px`, left: `${buttonPosition.x}px`, zIndex: 50 }}
+                >
+                    Summarise
+                </button>
+            )}
+
         </div>
     );
 };
