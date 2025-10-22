@@ -177,7 +177,7 @@ const AIAssistant = () => {
                   'bg-slate-800' :  // AI message background
                   'bg-slate-700'    // User message background
               }`}>
-                <p className="text-sm text-slate-200 m-0 leading-6">
+                <p className="text-sm text-slate-200 m-0 leading-relaxed break-words whitespace-pre-wrap overflow-hidden">
                   {message.sender === 'ai' ? (
                   removeThinkingText(message.text)) : (message.text)}
                 </p>
