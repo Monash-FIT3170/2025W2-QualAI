@@ -938,16 +938,8 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                             )}
 
                         </div>
-                        {/* Clear highlight button */}
-                        <button
-                            className="w-4 h-4 rounded border-2 border-slate-500 flex items-center justify-center text-slate-400 hover:text-white hover:border-white"
-                            onClick={handleClearHighlight}
-                            aria-label="Clear selected highlights"
-                            title='Clear selected highlight'
-                        >
-                            <i className="bi bi-eraser-fill text-xs" aria-hidden="true"></i>
-                        </button>
 
+                        {/*  highlight text button */}
                         <button
                             className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
                             aria-label="Highlight selected text"
@@ -957,14 +949,27 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                             <i className="bi bi-highlighter" aria-hidden="true"></i>
                         </button>
 
+                        {/* Clear highlight button */}
+                        <button 
+                        className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
+                        onClick={handleClearHighlight}
+                        aria-label="Clear selected highlights"
+                        title="Clear selected highlight"
+                        >
+                        <i className="bi bi-eraser-fill text-base" aria-hidden="true"></i>
+                        </button>
+
                         {/* Clear all highlights button */}
-                        <button
-                            className="bg-transparent border border-slate-500 text-slate-400 text-xs px-2 py-1 rounded hover:border-white hover:text-white transition-colors ml-2"
+                       <button
+                            className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-red-400"
                             onClick={handleClearAllHighlights}
                             aria-label="Remove all highlights"
+                            title="Clear all highlights from transcription"
                         >
-                            Clear All
+                            <i className="bi bi-trash3" aria-hidden="true"></i>
                         </button>
+
+
                     </div>
                 )}
 
