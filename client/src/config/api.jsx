@@ -12,5 +12,6 @@ export const API_ENDPOINTS = {
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   updateProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
-  getHighlights: (transcriptionId) => `${API_BASE}/highlights/${transcriptionId}`
+  getHighlights: (transcriptionId) => `${API_BASE}/highlights/${transcriptionId}`,
+  getHighlighters: (projectId) => `${API_BASE}/projects/${projectId}/highlighters/`,
 };

@@ -29,6 +29,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     const [isEditing, setIsEditing] = useState(false);
     const [editedText, setEditedText] = useState("");
     const [saving, setSaving] = useState(false);
+    const [projectHighlighters, setProjectHighlighters] = useState([]);
 
     // highlight state 
     const [highlights, setHighlights] = useState([]);
@@ -68,6 +69,42 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
         loadTranscriptions();
     }, [activeProjectId]);
+
+    // Fetch project highlighters when project changes
+    useEffect(() => {
+        const fetchHighlighters = async () => {
+            if (!activeProjectId) return;
+            try {
+            const response = await fetch(API_ENDPOINTS.getHighlighters(activeProjectId));
+            if (response.ok) {
+                const data = await response.json();
+
+                // fallback block if no highlighters exist
+                if (data.length === 0) {
+                setProjectHighlighters([
+                    { highlighter_id: "default-yellow", label: "Highlight", colour: "yellow", weight: 1 },
+                    { highlighter_id: "default-blue", label: "Note", colour: "lightblue", weight: 1 },
+                    { highlighter_id: "default-green", label: "Context", colour: "lightgreen", weight: 1 },
+                    { highlighter_id: "default-pink", label: "Context", colour: "pink", weight: 1 },
+                    { highlighter_id: "default-orange", label: "Context", colour: "orange", weight: 1 }
+                ]);
+                } else {
+                setProjectHighlighters(data);
+                }
+
+            } else {
+                console.error("Failed to fetch project highlighters");
+                setProjectHighlighters([]);
+            }
+            } catch (err) {
+            console.error("Error fetching project highlighters:", err);
+            setProjectHighlighters([]);
+            }
+        };
+
+        fetchHighlighters();
+    }, [activeProjectId]);
+
 
     // Clear uploaded transcription data when project changes
     useEffect(() => {
@@ -861,17 +898,23 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-600">
                         <span className="text-xs text-slate-400">Highlight:</span>
                         <div className="flex gap-1">
-                            {['yellow', 'lightblue', 'lightgreen', 'pink', 'orange'].map((color) => (
-                                <button
-                                    key={color}
+                            {projectHighlighters.length > 0 ? (
+                                projectHighlighters.map((h) => (
+                                    <button
+                                    key={h.highlighter_id}
                                     className={`w-4 h-4 rounded border-2 ${
-                                        highlightColor === color ? 'border-white' : 'border-slate-500'
+                                        highlightColor === h.colour ? 'border-white' : 'border-slate-500'
                                     }`}
-                                    style={{ backgroundColor: color }}
-                                    onClick={() => handleHighlightColorChange(color)}
-                                    aria-label={`Select ${color} highlight color`}
-                                />
-                            ))}
+                                    style={{ backgroundColor: h.colour }}
+                                    onClick={() => handleHighlightColorChange(h.colour)}
+                                    aria-label={`Select ${h.label} highlight`}
+                                    title={h.label}
+                                    />
+                                ))
+                            ) : (
+                                <span className="text-xs text-slate-400">No highlight colours set</span>
+                            )}
+
                         </div>
                         {/* Clear highlight button */}
                         <button
