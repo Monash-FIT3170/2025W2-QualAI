@@ -743,16 +743,38 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         }
 
         if (piece.type === 'hl') {
+            // Create a temp element to compute the actual color value
+            const temp = document.createElement("div");
+            temp.style.color = piece.color;
+            document.body.appendChild(temp);
+            const computed = getComputedStyle(temp).color;
+            document.body.removeChild(temp);
+
+            // Extract RGB values and compute brightness
+            const rgb = computed.match(/\d+/g);
+            let textColor = "white";
+            if (rgb) {
+                const [r, g, b] = rgb.map(Number);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                if (brightness > 160) textColor = "black";
+            }
+
             return (
-            <span
-                key={key}
-                className="highlighted-text"
-                style={{ backgroundColor: piece.color, padding: '2px 4px', borderRadius: '3px' }}
-            >
-                {children}
-            </span>
+                <span
+                    key={key}
+                    className="highlighted-text"
+                    style={{
+                        backgroundColor: piece.color,
+                        color: textColor,
+                        padding: '2px 4px',
+                        borderRadius: '3px'
+                    }}
+                >
+                    {children}
+                </span>
             );
         }
+
         return <React.Fragment key={key}>{children}</React.Fragment>;
         };
 
