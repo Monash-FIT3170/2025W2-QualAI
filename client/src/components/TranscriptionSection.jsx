@@ -766,7 +766,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     style={{
                         backgroundColor: piece.color,
                         color: textColor,
-                        padding: '2px 4px',
+                        padding: '0',
                         borderRadius: '3px'
                     }}
                 >
