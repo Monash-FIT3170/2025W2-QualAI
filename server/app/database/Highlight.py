@@ -31,6 +31,9 @@ class Highlight:
                     FOREIGN KEY (transcription_id)
                         REFERENCES {config.DB_TRANS_TABLE_NAME}(transcription_id)
                         ON DELETE CASCADE
+                    FOREIGN KEY (highlighter_id)
+                        REFERENCES {config.DB_HIGHLIGHTER_TABLE_NAME}(highlighter_id)
+                        ON DELETE CASCADE
                 )
             """
             )
