@@ -74,7 +74,9 @@ const UploadAudioCard = ({ onTranscriptionComplete }) => {
         {/* Show current project */}
         {activeProject && (
           <p className="text-xs text-slate-400 mb-2">
-            Project: {activeProject.name}
+            Project: {activeProject.name.length > 20 
+                        ? activeProject.name.substring(0, 18) + '..'
+                        : activeProject.name}
           </p>
         )}
 
