@@ -69,7 +69,9 @@ class QdrantManager:
             case "outlier":
                 return QDrantTemplates.outlier_template(prompt_context)
             case "quote":
-                return (QDrantTemplates.quote_template(prompt, prompt_context),)
+                return QDrantTemplates.quote_template(prompt, prompt_context)
+            case "research":
+                return QDrantTemplates.generate_code_template(prompt, prompt_context)
             case _:
                 print(
                     f"Warning: Unknown analysis mode '{analysis_mode}'. Using default template."
