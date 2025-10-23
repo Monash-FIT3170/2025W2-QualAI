@@ -1,12 +1,14 @@
 /**
  * TranscriptionSection Component
  * Displays interview transcriptions with editing, download,
- * and ChatPDF-style highlights (offset-based & persisted).
+ * ChatPDF-style highlights (offset-based & persisted),
+ * and a collapsible "Ask AI (highlights)" box.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from "../contexts/ProjectContext";
+import HighlightAskBox from "./HighlightAskBox";
 import "../assets/styles/TranscriptionSection.css";
 
 /** Safely parse JSON, returns null on failure */
@@ -162,6 +164,8 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
   const [highlightColor, setHighlightColor] = useState("yellow");
   const [savedHighlights, setSavedHighlights] = useState([]);
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
+
+  const [showAskBox, setShowAskBox] = useState(false);
 
   const previousProjectId = useRef(activeProjectId);
   const previousTranscriptionData = useRef(transcriptionData);
@@ -411,7 +415,6 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         throw new Error("Failed");
       }
 
-      // Always pull server truth (no optimistic insert)
       await loadHighlights();
       setSelectedHighlightId(null);
       const sel = window.getSelection?.();
@@ -498,8 +501,10 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     <div className="bg-slate-800 rounded-xl shadow-md p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Header */}
       <div className="flex justify-between items-center mb-2 font-sora">
+        {/* Left: title + dropdown */}
         <div className="flex items-center gap-3">
           <h3 className="text-lg text-white font-bold">Transcription</h3>
+
           <select
             value={selectedTranscriptionId || ""}
             onChange={handleTranscriptionChange}
@@ -521,7 +526,19 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
           </select>
         </div>
 
-        <div className="flex gap-3">
+        {/* Right: actions incl. Ask AI toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            className={`px-3 py-2 text-xs rounded-md ${
+              showAskBox ? "bg-slate-600 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
+            onClick={() => setShowAskBox((v) => !v)}
+            title="Ask AI about selected highlight colors"
+          >
+            <i className="bi bi-chat-right-text mr-1" />
+            Ask AI (highlights)
+          </button>
+
           <button
             className={`text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 ${
               isEditing ? "bg-green-600 hover:bg-green-700" : "bg-indigo-600 hover:bg-indigo-700"
@@ -589,7 +606,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         </div>
       </div>
 
-      {/* Content */}
+      {/* Transcription content area */}
       <div className="bg-slate-700 rounded-lg p-3 flex-1 flex flex-col min-h-0">
         {/* Highlight toolbar */}
         {!isEditing && selectedTranscriptionId && (
@@ -603,7 +620,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     highlightColor === color ? "border-white" : "border-slate-500"
                   }`}
                   style={{ backgroundColor: color }}
-                  onClick={() => setHighlightColor(color)}
+                  onClick={() => handleHighlightColorChange(color)}
                   aria-label={`Select ${color} highlight color`}
                   title={`Use ${color} color`}
                 />
@@ -641,6 +658,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
           </div>
         )}
 
+        {/* Scrollable transcription text container */}
         <div
           className="flex-1 overflow-y-auto max-h-[200px] transcription-text"
           onClick={() => setSelectedHighlightId(null)} // click outside to clear selection
@@ -676,6 +694,25 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
           </button>
         </div>
       </div>
+
+      {/* Ask AI over highlights (collapsible, below content) */}
+      {showAskBox && (
+        <div className="mt-3 border border-slate-700 rounded-xl overflow-hidden">
+          <div className="bg-slate-800/70 backdrop-blur px-3 py-2 border-b border-slate-700">
+            <span className="text-xs text-slate-300">
+              Ask a question grounded only in selected highlight colors
+            </span>
+          </div>
+          <div className="p-3 bg-slate-800 rounded-b-xl">
+            <HighlightAskBox
+              projectId={activeProjectId}
+              transcriptionId={selectedTranscriptionId}
+              transcriptionText={typeof displayText === "string" ? displayText : ""}
+              highlights={savedHighlights}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

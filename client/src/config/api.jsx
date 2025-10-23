@@ -7,6 +7,9 @@ export const API_ENDPOINTS = {
   GENERATE: `${API_BASE}/generate/`,
   PROJECT: `${API_BASE}/projects`,
   HIGHLIGHTS: `${API_BASE}/highlights`,
+  AI_ASK: `${API_BASE}/prompt/ask_highlights`,
+  PROMPT: `${API_BASE}/prompt`,
+  ASK_HIGHLIGHTS: `${API_BASE}/prompt/ask_highlights`,
 
   listProjectTranscriptions: (projectId) => `${API_BASE}/projects/${projectId}/transcriptions`,
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
