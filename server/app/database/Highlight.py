@@ -109,17 +109,20 @@ class Highlight:
                             ELSE 0
                         END
                     ) AS snippet,
-                    COALESCE(hi.label, ''),
-                    COALESCE(hi.weight, ?),
-                    COALESCE(hi.colour, h.color)
+                    COALESCE(hi.label, hi_colour.label, ''),
+                    COALESCE(hi.weight, hi_colour.weight, ?),
+                    COALESCE(hi.colour, hi_colour.colour, h.color)
                 FROM {config.DB_HIGHLIGHT_TABLE_NAME} AS h
                 INNER JOIN {config.DB_TRANS_TABLE_NAME} AS t
                     ON t.transcription_id = h.transcription_id
                 LEFT JOIN {config.DB_HIGHLIGHTER_TABLE_NAME} AS hi
                     ON hi.highlighter_id = h.highlighter_id
+                LEFT JOIN {config.DB_HIGHLIGHTER_TABLE_NAME} AS hi_colour
+                    ON hi_colour.project_id = t.project_id
+                    AND LOWER(hi_colour.colour) = LOWER(h.color)
                 WHERE t.project_id = ?
                 ORDER BY
-                    CAST(COALESCE(hi.weight, ?) AS INTEGER) DESC,
+                    CAST(COALESCE(hi.weight, hi_colour.weight, ?) AS INTEGER) DESC,
                     h.created_at ASC
                 """,
                 (str(WEIGHT_FALLBACK), project_id, str(WEIGHT_FALLBACK)),

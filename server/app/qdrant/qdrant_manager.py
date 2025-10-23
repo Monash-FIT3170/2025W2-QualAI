@@ -284,9 +284,8 @@ class QdrantManager:
             return "", ignore_snippets
 
         lines: list[str] = [
-            "HIGHLIGHT PRIORITY CONTEXT",
-            "The user marked certain transcript segments with importance levels. "
-            "Prioritise higher weight excerpts and down-weight lower ones accordingly.",
+            "Researcher highlight guidance:",
+            "Treat the passages below as especially meaningful—the higher the level, the more influence they should have in your answer.",
         ]
 
         current_weight = None
@@ -294,7 +293,7 @@ class QdrantManager:
             weight = highlight.get("weight", 0)
             if weight != current_weight:
                 label = weight_labels.get(weight, f"Weight {weight}")
-                lines.append(f"[{label.upper()} PRIORITY]")
+                lines.append(f"{label} priority:")
                 current_weight = weight
 
             snippet = self._condense_snippet(highlight.get("snippet", ""), max_length=220)
@@ -302,15 +301,14 @@ class QdrantManager:
             source = highlight.get("transcription_name", "Unknown transcript")
             comment = highlight.get("comment")
 
-            entry = f"- {label} → \"{snippet}\" (source: {source})"
+            entry = f"- {label}: \"{snippet}\" (source: {source})"
             if comment:
                 entry += f" [Note: {comment}]"
             lines.append(entry)
 
         if ignore_snippets:
             lines.append(
-                "[IGNORE PRIORITY] The following segments were flagged to be ignored. "
-                "If they appear elsewhere in the context, treat them as out-of-scope."
+                "Segments the researcher tagged as ignore should be treated as out-of-scope even if fragments surface elsewhere."
             )
 
         return "\n".join(lines), ignore_snippets
@@ -337,10 +335,26 @@ class QdrantManager:
         for snippet in ignore_snippets:
             if not snippet:
                 continue
-            condensed = " ".join(snippet.split())
-            for candidate in {snippet.strip(), condensed}:
+
+            raw = snippet.strip()
+            condensed = " ".join(raw.split())
+            candidates = {raw, condensed}
+
+            for candidate in list(candidates):
                 if not candidate:
                     continue
+                try:
+                    import re
+
+                    pattern = re.compile(
+                        r"\s+".join(re.escape(token) for token in candidate.split()),
+                        flags=re.IGNORECASE,
+                    )
+                    if pattern.search(masked_context):
+                        masked_context = pattern.sub("[IGNORED SEGMENT]", masked_context)
+                except re.error as regex_error:
+                    print(f"Regex error while masking ignored snippet: {regex_error}")
+
                 masked_context = masked_context.replace(candidate, "[IGNORED SEGMENT]")
 
         return masked_context
