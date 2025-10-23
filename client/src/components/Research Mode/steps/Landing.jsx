@@ -1,4 +1,4 @@
-import React, { useState,useEffect,useRef  } from 'react';
+import React, { useState, useEffect, useRef  } from 'react';
 
 export default function Landing({ onNext, setResearchQuestion }) {
 
@@ -15,10 +15,10 @@ export default function Landing({ onNext, setResearchQuestion }) {
 
 
   return (
-    <div className="flex flex-col h-full justify-center items-center text-white">
+    <div className="flex flex-col h-full items-center text-white">
       <h2 className="text-xl font-semibold mb-4">Research Mode</h2>
       <p className="text-white text-center text-slate-400 text-center mb-4">
-        Description here...
+        Perform manual guided analysis on your project with the help of AI.
         Enter a research question to get started!
       </p>
 
@@ -32,8 +32,8 @@ export default function Landing({ onNext, setResearchQuestion }) {
 
       <button
         disabled={input.trim() === ""}
-        onClick={onNext}
-        className={`mt-4 px-4 py-2 rounded text-white w-full transition-colors
+        onClick={handleNext}
+        className={`mt-0 px-4 py-2 rounded text-white w-full transition-colors
           ${input.trim() 
             ? "bg-indigo-600 hover:bg-indigo-700"        // enabled
             : "bg-indigo-600 opacity-50 cursor-not-allowed" // disabled

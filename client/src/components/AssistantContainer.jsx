@@ -6,7 +6,7 @@ export default function AssistantContainer() {
   const [activeMode, setActiveMode] = useState("chat");
 
   return (
-    <div className="h-full bg-slate-900 rounded-xl p-4 flex flex-col">
+    <div className="h-full bg-slate-900 rounded-xl p-1 flex flex-col w-full">
       {/* Tab Bar */}
       <div className="flex mb-4 border-b border-slate-700">
         <button
