@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from app.api.models import HighlighterRequest
+import sqlite3
+from app.config import config
 
 highlighter_router = APIRouter(prefix="/projects/{project_id}/highlighters")
 
@@ -77,6 +79,19 @@ def update_highlighter(
             colour=data.colour,
             weight=str(data.weight),
         )
+
+        with sqlite3.connect(config.DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                f"""
+                UPDATE {config.DB_HIGHLIGHT_TABLE_NAME}
+                SET color = ?
+                WHERE highlighter_id = ?
+                """,
+                (data.colour, highlighter_id),
+            )
+            conn.commit()
+        
         return {"message": "Highlighter updated successfully."}
 
     except ValueError as e:
