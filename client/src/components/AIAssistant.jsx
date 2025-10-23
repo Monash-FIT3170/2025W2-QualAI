@@ -2,14 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useProject } from '../contexts/ProjectContext';
 import { useChat } from "../contexts/ChatContext";
 
-/** Initial AI greeting **/
-const INITIAL_MESSAGES = [
-  {
-    sender: "ai",
-    text: "Hello! I'm your AI research assistant. How can I help you analyze your interview data today?",
-  },
-];
-
 /** Helpers to clean text before using it as a prompt **/
 const removeThinkingText = (text) => {
   const split = text.split('</think>');
@@ -31,22 +23,7 @@ const AIAssistant = () => {
 
   const messagesEndRef = useRef(null);
 
-  /** Load messages when active project changes **/
-  useEffect(() => {
-    if (activeProjectId) {
-      const saved = localStorage.getItem(`aiMessages_${activeProjectId}`);
-      setMessages(saved ? JSON.parse(saved) : INITIAL_MESSAGES);
-    } else {
-      setMessages(INITIAL_MESSAGES);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProjectId]);
-
-  /** Persist messages per project **/
-  useEffect(() => {
-    if (!activeProjectId) return;
-    localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(messages || []));
-  }, [messages, activeProjectId]);
+  // Persistence handled in ChatContext
 
   /** Auto scroll **/
   useEffect(() => {
