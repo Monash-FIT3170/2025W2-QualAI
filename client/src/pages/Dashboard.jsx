@@ -29,7 +29,7 @@ const Dashboard = () => {
           Left Sidebar (1fr width)
           Contains upload functionality and analysis steps 
         */}
-        <div className="flex flex-col gap-4 h-full min-h-0">
+        <div className="flex flex-col gap-4 h-full min-h-0 min-w-0">
           {/* File upload card */}
           <UploadAudioCard onTranscriptionComplete={handleTranscriptionComplete}/>
           
@@ -41,7 +41,7 @@ const Dashboard = () => {
           Main Content Area (2fr width - takes twice the space of sidebars)
           Primary workspace for transcription editing 
         */}
-        <div className="flex flex-col h-full min-h-0">
+        <div className="flex flex-col h-full min-h-0 min-w-0">
           <TranscriptionSection 
             transcriptionData={transcriptionData}
             onTranscriptionUploaded={handleTranscriptionComplete}
@@ -52,7 +52,7 @@ const Dashboard = () => {
           Right Sidebar (1fr width)
           AI Assistant chat interface 
         */}
-        <div className="flex flex-col h-full min-h-0">
+        <div className="flex flex-col h-full min-h-0 min-w-0">
           <AIAssistant />
         </div>
       </div>

@@ -220,7 +220,7 @@ const AIAssistant = () => {
           </div>
 
       {/* Scrollable messages container */}
-      <div className="flex-1 min-h-0 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
         {/* Messages list with vertical spacing */}
         <div className="space-y-4">
           {loading && (
@@ -245,12 +245,15 @@ const AIAssistant = () => {
               </div>
               
               {/* Message bubble with conditional styling */}
-              <div className={`p-3 rounded-lg max-w-[80%] ${
+              <div className={`p-3 rounded-lg max-w-[80%] min-w-0 ${
                 message.sender === 'ai' ? 
                   'bg-slate-800' :  // AI message background
                   'bg-slate-700'    // User message background
               }`}>
-                <p className="text-sm text-slate-200 m-0 leading-6">
+                <p 
+                  className="text-sm text-slate-200 m-0 leading-relaxed break-words whitespace-pre-wrap overflow-hidden"
+                  style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                >
                   {message.sender === 'ai' ? (
                   removeThinkingText(message.text)) : (message.text)}
                 </p>

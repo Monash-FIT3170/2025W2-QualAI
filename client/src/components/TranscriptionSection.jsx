@@ -830,11 +830,23 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                         <option value="" disabled>
                             {loading ? "Loading..." : transcriptions.length === 0 ? "No transcriptions" : "Select transcription"}
                         </option>
-                        {transcriptions.map((transcription) => (
-                            <option key={transcription.transcription_id} value={transcription.transcription_id}>
-                                {transcription.name}
-                            </option>
-                        ))}
+                        {transcriptions.map((transcription) => {
+                            const truncateName = (name, maxLength = 25) => {
+                                if (name.length <= maxLength) return name;
+                                    const extension = name.substring(name.lastIndexOf('.'));
+                                    const baseName = name.substring(0, name.lastIndexOf('.'));
+                                    const keepLength = maxLength - extension.length - 3;
+                                return keepLength > 0 
+                                    ? `${baseName.substring(0, keepLength)}...${extension}`
+                                    : `${name.substring(0, maxLength - 3)}...`;
+                            };
+                            
+                            return (
+                                <option key={transcription.transcription_id} value={transcription.transcription_id}>
+                                    {truncateName(transcription.name)}
+                                </option>
+                            );
+                        })}
                     </select>
                 </div>
 
