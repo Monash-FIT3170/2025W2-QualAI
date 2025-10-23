@@ -33,15 +33,22 @@ async def transcribe_endpoint(
 
     # Transcribe the file using Whisper
     text_output = ""
+    file_extension_name = Path(file.filename).suffix.lower() if file.filename else ""
 
     try:
-        transcriber = request.app.state.transcriber
-        result = await transcriber.transcribe(str(file_path), language="en")
-        text_output = result.get("text", "")
+        if file_extension_name == '.txt':
+            transcript_filename = file.filename
+            with open(file_path, "r", encoding='utf-8') as f:
+                text_output = f.read()
+            
+        else:
+            transcriber = request.app.state.transcriber
+            result = await transcriber.transcribe(str(file_path), language="en")
+            text_output = result.get("text", "")
 
-        transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
-            " ", "_"
-        )
+            transcript_filename = f"{Path(file.filename).stem}_transcript.txt".replace(
+                " ", "_"
+            )
 
         # Save transcription to the database
         transcription_id = request.app.state.transcripts_store.insert(
