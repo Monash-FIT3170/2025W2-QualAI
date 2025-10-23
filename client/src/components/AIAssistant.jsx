@@ -113,6 +113,7 @@ const AIAssistant = () => {
     e.preventDefault();
     const text = researchQuestionMessage.trim()
     if (!text) return
+    console.log("before444")
 
     setResearchQuestionMessage('')
 
@@ -131,6 +132,7 @@ const AIAssistant = () => {
     if (!response.ok) throw new Error(await response.text() || 'Error fetching response from AI');
 
       const data = await response.json();
+      alert(JSON.stringify(data.codes, null, 2))
       const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
 
     await codesDisplay()

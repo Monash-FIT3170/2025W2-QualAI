@@ -10,7 +10,7 @@ import { useProject } from '../../contexts/ProjectContext';
 export default function ResearchMode() {
   const [phase, setPhase] = useState("Landing");
   const [researchQuestion, setResearchQuestion] = useState("");
-  const [codes, setCodes] = useState({});
+  const [codes, setCodes] = useState([]);
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-sm p-4 h-full flex flex-col">

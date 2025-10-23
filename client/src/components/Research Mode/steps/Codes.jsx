@@ -1,4 +1,6 @@
 import React, { useState,useEffect,useRef  } from 'react';
+import { API_ENDPOINTS } from '../../../config/api';
+import { useProject } from '../../../contexts/ProjectContext';
 
 
 function CodesToolBar({ codes, setCodes, setPhase, researchQuestion }) {
@@ -14,7 +16,7 @@ function CodesToolBar({ codes, setCodes, setPhase, researchQuestion }) {
         <h2 className="text-xl font-semibold mb-1 text-center">Codes</h2>
       </div>
 
-      <p className="text-sm mb-2 bg-slate-700 rounded-xl p-1 px-4 py-1 italic">'{researchQuestion}'</p>
+      <p className="text-sm text-center mb-2 rounded-xl p-1 px-4 py-1 italic">'{researchQuestion}'</p>
       <div className="flex justify-left gap-2">
         <button className="bg-slate-900 px-4 py-1 rounded-xl text-sm">
           Add Code
@@ -27,30 +29,49 @@ function CodesToolBar({ codes, setCodes, setPhase, researchQuestion }) {
   );
 }
 
-function CodesList({ codes }) {
+function CodesList({ codes, handleDeleteCode}) {
   return (
-    <div className="overflow-y-auto max-h-[70vh] bg-slate-900 rounded-xl mt-2 py-1 px-1">
-      {Object.entries(codes).map(([codeName, quotes]) => (
-        <CodeCard key={codeName} codeName={codeName} quotes={quotes} />
+    <div className="overflow-y-auto max-h-[50vh] bg-slate-900 rounded-xl mt-2 py-1 px-1 mb-2">
+      {codes.map((codeItem) => (
+        <CodeCard
+          codeId={codeItem.id}
+          codeName={codeItem.code}
+          quotes={codeItem.quotes}
+          handleDeleteCode={handleDeleteCode}
+        />
       ))}
     </div>
   );
 }
 
-function CodeCard({ codeName, quotes }) {
+function CodeCard({codeId, codeName, quotes, handleDeleteCode}) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const confirmDelete = () => {
+    if (window.confirm(`Are you sure you want to delete the code "${codeName}"?`)) {
+      handleDeleteCode(codeId);
+    }
+  };
 
   return (
     <div className="rounded-xl p-2">
       {/* Header Row */}
       <div
-        className="flex justify-between items-center cursor-pointer"
+        className="flex justify-between gap-2 cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
+        <button
+          onClick={confirmDelete}
+          className="text-red-500 text-xs mt-1 px-1"
+          title="deleteCode"
+        >
+          <i className="bi bi-trash"></i>
+        </button>
         <h3 className="text-sm text-white">{codeName}</h3>
         <span className="text-slate-300 text-sm">
           {isOpen ? "▲" : "▼"}
         </span>
+
       </div>
 
       {/* Quotes (Dropdown Section) */}
@@ -68,30 +89,54 @@ function CodeCard({ codeName, quotes }) {
 }
 
 export default function Codes({ codes, setCodes, setPhase, researchQuestion, onNext}) {
+  const { activeProjectId } = useProject();
+
+  const handleDeleteCode = async (codeId) => {
+    try {
+      await fetch(`${API_ENDPOINTS.deleteCode(codeId)}`, { method: "DELETE" }); 
+      setCodes((prev) => prev.filter((code) => code.id !== codeId));
+    } catch (error) {
+      console.error("Error deleting code:", error);
+    }
+  };
 
   useEffect(() => {
-    if (Object.keys(codes).length === 0) {
-      const dummyCodes = {
-        "Code 1": ["Sample text segment 1", "Sample text segment 2"],
-        "Code 2": ["Sample text segment 3"],
-        "Code 3": ["Sample text segment 4", "Sample text segment 5", "Sample text segment 6"]
-      };
-      setCodes(dummyCodes);
-    }
-  }, [codes, setCodes]);
+    const fetchCodes = async () => {
+        try {
+          const response = await fetch(API_ENDPOINTS.listProjectCodes(activeProjectId), {
+          method: "GET", // explicitly specify GET (optional; default is GET)
+          headers: {
+            "Content-Type": "application/json", // optional for GET
+          },
+        });
+
+          if (!response.ok) throw new Error("Failed to fetch codes");
+    
+          const data = await response.json();
+          setCodes(data.codes || []); // expect [{ id, code, quotes }]
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchCodes();
+      
+    }, [setCodes, researchQuestion]);
 
   return (
-    <div>
+    <div className='flex flex-col h-full'>
       <CodesToolBar
         codes={codes}
         setCodes={setCodes}
         setPhase={setPhase}
         researchQuestion={researchQuestion}
       />
-      <CodesList codes={codes} />
+      <CodesList 
+        codes={codes}
+        handleDeleteCode={handleDeleteCode} />
       <button
         onClick={onNext}
-        className={"mt-0 px-4 py-2 rounded text-white w-full bg-indigo-600 hover:bg-indigo-700"}
+        className={"px-4 py-2 rounded text-white w-full bg-indigo-600 hover:bg-indigo-700 mt-auto"}
         >
         Generate Themes
       </button>
