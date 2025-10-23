@@ -34,7 +34,7 @@ export default function ResearchMode() {
       {phase === "Themes" && 
         <Themes 
           codes = {codes}
-          
+          setPhase ={setPhase}
         /> }
     </div>
   );
