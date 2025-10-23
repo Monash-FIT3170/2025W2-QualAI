@@ -5,7 +5,7 @@ from app.service.llm_services import generate_offline, generate_online
 prompt_router = APIRouter()
 
 
-@prompt_router.post("/generate")
+@prompt_router.post("/generate/")
 async def generate_text(request: Request, payload: PromptRequest):
     """
     Generates a text response using either an online (Gemini) or offline (Ollama) model.

@@ -1,7 +1,6 @@
 class QDrantTemplates:
     @staticmethod
     def default_template(prompt: str, prompt_context: str) -> str:
-        """Returns the default metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -39,7 +38,6 @@ class QDrantTemplates:
 
     @staticmethod
     def summary_template(prompt_context: str) -> str:
-        """Returns the summary mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -54,7 +52,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Do not include detailed analysis or extensive quotes.</RULE>
                 <RULE id="3">If the context is insufficient, state: "I could not find enough information to create a summary."</RULE>
-                <RULE id="4">Maintain a warm, readable tone while staying succinct.</RULE>
+                <RULE id="4">Maintain a warm, readable tone while staying succinct. Respond only with the content for the <SUMMARY> section. Do not include any preface or reasoning</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -68,8 +66,36 @@ class QDrantTemplates:
         """
 
     @staticmethod
+    def summary_direct_template(target_text: str) -> str:
+        """
+        Summarise the provided text directly (no external context/RAG).
+        """
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are an expert at concise summaries.
+            </ROLE>
+            <TASK>
+                Summarise the following text in 2-4 sentences, capturing the main point(s) without adding new facts.
+            </TASK>
+            <RULES>
+                <RULE id="1">Base the summary ONLY on <TARGET_TEXT>.</RULE>
+                <RULE id="2">Be clear, neutral, and concise.</RULE>
+                <RULE id="3">Respond only with the content for the <SUMMARY> section. Do not include any preface or reasoning.</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <TARGET_TEXT>
+                {target_text.strip()}
+            </TARGET_TEXT>
+        </DATA>
+
+        <SUMMARY>
+        """
+
+    @staticmethod
     def code_theme_template(prompt_context: str) -> str:
-        """Returns the code/theme mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -89,6 +115,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Support each theme with at least one direct quote.</RULE>
                 <RULE id="3">If no clear themes emerge, state: "I could not identify distinct themes in this content."</RULE>
+                <RULE id="4">Respond only inside the <THEMATIC_ANALYSIS> section without preface.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -103,7 +130,6 @@ class QDrantTemplates:
 
     @staticmethod
     def outlier_template(prompt_context: str) -> str:
-        """Returns the outlier mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -123,6 +149,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Support each outlier identification with specific evidence.</RULE>
                 <RULE id="3">If no outliers are found, state: "I could not identify any significant outliers in this content."</RULE>
+                <RULE id="4">Respond only inside the <OUTLIER_ANALYSIS> section without preface.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -137,7 +164,6 @@ class QDrantTemplates:
 
     @staticmethod
     def quote_template(prompt: str, prompt_context: str) -> str:
-        """Returns the quote mode metaprompt template."""
         return f"""
         <INSTRUCTIONS>
             <ROLE>
@@ -156,6 +182,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Include exact quotes, do not paraphrase.</RULE>
                 <RULE id="3">If no relevant quotes are found, state: "I could not find quotes related to this theme in the provided content."</RULE>
+                <RULE id="4">Respond only inside the <RELEVANT_QUOTES> section without preface.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -169,4 +196,61 @@ class QDrantTemplates:
         </DATA>
 
         <RELEVANT_QUOTES>
+        """
+
+    @staticmethod
+    def explain_template(target_text: str) -> str:
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are an expert explainer.
+            </ROLE>
+            <TASK>
+                Explain the following text clearly for a non-expert audience.
+                Use plain language, short paragraphs, and brief bullet points if helpful.
+                Do NOT add new facts beyond what the text provides.
+            </TASK>
+            <RULES>
+                <RULE id="1">Base your explanation ONLY on <TARGET_TEXT>.</RULE>
+                <RULE id="2">Avoid jargon unless you also define it simply.</RULE>
+                <RULE id="3">Be concise and clear.</RULE>
+                <RULE id="4">Respond only with the content for the <EXPLANATION> section. Do not include any preface or reasoning.</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <TARGET_TEXT>
+                {target_text.strip()}
+            </TARGET_TEXT>
+        </DATA>
+
+        <EXPLANATION>
+        """
+
+    @staticmethod
+    def rewrite_template(target_text: str) -> str:
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are a precise editor.
+            </ROLE>
+            <TASK>
+                Rewrite the following text to improve clarity and concision.
+                Preserve the original meaning. Output only the rewritten text.
+            </TASK>
+            <RULES>
+                <RULE id="1">Base your rewrite ONLY on <TARGET_TEXT>.</RULE>
+                <RULE id="2">Keep tone neutral and professional unless tone is explicitly embedded in the text.</RULE>
+                <RULE id="3">Remove filler, redundancy, and convoluted phrasing.</RULE>
+                <RULE id="4">Respond only with the content for the <REWRITE> section. Do not include any preface or reasoning.</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <TARGET_TEXT>
+                {target_text.strip()}
+            </TARGET_TEXT>
+        </DATA>
+
+        <REWRITE>
         """

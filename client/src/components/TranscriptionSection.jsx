@@ -1,23 +1,24 @@
 /**
  * TranscriptionSection Component
- * * Displays interview transcriptions with editing and export functionality.
- * Provides a workspace for viewing and annotating transcribed text.
  */
-import React, { useState, useEffect, useRef } from 'react'; // Make sure React is imported
+import React, { useState, useEffect, useRef } from 'react';
 import { API_ENDPOINTS } from "../config/api";
 import { useProject } from "../contexts/ProjectContext";
 import "../assets/styles/TranscriptionSection.css";
+import { useChat } from "../contexts/ChatContext";
 
-
-/** Safely parse JSON, returns null on failure */
 const safeParseJSON = (json) => {
-  try {
-    return json ? JSON.parse(json) : null;
-  } catch {
-    console.error("Invalid transcription data JSON");
-    return null;
-  }
+  try { return json ? JSON.parse(json) : null; } catch { return null; }
 };
+
+// Reuse the same cleaning helpers as chat:
+const removeThinkingText = (text) => {
+  const split = text.split('</think>');
+  return split.length > 1 ? split[1].trim() : text;
+};
+const stripTags = (text) => text.replace(/<\/?[^>]+>/g, '');
+const collapseWS = (t) => t.replace(/\s+/g, ' ').trim();
+const cleanForAction = (raw) => collapseWS(stripTags(removeThinkingText(raw)));
 
 const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) => { // Add callback prop
     const { activeProjectId } = useProject();
@@ -41,34 +42,26 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     // ref to the rendered text container for selection offset calc
     const textContainerRef = useRef(null);
 
-    const transcriptionDataObject = safeParseJSON(transcriptionData);
+  const transcriptionDataObject = safeParseJSON(transcriptionData);
 
-    // Load transcriptions when project changes
-    useEffect(() => {
-        const loadTranscriptions = async () => {
-            if (!activeProjectId) return;
-            
-            try {
-                setLoading(true);
-                const response = await fetch(API_ENDPOINTS.listProjectTranscriptions(activeProjectId));
-                if (response.ok) {
-                    const data = await response.json();
-                    setTranscriptions(data);
-                    // Reset selection when project changes
-                    setSelectedTranscriptionId(null);
-                    setSelectedTranscriptionText("");
-                } else {
-                    console.error('Failed to load transcriptions');
-                }
-            } catch (error) {
-                console.error('Error loading transcriptions:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadTranscriptions();
-    }, [activeProjectId]);
+  useEffect(() => {
+    const loadTranscriptions = async () => {
+      if (!activeProjectId) return;
+      try {
+        setLoading(true);
+        const response = await fetch(API_ENDPOINTS.listProjectTranscriptions(activeProjectId));
+        if (response.ok) {
+          const data = await response.json();
+          setTranscriptions(data);
+          setSelectedTranscriptionId(null);
+          setSelectedTranscriptionText("");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTranscriptions();
+  }, [activeProjectId]);
 
     // Fetch project highlighters when project changes
     useEffect(() => {
@@ -101,19 +94,14 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         fetchHighlighters();
     }, [activeProjectId]);
 
+  useEffect(() => {
+    if (activeProjectId !== previousProjectId.current) {
+        setHighlights([]);
 
-    // Clear uploaded transcription data when project changes
-    useEffect(() => {
-        if (activeProjectId !== previousProjectId.current) {
-            setHighlights([]);
-
-            // Project has changed, clear any uploaded transcription data
-            if (onTranscriptionUploaded) {
-                onTranscriptionUploaded(null);
-            }
-            previousProjectId.current = activeProjectId;
-        }
-    }, [activeProjectId, onTranscriptionUploaded]);
+      onTranscriptionUploaded && onTranscriptionUploaded(null);
+      previousProjectId.current = activeProjectId;
+    }
+  }, [activeProjectId, onTranscriptionUploaded]);
 
     // Handle new transcription uploads - only run when transcriptionData actually changes
     useEffect(() => {
@@ -246,18 +234,15 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         }
     };
 
-    // Handle edit mode toggle
-    const handleEditToggle = () => {
-        if (isEditing) {
-            // Cancel editing
-            setEditedText("");
-            setIsEditing(false);
-        } else {
-            // Start editing
-            setEditedText(selectedTranscriptionText);
-            setIsEditing(true);
-        }
-    };
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setEditedText("");
+      setIsEditing(false);
+    } else {
+      setEditedText(selectedTranscriptionText);
+      setIsEditing(true);
+    }
+  };
 
     // Handle save transcription
     const handleSaveTranscription = async () => {
@@ -305,6 +290,49 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
             setSaving(false);
         }
     };
+
+    const [selectedText, setSelectedText] = useState("");
+    const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+    const [showPopup, setShowPopup] = useState(false);
+
+    const { sendMessage } = useChat();
+
+    const handleTextSelection = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) { setShowPopup(false); return; }
+      const selected = selection.toString().trim();
+      if (selected.length === 0) { setShowPopup(false); return; }
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      setButtonPosition({ x: rect.left + window.scrollX, y: rect.top + window.scrollY - 30 });
+      setSelectedText(selected);
+      setShowPopup(true);
+    };
+
+    useEffect(() => {
+      const handleMouseUp = () => setTimeout(() => handleTextSelection(), 0);
+      document.addEventListener("mouseup", handleMouseUp);
+      return () => document.removeEventListener("mouseup", handleMouseUp);
+    }, []);
+
+    const sendSelectionWithTemplate = (tpl) => {
+      if (!selectedText) return;
+      const cleaned = cleanForAction(selectedText);
+      if (!cleaned) return;
+
+      const prefixMap = {
+        summary_direct: "Summarise",
+        explain: "Explain",
+        rewrite: "Rewrite"
+      };
+      const prefix = prefixMap[tpl] || "Action";
+      sendMessage(`${prefix}: ${cleaned}`, "offline", tpl);
+      setShowPopup(false);
+    };
+
+    const handleSummarise = () => sendSelectionWithTemplate("summary_direct");
+    const handleExplain = () => sendSelectionWithTemplate("explain");
+    const handleRewrite = () => sendSelectionWithTemplate("rewrite");
 
     // compute selection offsets within the text container
     const getSelectionOffsets = (containerEl) => {
@@ -850,68 +878,39 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     </select>
                 </div>
 
-                {/* Action buttons container */}
-                <div className='flex gap-3'>
-                    {/* Edit/Save transcription button */}
-                    <button
-                        className={`text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 ${
-                            isEditing 
-                                ? "bg-green-600 hover:bg-green-700" 
-                                : "bg-indigo-600 hover:bg-indigo-700"
-                        }`}
-                        aria-label={isEditing ? "Save transcription" : "Edit transcription"}
-                        onClick={isEditing ? handleSaveTranscription : handleEditToggle}
-                        disabled={!selectedTranscriptionId || saving}
-                    >
-                        {saving ? (
-                            <>
-                                <i className="bi bi-arrow-clockwise spin" aria-hidden="true" />
-                                Saving...
-                            </>
-                        ) : isEditing ? (
-                            <>
-                                <i className="bi bi-check" aria-hidden="true" />
-                                Save
-                            </>
-                        ) : (
-                            <>
-                                <i className="bi bi-pencil" aria-hidden="true" />
-                                Edit
-                            </>
-                        )}
-                    </button>
+        <div className='flex gap-3'>
+          <button
+            className={`text-white text-sm px-4 py-2 rounded-md flex items-center gap-2 ${
+              isEditing ? "bg-green-600 hover:bg-green-700" : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
+            aria-label={isEditing ? "Save transcription" : "Edit transcription"}
+            onClick={isEditing ? handleSaveTranscription : handleEditToggle}
+            disabled={!selectedTranscriptionId || saving}
+          >
+            {saving ? (<><i className="bi bi-arrow-clockwise spin" />Saving...</>) :
+              isEditing ? (<><i className="bi bi-check" />Save</>) :
+              (<><i className="bi bi-pencil" />Edit</>)}
+          </button>
 
-                    {/* Cancel edit button - only show when editing */}
-                    {isEditing && (
-                        <button
-                            className="bg-gray-600 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-700 flex items-center gap-2"
-                            aria-label="Cancel editing"
-                            onClick={handleEditToggle}
-                        >
-                            <i className="bi bi-x" aria-hidden="true" />
-                            Cancel
-                        </button>
-                    )}
+          {isEditing && (
+            <button
+              className="bg-gray-600 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-700 flex items-center gap-2"
+              aria-label="Cancel editing"
+              onClick={handleEditToggle}
+            >
+              <i className="bi bi-x" />Cancel
+            </button>
+          )}
 
-                    {/* Delete transcription button */}
-                    <button
-                        className="bg-red-600 text-white text-sm px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label="Delete transcription"
-                        onClick={handleDeleteTranscription}
-                        disabled={!selectedTranscriptionId || deleting}
-                    >
-                        {deleting ? (
-                            <>
-                                <i className="bi bi-arrow-clockwise spin" aria-hidden="true" />
-                                Deleting...
-                            </>
-                        ) : (
-                            <>
-                                <i className="bi bi-trash" aria-hidden="true" />
-                                Delete
-                            </>
-                        )}
-                    </button>
+          <button
+            className="bg-red-600 text-white text-sm px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Delete transcription"
+            onClick={handleDeleteTranscription}
+            disabled={!selectedTranscriptionId || deleting}
+          >
+            {deleting ? (<><i className="bi bi-arrow-clockwise spin" />Deleting...</>) :
+              (<><i className="bi bi-trash" />Delete</>)}
+          </button>
 
                     {/* Download transcription button */}
                     <button
@@ -1005,20 +1004,31 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                     )}
                 </div>
 
-                {/* Transcription toolbar (bottom right) */}
-                <div className="flex justify-end mt-2">
-                    {/* Code view toggle button */}
-                    <button
-                        className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
-                        aria-label="Toggle code view"
-                    // TODO: Implement code view toggle functionality
-                    >
-                        <i className="bi bi-code" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>
+        <div className="flex justify-end mt-2">
+          <button
+            className="bg-transparent border-0 text-slate-400 cursor-pointer p-1 ml-2 transition-colors hover:text-slate-200"
+            aria-label="Toggle code view"
+            title="Code"
+          >
+            <i className="bi bi-code"></i>
+          </button>
         </div>
-    );
+      </div>
+
+      {showPopup && (
+        <div
+          className="absolute bg-indigo-600 text-white text-xs px-2 py-[2px] rounded shadow-md border border-indigo-600 flex gap-2"
+          style={{ position: "absolute", top: `${buttonPosition.y}px`, left: `${buttonPosition.x}px`, zIndex: 50 }}
+        >
+          <button className="px-2 py-[3px] text-xs leading-none flex items-center justify-center rounded hover:bg-indigo-700" onClick={handleSummarise} aria-label="Summarise selection">Summarise</button>
+          <span className="text-white">•</span>
+          <button className="px-2 py-[3px] text-xs leading-none flex items-center justify-center rounded hover:bg-indigo-700" onClick={handleExplain} aria-label="Explain selection">Explain</button>
+          <span className="text-white">•</span>
+          <button className="px-2 py-[3px] text-xs leading-none flex items-center justify-center rounded hover:bg-indigo-700" onClick={handleRewrite} aria-label="Rewrite selection">Rewrite</button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default TranscriptionSection;

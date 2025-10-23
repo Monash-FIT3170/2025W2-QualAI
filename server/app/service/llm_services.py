@@ -7,19 +7,59 @@ from app.config import config
 
 def clean_response(text: str) -> str:
     """
-    Clean AI response by removing XML-like tags.
-    Removes tags like </ANSWER>, </think>, etc.
+    Clean AI response by removing hidden reasoning and extraneous tags.
+
+    Steps:
+    - Remove entire contents of known reasoning blocks like <think>...</think> (case-insensitive).
+    - If one of our expected output sections exists (e.g., <SUMMARY>...</SUMMARY>), extract only that content.
+    - Strip any remaining XML-like tags and trim whitespace.
 
     Args:
         text: The raw AI response text
 
     Returns:
-        Cleaned text without XML-like tags
+        Cleaned text intended for display.
     """
-    # Remove closing XML-like tags (e.g., </ANSWER>, </think>, etc.)
-    text = re.sub(r'</[A-Z_]+>', '', text, flags=re.IGNORECASE)
-    # Remove opening XML-like tags with attributes (e.g., <ANSWER>, <think>, etc.)
-    text = re.sub(r'<[A-Z_]+[^>]*>', '', text, flags=re.IGNORECASE)
+    if not isinstance(text, str):
+        return ""
+
+    # 1) Remove thinking/reasoning blocks completely
+    reasoning_tags = [
+        "think",
+        "reasoning",
+        "chain_of_thought",
+        "c_o_t",
+        "cot",
+        "scratchpad",
+    ]
+    for tag in reasoning_tags:
+        pattern = rf"<\s*{tag}[^>]*?>.*?<\s*/\s*{tag}\s*>"
+        text = re.sub(pattern, "", text, flags=re.IGNORECASE | re.DOTALL)
+
+    # 2) Prefer content inside known output tags
+    output_tags = [
+        "SUMMARY",
+        "EXPLANATION",
+        "REWRITE",
+        "ANSWER",
+        "THEMATIC_ANALYSIS",
+        "OUTLIER_ANALYSIS",
+        "RELEVANT_QUOTES",
+    ]
+    extracted = None
+    for tag in output_tags:
+        m = re.search(rf"<\s*{tag}[^>]*>(.*?)<\s*/\s*{tag}\s*>", text, flags=re.IGNORECASE | re.DOTALL)
+        if m and m.group(1):
+            extracted = m.group(1)
+            break
+    if extracted is not None:
+        text = extracted
+
+    # 3) Remove any remaining XML-like tags
+    text = re.sub(r"</[A-Z_][A-Z0-9_\-]*>", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text, flags=re.IGNORECASE)
+
+    # 4) Normalize whitespace
     return text.strip()
 
 
