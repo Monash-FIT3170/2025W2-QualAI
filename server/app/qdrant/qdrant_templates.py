@@ -49,6 +49,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Do not include detailed analysis or extensive quotes.</RULE>
                 <RULE id="3">If the context is insufficient, state: "I could not find enough information to create a summary."</RULE>
+                <RULE id="4">Respond only with the content for the <SUMMARY> section. Do not include any preface or reasoning.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -77,6 +78,7 @@ class QDrantTemplates:
             <RULES>
                 <RULE id="1">Base the summary ONLY on <TARGET_TEXT>.</RULE>
                 <RULE id="2">Be clear, neutral, and concise.</RULE>
+                <RULE id="3">Respond only with the content for the <SUMMARY> section. Do not include any preface or reasoning.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -110,6 +112,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Support each theme with at least one direct quote.</RULE>
                 <RULE id="3">If no clear themes emerge, state: "I could not identify distinct themes in this content."</RULE>
+                <RULE id="4">Respond only inside the <THEMATIC_ANALYSIS> section without preface.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -143,6 +146,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Support each outlier identification with specific evidence.</RULE>
                 <RULE id="3">If no outliers are found, state: "I could not identify any significant outliers in this content."</RULE>
+                <RULE id="4">Respond only inside the <OUTLIER_ANALYSIS> section without preface.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -175,6 +179,7 @@ class QDrantTemplates:
                 <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
                 <RULE id="2">Include exact quotes, do not paraphrase.</RULE>
                 <RULE id="3">If no relevant quotes are found, state: "I could not find quotes related to this theme in the provided content."</RULE>
+                <RULE id="4">Respond only inside the <RELEVANT_QUOTES> section without preface.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -206,6 +211,7 @@ class QDrantTemplates:
                 <RULE id="1">Base your explanation ONLY on <TARGET_TEXT>.</RULE>
                 <RULE id="2">Avoid jargon unless you also define it simply.</RULE>
                 <RULE id="3">Be concise and clear.</RULE>
+                <RULE id="4">Respond only with the content for the <EXPLANATION> section. Do not include any preface or reasoning.</RULE>
             </RULES>
         </INSTRUCTIONS>
 
@@ -233,6 +239,7 @@ class QDrantTemplates:
                 <RULE id="1">Base your rewrite ONLY on <TARGET_TEXT>.</RULE>
                 <RULE id="2">Keep tone neutral and professional unless tone is explicitly embedded in the text.</RULE>
                 <RULE id="3">Remove filler, redundancy, and convoluted phrasing.</RULE>
+                <RULE id="4">Respond only with the content for the <REWRITE> section. Do not include any preface or reasoning.</RULE>
             </RULES>
         </INSTRUCTIONS>
 

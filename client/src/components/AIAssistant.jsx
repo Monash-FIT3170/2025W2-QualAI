@@ -22,6 +22,7 @@ const AIAssistant = () => {
   const [pendingAction, setPendingAction] = useState({}); // { [index]: 'summary'|'explain'|'rewrite'|null }
 
   const messagesEndRef = useRef(null);
+  const activeProjectIdRef = useRef(activeProjectId); // Track active project in ref
 
   // Persistence handled in ChatContext
 

@@ -1,7 +1,66 @@
 import httpx
+import re
 from fastapi import HTTPException
 
 from app.config import config
+
+
+def clean_response(text: str) -> str:
+    """
+    Clean AI response by removing hidden reasoning and extraneous tags.
+
+    Steps:
+    - Remove entire contents of known reasoning blocks like <think>...</think> (case-insensitive).
+    - If one of our expected output sections exists (e.g., <SUMMARY>...</SUMMARY>), extract only that content.
+    - Strip any remaining XML-like tags and trim whitespace.
+
+    Args:
+        text: The raw AI response text
+
+    Returns:
+        Cleaned text intended for display.
+    """
+    if not isinstance(text, str):
+        return ""
+
+    # 1) Remove thinking/reasoning blocks completely
+    reasoning_tags = [
+        "think",
+        "reasoning",
+        "chain_of_thought",
+        "c_o_t",
+        "cot",
+        "scratchpad",
+    ]
+    for tag in reasoning_tags:
+        pattern = rf"<\s*{tag}[^>]*?>.*?<\s*/\s*{tag}\s*>"
+        text = re.sub(pattern, "", text, flags=re.IGNORECASE | re.DOTALL)
+
+    # 2) Prefer content inside known output tags
+    output_tags = [
+        "SUMMARY",
+        "EXPLANATION",
+        "REWRITE",
+        "ANSWER",
+        "THEMATIC_ANALYSIS",
+        "OUTLIER_ANALYSIS",
+        "RELEVANT_QUOTES",
+    ]
+    extracted = None
+    for tag in output_tags:
+        m = re.search(rf"<\s*{tag}[^>]*>(.*?)<\s*/\s*{tag}\s*>", text, flags=re.IGNORECASE | re.DOTALL)
+        if m and m.group(1):
+            extracted = m.group(1)
+            break
+    if extracted is not None:
+        text = extracted
+
+    # 3) Remove any remaining XML-like tags
+    text = re.sub(r"</[A-Z_][A-Z0-9_\-]*>", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text, flags=re.IGNORECASE)
+
+    # 4) Normalize whitespace
+    return text.strip()
 
 
 async def generate_online(prompt: str) -> dict:
@@ -15,7 +74,8 @@ async def generate_online(prompt: str) -> dict:
         A dictionary containing the model's response.
     """
     if not config.GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured.")
+        raise HTTPException(
+            status_code=500, detail="GEMINI_API_KEY is not configured.")
 
     url = f"{config.GEMINI_API_URL}?key={config.GEMINI_API_KEY}"
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -38,7 +98,7 @@ async def generate_online(prompt: str) -> dict:
                 .get("parts", [{}])[0]
                 .get("text", "")
             )
-            return {"response": reply.strip()}
+            return {"response": clean_response(reply)}
 
     except httpx.HTTPStatusError as e:
         print(f"Gemini API Error: {e.response.text}")
@@ -68,17 +128,17 @@ async def generate_offline(prompt: str) -> dict:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 config.OLLAMA_URL,
-                json={"model": config.OLLAMA_MODEL, "prompt": prompt, "stream": False},
+                json={"model": config.OLLAMA_MODEL,
+                      "prompt": prompt, "stream": False},
                 timeout=config.OLLAMA_TIMEOUT,
             )
             response.raise_for_status()
 
             json_response = response.json()
-            return {
-                "response": json_response.get(
-                    "response", "No 'response' field in Ollama reply"
-                )
-            }
+            raw_response = json_response.get(
+                "response", "No 'response' field in Ollama reply"
+            )
+            return {"response": clean_response(raw_response)}
 
     except httpx.HTTPStatusError as e:
         print(f"OLLAMA Error: {e.response.text}")

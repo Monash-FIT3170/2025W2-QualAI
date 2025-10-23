@@ -12,6 +12,11 @@ export const API_ENDPOINTS = {
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   updateProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
+
+  // Chat endpoints
+  getProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
+  postProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
+
   getHighlights: (transcriptionId) => `${API_BASE}/highlights/${transcriptionId}`,
   getHighlighters: (projectId) => `${API_BASE}/projects/${projectId}/highlighters/`,
 };
