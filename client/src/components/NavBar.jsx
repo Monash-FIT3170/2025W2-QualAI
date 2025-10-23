@@ -120,7 +120,9 @@ useEffect(() => {
                       : "bg-slate-600 text-white/80 hover:bg-slate-500")
                   }
                 >
-                  {p.name}
+                  {p.name.length > 20 
+                        ? p.name.substring(0, 18) + '..'
+                        : p.name}
                 </button>
 
                 {/* Tooltip */} 
