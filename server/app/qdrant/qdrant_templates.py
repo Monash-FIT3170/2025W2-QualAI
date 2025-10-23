@@ -166,7 +166,7 @@ class QDrantTemplates:
 
         <RELEVANT_QUOTES>
         """
-    
+
     @staticmethod
     def generate_code_template(prompt: str, prompt_context: str) -> str:
         print("reachtemplate")

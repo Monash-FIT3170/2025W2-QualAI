@@ -64,9 +64,7 @@ class Codes:
 
         return code_id
 
-    def update(
-        self, code_id: int, code_name: str, quotes: list
-    ) -> int:
+    def update(self, code_id: int, code_name: str, quotes: list) -> int:
         """
         Method to update existing code in the table.
 
@@ -180,7 +178,7 @@ class Codes:
             (code_id, name, json.loads(quotes_json), created_at)
             for code_id, name, quotes_json, created_at in rows
         ]
-    
+
     def get_codes_by_project(self, project_id: int) -> list[tuple[int, str, list, str]]:
         with sqlite3.connect(self.db_name) as conn:
             cur = conn.cursor()
