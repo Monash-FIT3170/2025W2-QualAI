@@ -27,7 +27,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-*/Interview_Uploads
+*Interview_Uploads
 
 # Python cache
 __pycache__
