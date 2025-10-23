@@ -8,13 +8,15 @@ highlight_router = APIRouter(prefix="/highlights", tags=["Highlights"])
 highlight_db = Highlight(config.DB_PATH)
 
 @highlight_router.post("/")
-def add_highlight(transcription_id: int, start: int, end: int, color: str, comment: str = ""):
+def add_highlight(transcription_id: int, start: int, end: int, color: str, comment: str = "", highlighter_id: int | None = None):
     highlight_db.insert(
         transcription_id=transcription_id,
         start=start,
         end=end,
         color=color,
-        comment=comment
+        comment=comment,
+        highlighter_id=highlighter_id
+        
     )
     return {"message": "Highlight added successfully"}
 

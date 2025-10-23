@@ -22,6 +22,7 @@ class Highlight:
                 CREATE TABLE IF NOT EXISTS {config.DB_HIGHLIGHT_TABLE_NAME} (
                     highlight_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     transcription_id INTEGER NOT NULL,
+                    highlighter_id INTEGER,
                     start_offset INTEGER NOT NULL,
                     end_offset INTEGER NOT NULL,
                     color TEXT NOT NULL,
@@ -34,16 +35,16 @@ class Highlight:
             """
             )
 
-    def insert(self, transcription_id: int, start: int, end: int, color: str, comment: str = None) -> int:
+    def insert(self, transcription_id: int, start: int, end: int, color: str, comment: str = None, highlighter_id: int = None) -> int:
         with sqlite3.connect(self.db_name) as conn:
             cur = conn.cursor()
             cur.execute(
                 f"""
                 INSERT INTO {config.DB_HIGHLIGHT_TABLE_NAME}
-                    (transcription_id, start_offset, end_offset, color, comment)
-                VALUES (?, ?, ?, ?, ?)
+                    (transcription_id, highlighter_id, start_offset, end_offset, color, comment)
+                VALUES (?, ?, ?, ?, ?, ?)
             """,
-                (transcription_id, start, end, color, comment),
+                (transcription_id, highlighter_id, start, end, color, comment),
             )
             return cur.lastrowid
 

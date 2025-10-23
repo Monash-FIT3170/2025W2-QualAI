@@ -81,13 +81,9 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
 
                 // fallback block if no highlighters exist
                 if (data.length === 0) {
-                setProjectHighlighters([
-                    { highlighter_id: "default-yellow", label: "Highlight", colour: "yellow", weight: 3 },
-                    { highlighter_id: "default-blue", label: "Note", colour: "lightblue", weight: 3 },
-                    { highlighter_id: "default-green", label: "Context", colour: "lightgreen", weight: 3},
-                    { highlighter_id: "default-pink", label: "Context", colour: "pink", weight: 3 },
-                    { highlighter_id: "default-orange", label: "Context", colour: "orange", weight: 3 }
-                ]);
+                    console.warn("No highlighters found. Prompting user to add some in settings.");
+                    setProjectHighlighters([]); // clear the list
+
                 } else {
                 setProjectHighlighters(data);
                 }
@@ -525,7 +521,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
     };
 
 
-    const addHighlight = async ({ transcriptionId, start, end, color }) => {
+    const addHighlight = async ({ transcriptionId, start, end, color, highlighterId }) => {
         try {
         // Your FastAPI route takes simple params (query/form), not JSON.
         // We'll send as query params to /highlights/
@@ -534,6 +530,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         url.searchParams.set('start', start);
         url.searchParams.set('end', end);
         url.searchParams.set('color', color);
+        if (highlighterId) url.searchParams.set("highlighter_id", highlighterId);
 
         const res = await fetch(url.toString(), {
             method: 'POST'
@@ -571,12 +568,15 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
         if (sel) sel.removeAllRanges();
 
         // save new highlight
+        const selectedHighlighter = projectHighlighters.find(h => h.colour === highlightColor);
         await addHighlight({
             transcriptionId,
             start: offsets.start,
             end: offsets.end,
             color: highlightColor,
+            highlighterId: selectedHighlighter?.highlighter_id ?? null,
         });
+
 
         // reload highlights after short delay
         setTimeout(() => fetchHighlights(transcriptionId), 100);
@@ -934,7 +934,7 @@ const TranscriptionSection = ({ transcriptionData, onTranscriptionUploaded }) =>
                                     />
                                 ))
                             ) : (
-                                <span className="text-xs text-slate-400">No highlight colours set</span>
+                                <span className="text-xs text-slate-400">Add highlighters in settings</span>
                             )}
 
                         </div>
