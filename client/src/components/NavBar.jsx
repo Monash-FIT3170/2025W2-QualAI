@@ -59,6 +59,9 @@ useEffect(() => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { projects, activeProjectId, setActiveProjectId, loadProjects } = useProject();
 
+  const activeProject = projects.find(p => p.project_id === activeProjectId);
+
+
 
   /**
    * Handles opening project files
@@ -99,6 +102,33 @@ useEffect(() => {
             aria-hidden="true"
           />
           <span className="ml-2 text-xl font-bold text-white">QualAI</span>
+
+          {/* Current Project Badge */}
+          <div
+            className="ml-4 hidden sm:flex items-center gap-2 px-3 py-1 rounded-md border border-slate-700 bg-slate-700/40"
+            title={
+              activeProject
+                ? (activeProject.description || activeProject.name)
+                : "No project selected"
+            }
+            aria-label="Current project"
+          >
+            <i className="bi bi-folder2" aria-hidden="true" />
+            {activeProject ? (
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-white leading-tight truncate max-w-[240px]">
+                  Currently working on: {activeProject.name}
+                </span>
+                <span className="text-xs text-slate-300 leading-tight truncate max-w-[320px] md:block">
+                  {activeProject.description || "No description"}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-slate-300">No project selected</span>
+            )}
+          </div>
+
+
         </div>
         
         {/* Project navigation section */}
