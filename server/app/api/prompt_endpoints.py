@@ -30,7 +30,7 @@ async def generate_text(request: Request, payload: PromptRequest):
         return await generate_online(augmented_prompt)
     else:
         return await generate_offline(augmented_prompt)
-
+    
 
 @prompt_router.post("/generate_code")
 async def generate_codes(request: Request, payload: PromptRequest):
@@ -51,47 +51,48 @@ async def generate_codes(request: Request, payload: PromptRequest):
     if mode == "online":
         promptResponse = await generate_online(augmented_prompt)
         print(promptResponse)
-        # return promptResponse
+        #return promptResponse
     else:
         promptResponse = await generate_offline(augmented_prompt)
-        # return promptResponse
+        #return promptResponse
+    
+
 
     promptResponseText = promptResponse["response"]
     codes = extract_text(promptResponseText)
     print(codes)
 
     codesDatabase = Codes(config.DB_PATH)
-
+    codesDatabase.clear_codes_by_project(project_id) #clear codes instead of appending them
+    
     existing_codes = {name for _, name, _, _ in codesDatabase.get_all_codes()}
 
-    # insert or update code based on database storage
+    #insert or update code based on database storage
     for code_name, quotes in codes.items():
         if code_name in existing_codes:
             # update existing code instead
-            code_id = next(
-                c[0] for c in codesDatabase.get_all_codes() if c[1] == code_name
-            )
+            code_id = next(c[0] for c in codesDatabase.get_all_codes() if c[1] == code_name)
             codesDatabase.update(code_id, code_name, quotes)
         else:
             codesDatabase.insert(code_name, quotes, project_id)
 
     return promptResponse
 
-
 @prompt_router.get("/projects/{project_id}/codes")
 async def list_codes(project_id: int):
-    """
+    '''
     Lists all the codes for the project in the database, used to list code management
-    """
+    '''
     print("LIST CODES WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
     database = Codes(config.DB_PATH)
     codes = database.get_codes_by_project(project_id)
-    return {"codes": [{"id": c[0], "code": c[1], "quotes": c[2]} for c in codes]}
-
+    return {
+        "codes": [{"id": c[0], "code": c[1], "quotes": c[2]} for c in codes]
+    }
 
 @prompt_router.delete("/codes/{code_id}")
 async def delete_code(code_id: int):
-    # Deletes codes from database
+    #Deletes codes from database
     database = Codes(config.DB_PATH)
     try:
         database.delete(code_id)
@@ -99,12 +100,12 @@ async def delete_code(code_id: int):
     except ValueError:
         raise HTTPException(status_code=404, detail="Code not found")
 
-
+    
 def extract_text(text: str):
-    """
+    '''
     Regex decoder which takes the text designed by the AI prompt and turns it into a dict object
-    """
-    pattern = r"~(.*?)~(.*?)(?=(~|$))"  # regex decoder
+    '''
+    pattern = r"~(.*?)~(.*?)(?=(~|$))" #regex decoder
     matches = re.findall(pattern, text, flags=re.DOTALL)
 
     codes = {}
@@ -119,3 +120,7 @@ def extract_text(text: str):
         codes[code_name] = quotes
 
     return codes
+
+    
+     
+

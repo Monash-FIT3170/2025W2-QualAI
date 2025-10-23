@@ -199,3 +199,18 @@ class Codes:
             (code_id, name, json.loads(quotes_json), created_at)
             for code_id, name, quotes_json, created_at in rows
         ]
+
+    def clear_codes_by_project(self, project_id: int) -> list[tuple[int, str, list, str]]:
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+
+            cur.execute(
+                f"""
+                DELETE FROM {config.DB_CODE_TABLE_NAME}
+                WHERE project_id = ?
+            """,
+                (project_id,),
+            )
+
+            rows = cur.fetchall()
