@@ -2,6 +2,8 @@ import sqlite3
 import json
 from app.config import config
 
+WEIGHT_FALLBACK = 3
+
 
 class Highlight:
     """
@@ -74,6 +76,95 @@ class Highlight:
                 }
                 for r in rows
             ]
+
+    def get_project_highlights_with_metadata(self, project_id: int) -> list[dict]:
+        """
+        Returns highlight snippets for a given project enriched with highlighter metadata.
+
+        Args:
+            project_id (int): Project identifier.
+
+        Returns:
+            list[dict]: Highlight metadata rows containing snippet, weight, and labels.
+        """
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+
+            cur.execute(
+                f"""
+                SELECT
+                    h.highlight_id,
+                    h.start_offset,
+                    h.end_offset,
+                    h.color,
+                    h.comment,
+                    t.transcription_id,
+                    t.name,
+                    SUBSTR(
+                        t.transcription,
+                        h.start_offset + 1,
+                        CASE
+                            WHEN h.end_offset > h.start_offset THEN h.end_offset - h.start_offset
+                            ELSE 0
+                        END
+                    ) AS snippet,
+                    COALESCE(hi.label, ''),
+                    COALESCE(hi.weight, ?),
+                    COALESCE(hi.colour, h.color)
+                FROM {config.DB_HIGHLIGHT_TABLE_NAME} AS h
+                INNER JOIN {config.DB_TRANS_TABLE_NAME} AS t
+                    ON t.transcription_id = h.transcription_id
+                LEFT JOIN {config.DB_HIGHLIGHTER_TABLE_NAME} AS hi
+                    ON hi.highlighter_id = h.highlighter_id
+                WHERE t.project_id = ?
+                ORDER BY
+                    CAST(COALESCE(hi.weight, ?) AS INTEGER) DESC,
+                    h.created_at ASC
+                """,
+                (str(WEIGHT_FALLBACK), project_id, str(WEIGHT_FALLBACK)),
+            )
+
+            rows = cur.fetchall()
+
+        highlights = []
+        for row in rows:
+            (
+                highlight_id,
+                start_offset,
+                end_offset,
+                color,
+                comment,
+                transcription_id,
+                transcription_name,
+                snippet,
+                highlighter_label,
+                weight_raw,
+                highlighter_colour,
+            ) = row
+
+            try:
+                weight = int(weight_raw)
+            except (TypeError, ValueError):
+                weight = WEIGHT_FALLBACK
+
+            highlights.append(
+                {
+                    "highlight_id": highlight_id,
+                    "start_offset": start_offset,
+                    "end_offset": end_offset,
+                    "color": color,
+                    "comment": comment or "",
+                    "transcription_id": transcription_id,
+                    "transcription_name": transcription_name,
+                    "snippet": (snippet or "").strip(),
+                    "highlighter_label": highlighter_label or "",
+                    "weight": weight,
+                    "highlighter_colour": highlighter_colour or color,
+                }
+            )
+
+        return highlights
 
     def delete(self, highlight_id: int) -> bool:
         with sqlite3.connect(self.db_name) as conn:
