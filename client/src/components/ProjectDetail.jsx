@@ -62,7 +62,16 @@ const ProjectDetail = forwardRef(({ project }, ref) => {
         />
       </div>
 
-      <div className="mb-4">
+      <div
+        style={{
+          maxHeight: '20rem',
+          overflowY: 'auto',
+          paddingRight: '0.5rem',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(148,163,184,0.6) transparent',
+        }}
+        className="space-y-3"
+      >
         <label className="block text-sm font-medium text-gray-300 mb-2">
           Description
         </label>
