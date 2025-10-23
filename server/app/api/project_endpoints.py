@@ -23,10 +23,12 @@ def create_project(request: Request, payload: ProjectRequest):
         )
     except sqlite3.IntegrityError:
         # UNIQUE(name) violated
-        raise HTTPException(status_code=400, detail="Project name already exists.")
+        raise HTTPException(
+            status_code=400, detail="Project name already exists.")
 
     # fetch and return canonical row
-    name, desc, created_at = request.app.state.projects_store.get_project_by_id(new_id)
+    name, desc, created_at = request.app.state.projects_store.get_project_by_id(
+        new_id)
     return project_row_to_dict(new_id, (name, desc, created_at))
 
 
@@ -39,7 +41,8 @@ def list_projects(request: Request) -> list[dict]:
     if not rows:
         # auto-create default to keep UX consistent with your current app
         try:
-            default_id = request.app.state.projects_store.insert(config.DEFAULT_PROJECT)
+            default_id = request.app.state.projects_store.insert(
+                config.DEFAULT_PROJECT)
             name, desc, created_at = request.app.state.projects_store.get_project_by_id(
                 default_id
             )
@@ -91,3 +94,20 @@ def delete_project(request: Request, project_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete project: {e}")
+
+
+@project_router.put("/projects/{project_id}")
+def update_project(request: Request, payload: ProjectRequest, project_id: int):
+    """
+    Create a new project. Name must be unique (sqlite UNIQUE constraint).
+    """
+    try:
+        request.app.state.projects_store.update(
+            project_id, payload.name, payload.description
+        )
+
+        return {"message": "Project updated successfully."}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

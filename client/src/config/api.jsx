@@ -6,9 +6,17 @@ export const API_ENDPOINTS = {
   DOWNLOAD: `${API_BASE}/download/`,
   GENERATE: `${API_BASE}/generate/`,
   PROJECT: `${API_BASE}/projects`,
+  HIGHLIGHTS: `${API_BASE}/highlights`,
 
   listProjectTranscriptions: (projectId) => `${API_BASE}/projects/${projectId}/transcriptions`,
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   updateProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
-  deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`
+  deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
+
+  // Chat endpoints
+  getProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
+  postProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
+
+  getHighlights: (transcriptionId) => `${API_BASE}/highlights/${transcriptionId}`,
+  getHighlighters: (projectId) => `${API_BASE}/projects/${projectId}/highlighters/`,
 };

@@ -7,11 +7,14 @@ import sqlite3
 from app.config import config
 from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
-from app.database import Project, Transcription
+from app.database import Project, Transcription, ChatHistory, Highlighter, Highlight
 from app.api.project_endpoints import project_router
 from app.api.project_transcription_endpoints import transcription_router
 from app.api.media_transcriber_endpoints import transcribe_router
 from app.api.prompt_endpoints import prompt_router
+from app.api.chat_history_endpoint import chat_history_router
+from app.api.highlighter_endpoints import highlighter_router
+from app.api.highlight_endpoints import highlight_router
 
 
 # --- Application Setup ---
@@ -28,6 +31,8 @@ async def lifespan(app: FastAPI):
     # Initalise SQL Database
     app.state.projects_store = Project(config.DB_PATH)
     app.state.transcripts_store = Transcription(config.DB_PATH)
+    app.state.chat_history_store = ChatHistory(config.DB_PATH)
+    app.state.highlighter_store = Highlighter(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
     app.state.qdrant_manager = QdrantManager()
@@ -43,7 +48,6 @@ async def lifespan(app: FastAPI):
         print(
             f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
         )
-        
 
     data_path = config.DEFAULT_TRANSCRIPTION_PATH
     if os.path.exists(data_path) and project_id is not None:
@@ -62,7 +66,7 @@ async def lifespan(app: FastAPI):
                 )
         except sqlite3.IntegrityError:
             print(
-                f"Default project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
+                f"Default transcription for project '{config.DEFAULT_PROJECT}' already exists, skipping creation"
             )
     else:
         print(f"Warning: Data path not found, skipping ingestion: {data_path}")
@@ -93,6 +97,9 @@ app.include_router(project_router)
 app.include_router(transcription_router)
 app.include_router(transcribe_router)
 app.include_router(prompt_router)
+app.include_router(chat_history_router)
+app.include_router(highlighter_router)
+app.include_router(highlight_router)
 
 
 # --- Back-end Status ---
