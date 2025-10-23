@@ -136,7 +136,7 @@ export default function Codes({ codes, setCodes, setPhase, researchQuestion, onN
         handleDeleteCode={handleDeleteCode} />
       <button
         onClick={onNext}
-        className={"px-4 py-2 rounded text-white w-full bg-indigo-600 hover:bg-indigo-700 mt-auto"}
+        className={"px-4 py-2 rounded text-white w-full bg-indigo-600 opacity-50 cursor-not-allowed mt-auto"}
         >
         Generate Themes
       </button>
