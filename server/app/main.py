@@ -7,7 +7,7 @@ import sqlite3
 from app.config import config
 from app.service.transcription_service import Transcriber
 from app.qdrant.qdrant_manager import QdrantManager
-from app.database import Project, Transcription, Highlighter, Highlight
+from app.database import Project, Transcription, Highlighter, Highlight, Codes
 from app.api.project_endpoints import project_router
 from app.api.project_transcription_endpoints import transcription_router
 from app.api.media_transcriber_endpoints import transcribe_router
@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     # Initalise SQL Database
     app.state.projects_store = Project(config.DB_PATH)
     app.state.transcripts_store = Transcription(config.DB_PATH)
+    app.state.codes_store = Codes(config.DB_PATH)
     app.state.highlighter_store = Highlighter(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup

@@ -62,6 +62,7 @@ async def generate_codes(request: Request, payload: PromptRequest):
     print(codes)
 
     codesDatabase = Codes(config.DB_PATH)
+    codesDatabase.clear_codes_by_project(project_id) #clear codes instead of appending them
     
     existing_codes = {name for _, name, _, _ in codesDatabase.get_all_codes()}
 

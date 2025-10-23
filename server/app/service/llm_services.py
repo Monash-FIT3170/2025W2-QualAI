@@ -92,3 +92,6 @@ async def generate_offline(prompt: str) -> dict:
             status_code=500,
             detail=f"Offline mode failed with an unexpected error: {str(e)}",
         )
+    
+
+    
