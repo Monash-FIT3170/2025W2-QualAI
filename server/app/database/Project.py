@@ -31,12 +31,12 @@ class Project:
                     description TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
+                """
             )
 
     def insert(self, project_name: str, description: str = "") -> int:
         """
-        Method to insert propject into the table. Returns the id of the project on success, and None on failure.
+        Method to insert project into the table. Returns the id of the project on success, and None on failure.
 
         Args:
             project_name (str): The name of the project. Must be unique or else it will fail on insert
@@ -61,6 +61,34 @@ class Project:
             project_id = cur.lastrowid
 
         return project_id
+
+    def update(
+        self, project_id: int, project_name: str, project_description: str
+    ) -> int:
+        """
+        Method to update existing propject in the table.
+
+        Args:
+            project_id (int): The id of the project.
+            project_name (str): The name of the project. Must be unique or else it will fail on insert
+            description (str): The description of the project
+        """
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON;")
+
+            cur.execute(
+                f"""
+                UPDATE {config.DB_PROJECT_TABLE_NAME}
+                SET name = ?, description = ?
+                WHERE project_id = ?
+            """,
+                (project_name, project_description, project_id),
+            )
+
+            if cur.rowcount < 1:
+                raise ValueError("There is no row associated with this project id!")
 
     def delete(self, project_id: int):
         """
@@ -88,7 +116,8 @@ class Project:
             rows_deleted = cur.rowcount
 
         if rows_deleted < 1:
-            raise ValueError("There is no row associated with this project id!")
+            raise ValueError(
+                "There is no row associated with this project id!")
 
     def get_project_by_id(self, project_id: int) -> tuple[str, str, str]:
         """

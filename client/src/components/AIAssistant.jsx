@@ -21,24 +21,77 @@ const INITIAL_MESSAGES = [
  * Provides interactive chat interface between user and AI assistant
  */
 const AIAssistant = () => {
-  const { activeProjectId, activeProject } = useProject();
+  const { activeProjectId } = useProject();
   
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [mode, setMode] = useState('offline');
   const [template, setTemplate] = useState("default")
   const messagesEndRef = useRef(null);
+  const activeProjectIdRef = useRef(activeProjectId); // Track active project in ref
+
+  // Update ref when activeProjectId changes
+  useEffect(() => {
+    activeProjectIdRef.current = activeProjectId;
+  }, [activeProjectId]);
+
+  // Function to load messages from server
+  const loadMessages = async (projectId) => {
+    if (!projectId) {
+      setMessages(INITIAL_MESSAGES);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(API_ENDPOINTS.getProjectChat(projectId));
+      if (!res.ok) throw new Error('Failed to load chat');
+      const data = await res.json();
+      const normalized = Array.isArray(data)
+        ? data.map(m => ({ sender: m.sender, text: m.text }))
+        : [];
+
+      // If no messages exist, save and display the initial greeting
+      if (normalized.length === 0) {
+        const initialMessage = INITIAL_MESSAGES[0];
+        setMessages(INITIAL_MESSAGES);
+        
+        // Save initial greeting to backend
+        fetch(API_ENDPOINTS.postProjectChat(projectId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            sender: initialMessage.sender, 
+            message: initialMessage.text 
+          })
+        }).catch(err => console.error('Failed to save initial greeting:', err));
+      } else {
+        setMessages(normalized);
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+      setMessages(INITIAL_MESSAGES);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load messages when a new active project is selected
   useEffect(() => {
-    if (activeProjectId) {
-      const savedMessages = localStorage.getItem(`aiMessages_${activeProjectId}`);
-      setMessages(savedMessages ? JSON.parse(savedMessages) : INITIAL_MESSAGES);
-    } else {
-      // If no project is selected, show initial messages
-      setMessages(INITIAL_MESSAGES);
-    }
+    let cancelled = false;
+
+    const load = async () => {
+      await loadMessages(activeProjectId);
+      if (cancelled) {
+        // If cancelled during load, reload the current active project
+        await loadMessages(activeProjectIdRef.current);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
   }, [activeProjectId]);
 
   // scroll to bottom of chat when there is a new message 
@@ -56,19 +109,32 @@ const AIAssistant = () => {
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage) return;
 
+    // Get project ID at send time
+    const requestProjectId = activeProjectId;
+
+    // Add user message to UI
     const nextAfterUser = [...messages, { sender: 'user', text: trimmedMessage }];
-    // Add user message to chat history
     setMessages(nextAfterUser);
+    
     // Clear input field after sending
     setNewMessage('');
 
-    if (activeProjectId) {
-      localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(nextAfterUser));
+    // Sync user message to backend
+    if (requestProjectId) {
+      try {
+        await fetch(API_ENDPOINTS.postProjectChat(requestProjectId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sender: 'user', message: trimmedMessage })
+        });
+      } catch (error) {
+        console.error('Failed to sync user message:', error);
+      }
     }
 
     try {
       // Make POST request to FastAPI /generate endpoint
-      console.log(activeProjectId);
+      console.log('Generating response for project:', requestProjectId);
       const response = await fetch(API_ENDPOINTS.GENERATE, {
         method: "POST",
         headers: {
@@ -78,7 +144,8 @@ const AIAssistant = () => {
         body: JSON.stringify({ 
           prompt: trimmedMessage, 
           mode: mode,
-          project: activeProjectId || 'default'
+          project: requestProjectId || 'default',
+          template: template
         })
 
       });
@@ -89,23 +156,26 @@ const AIAssistant = () => {
       }
 
       const data = await response.json();
-      const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
+      console.log('AI response received:', data.response ?? data.message);
 
-      setMessages(prev => {
-        const next = [...prev, { sender: 'ai', text: aiResponse }];
-        if (activeProjectId) {
-          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
-        }
-          return next;
-        });
+      // Check if user is still on the same project using ref
+      if (activeProjectIdRef.current === requestProjectId) {
+        // Reload messages from server to ensure consistency
+        await loadMessages(requestProjectId);
+      } else {
+        console.log(`AI response saved to project ${requestProjectId}, but user switched to project ${activeProjectIdRef.current}`);
+      }
+      
+      // Backend already saved the AI response
+      
     } catch (error) {
-      setMessages(prev => {
-        const next = [...prev, { sender: 'ai', text: `Error: ${error.message}` }];
-        if (activeProjectId) {
-          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
-        }
-        return next;
-      });
+      const errorMessage = `Error: ${error.message}`;
+      // Only show error if still on same project
+      if (activeProjectIdRef.current === requestProjectId) {
+        // Show error message temporarily
+        const errorMessages = [...nextAfterUser, { sender: 'ai', text: errorMessage }];
+        setMessages(errorMessages);
+      }
     }
     
     
@@ -153,6 +223,9 @@ const AIAssistant = () => {
       <div className="flex-1 min-h-0 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
         {/* Messages list with vertical spacing */}
         <div className="space-y-4">
+          {loading && (
+            <div className="text-slate-300 text-sm">Loading chat…</div>
+          )}
           {messages.map((message, index) => (
             /* Individual message bubble container */
             <div 

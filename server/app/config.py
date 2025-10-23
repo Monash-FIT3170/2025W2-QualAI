@@ -20,6 +20,9 @@ class Config(BaseSettings):
     DB_PATH: str = str((BASE_PATH / "qualAI.db"))
     DB_PROJECT_TABLE_NAME: str = "project"
     DB_TRANS_TABLE_NAME: str = "transcription"
+    DB_HIGHLIGHTER_TABLE_NAME: str = "highlighter"
+    DB_HIGHLIGHT_TABLE_NAME: str = "highlight"
+
 
     # Project settings
     DEFAULT_PROJECT: str = "default project"
@@ -45,7 +48,7 @@ class Config(BaseSettings):
     # Gemini settings
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
     GEMINI_API_URL: str = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
     )
 
     # Transcription settings
