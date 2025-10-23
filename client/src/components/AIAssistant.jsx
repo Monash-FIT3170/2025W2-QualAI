@@ -26,6 +26,18 @@ const AIAssistant = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
+  // Hidden input bar for the generate code
+  const [showCodeGenInput, setCodeGenInput] = useState(false);
+  const [researchQuestionMessage, setResearchQuestionMessage] = useState('');
+  const researchTemplate = 'research';
+
+  //Hidden output popup for code generation
+  const [showCodeResultBox, setShowCodeResultBox] = useState(false);
+  const [codeResult, setCodeResult] = useState('');
+
+  //output for codes buttons
+  const [codes, setCodes] = useState([]);
+
   const [mode, setMode] = useState('offline');
   const [template, setTemplate] = useState("default")
   const messagesEndRef = useRef(null);
@@ -45,70 +57,127 @@ const AIAssistant = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth'});}, [messages]);
 
-  /**
-   * Handles sending a new message
-   * @param {Event} e - Form submit event
-   */
-  const handleSendMessage = async(e) => {
-    e.preventDefault();
-    
-    // Don't send empty messages
-    const trimmedMessage = newMessage.trim();
+
+  /** Shared send handler for both the regular text box and code generator**/
+  const sendMessage = async (text) => {
+    const trimmedMessage = text.trim();
     if (!trimmedMessage) return;
 
     const nextAfterUser = [...messages, { sender: 'user', text: trimmedMessage }];
-    // Add user message to chat history
     setMessages(nextAfterUser);
-    // Clear input field after sending
-    setNewMessage('');
 
     if (activeProjectId) {
       localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(nextAfterUser));
     }
 
     try {
-      // Make POST request to FastAPI /generate endpoint
-      console.log(activeProjectId);
       const response = await fetch(API_ENDPOINTS.GENERATE, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({ 
-          prompt: trimmedMessage, 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: trimmedMessage,
           mode: mode,
-          project: activeProjectId || 'default'
-        })
-
+          project: activeProjectId || 'default',
+        }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Error fetching response from AI');
-      }
+      if (!response.ok) throw new Error(await response.text() || 'Error fetching response from AI');
 
       const data = await response.json();
       const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
 
-      setMessages(prev => {
+      setMessages((prev) => {
         const next = [...prev, { sender: 'ai', text: aiResponse }];
-        if (activeProjectId) {
-          localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
-        }
-          return next;
-        });
-    } catch (error) {
-      setMessages(prev => {
-        const next = [...prev, { sender: 'ai', text: `Error: ${error.message}` }];
         if (activeProjectId) {
           localStorage.setItem(`aiMessages_${activeProjectId}`, JSON.stringify(next));
         }
         return next;
       });
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'ai', text: `Error: ${error.message}` },
+      ]);
     }
+  };
+
+  /** Main textbox submit **/
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    sendMessage(newMessage);
+    setNewMessage('');
+  };
+
+  /** Research question submit **/
+  const handleSendSecondary = async (e) => {
+    e.preventDefault();
+    const text = researchQuestionMessage.trim()
+    if (!text) return
+
+    setResearchQuestionMessage('')
+
+    try {
+      const response = await fetch(API_ENDPOINTS.GENERATE_CODE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: text,
+          mode: mode,
+          project: activeProjectId || 'default',
+          template: researchTemplate
+        }),
+      });
+
+    if (!response.ok) throw new Error(await response.text() || 'Error fetching response from AI');
+
+      const data = await response.json();
+      const aiResponse = data.response ?? data.message ?? "AI could not generate a proper response.";
+
+    await codesDisplay()
+    setShowCodeResultBox(true);
     
+  } catch (error) {
+    setCodeResult(`Error: ${error.message}`);
+    setShowCodeResultBox(true);
+  }
+  };
+
+  const handleDeleteCode = async (codeId) => {
+  try {
+    await fetch(`${API_ENDPOINTS.deleteCode(codeId)}`, { method: "DELETE" }); 
+
+    setCodes((prev) => prev.filter((code) => code.id !== codeId));
+
     
+  } catch (error) {
+    console.error("Error deleting code:", error);
+  }
+};
+
+  const codesDisplay = async () => {
+    console.log("wwwwwwwwwwwwww")
+    if (!activeProjectId) return;
+    console.log("wwwwwwwwwwwwww")
+
+    try {
+      const response = await fetch(API_ENDPOINTS.listProjectCodes(activeProjectId), {
+      method: "GET", // explicitly specify GET (optional; default is GET)
+      headers: {
+        "Content-Type": "application/json", // optional for GET
+      },
+    });
+
+      console.log("wwwwwwwwwwwwww")
+      console.log(response)
+      if (!response.ok) throw new Error("Failed to fetch codes");
+
+      console.log("wwwwwwwwwwwwww")
+      const data = await response.json();
+      console.log(data)
+      setCodes(data.codes || []); // expect [{ id, code, quotes }]
+  } catch (error) {
+    console.error(error);
+  }
   };
 
   return (
@@ -208,7 +277,83 @@ const AIAssistant = () => {
           <i className="bi bi-send mr-2"></i> Send
         </button>
       </form>
+
+
+
+      {/* Research Question Text Box */}
+      <div className="mt-3">
+        <button
+          onClick={() => setCodeGenInput((s) => !s)}
+          className="w-full px-3 py-2 text-sm bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+        >
+          {showCodeGenInput ? "Hide Code Generator" : "Open Code Generator"}
+        </button>
+
+        {showCodeGenInput && (
+          <div className="mt-3">
+
+            {/* 👇 Secondary input form */}
+            <form className="flex gap-3" onSubmit={handleSendSecondary}>
+              <input
+                type="text"
+                className="flex-1 px-3 py-3 border border-slate-700 bg-slate-900 text-white rounded-lg focus:outline-none focus:border-green-600"
+                placeholder={`Enter Research Question`}
+                value={researchQuestionMessage}
+                onChange={(e) => setResearchQuestionMessage(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="flex-shrink-0 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <i className="bi bi-play-fill mr-2"></i> Run
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+
+      {/* Research Code Results Box */}
+      {showCodeResultBox && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-xl shadow-lg w-11/12 md:w-2/3 lg:w-1/2 p-6 relative">
+            <button
+              onClick={() => {
+                setShowCodeResultBox(false);
+                setCodes([]);        
+              }}
+              
+              className="absolute top-3 right-3 text-slate-400 hover:text-white"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+
+            <h3 className="text-lg font-semibold text-white mb-4">Generated Codes</h3>
+
+            <div className="bg-slate-900 p-4 rounded-lg max-h-[60vh] overflow-y-auto">
+              {codes.length === 0 ? (
+                <p className="text-slate-400">No codes found for this project.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {codes.map((codeItem) => (
+                    <button
+                      key={codeItem.id}
+                      onClick={() => {
+                            if (confirm("Delete this code?")) handleDeleteCode(codeItem.id)
+                          }}
+                      className="w-full text-left px-3 py-2 bg-slate-700 hover:bg-red-600 text-white rounded-lg transition-colors"
+                    >
+                      {codeItem.code}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
+    
   );
 };
 
