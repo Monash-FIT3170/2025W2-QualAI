@@ -1,5 +1,7 @@
 import os
 import tempfile
+from collections import defaultdict
+from typing import Iterable, Tuple
 
 from fastapi import HTTPException
 from qdrant_client import QdrantClient, models
@@ -9,6 +11,8 @@ from langchain_core.documents import Document
 import uuid
 from langchain_text_splitters import SpacyTextSplitter
 from app.qdrant.qdrant_templates import QDrantTemplates
+from app.config import config
+from app.database import Highlight
 
 
 class QdrantManager:
@@ -20,6 +24,7 @@ class QdrantManager:
         self,
         qdrant_url: str = None,
         embedding_model_name: str = "BAAI/bge-base-en-v1.5",
+        highlight_store: Highlight | None = None,
     ):
 
         print("Initializing QdrantManager...")
@@ -28,6 +33,11 @@ class QdrantManager:
             self.qdrant_url = os.getenv("QDRANT_URL", "http://qdrant:6333")
 
         self.embedding_model_name = embedding_model_name
+        try:
+            self.highlight_store = highlight_store or Highlight(config.DB_PATH)
+        except Exception as exc:
+            print(f"Warning: Failed to initialise highlight store: {exc}")
+            self.highlight_store = None
 
         # Initialize heavyweight objects once and store as attributes
         self.embedding_model = self._get_embeddings_model()
@@ -58,6 +68,16 @@ class QdrantManager:
         prompt_context = "No context found."
         if len(context_documents):
             prompt_context = "\n".join(doc.page_content for doc in context_documents)
+
+        highlight_context, ignore_snippets = self._prepare_highlight_context(
+            project_id
+        )
+
+        if ignore_snippets:
+            prompt_context = self._remove_ignored_snippets(prompt_context, ignore_snippets)
+
+        if highlight_context:
+            prompt_context = f"{highlight_context}\n\nADDITIONAL CONTEXT:\n{prompt_context}"
 
         match analysis_mode:
             case "default":
@@ -199,6 +219,145 @@ class QdrantManager:
             print(f"Error: The file at {transcription_path} was not found.")
         except Exception as e:
             print(f"An error occurred: {e}")
+
+    def _prepare_highlight_context(
+        self, project_id: int, max_total: int = 12
+    ) -> Tuple[str, list[str]]:
+        """
+        Builds a formatted highlight priority block and collects ignored snippets.
+        """
+        if self.highlight_store is None:
+            return "", []
+
+        try:
+            highlights = self.highlight_store.get_project_highlights_with_metadata(
+                project_id
+            )
+        except Exception as exc:
+            print(f"Warning: Failed to load highlights for project {project_id}: {exc}")
+            return "", []
+
+        if not highlights:
+            return "", []
+
+        ignore_snippets = [
+            h["snippet"]
+            for h in highlights
+            if h.get("weight", 0) <= 1 and h.get("snippet")
+        ]
+
+        priority_items = [
+            h for h in highlights if h.get("weight", 0) > 1 and h.get("snippet")
+        ]
+
+        if not priority_items and not ignore_snippets:
+            return "", []
+
+        weight_labels = {
+            5: "Critical",
+            4: "High",
+            3: "Medium",
+            2: "Low",
+            1: "Ignore",
+        }
+
+        # Sort by weight (desc), then by transcription name and start offset for stability
+        priority_items.sort(
+            key=lambda h: (-h.get("weight", 0), h.get("transcription_name", ""), h.get("start_offset", 0))
+        )
+
+        # Cap the amount of data per weight to keep prompts concise
+        per_weight_cap = {5: 5, 4: 3, 3: 2, 2: 1}
+        counts = defaultdict(int)
+        selected: list[dict] = []
+        for item in priority_items:
+            weight = item.get("weight", 0)
+            cap = per_weight_cap.get(weight, 1)
+            if counts[weight] >= cap:
+                continue
+            counts[weight] += 1
+            selected.append(item)
+            if len(selected) >= max_total:
+                break
+
+        if not selected and not ignore_snippets:
+            return "", ignore_snippets
+
+        lines: list[str] = [
+            "Researcher highlight guidance:",
+            "Treat the passages below as especially meaningful—the higher the level, the more influence they should have in your answer.",
+        ]
+
+        current_weight = None
+        for highlight in selected:
+            weight = highlight.get("weight", 0)
+            if weight != current_weight:
+                label = weight_labels.get(weight, f"Weight {weight}")
+                lines.append(f"{label} priority:")
+                current_weight = weight
+
+            snippet = self._condense_snippet(highlight.get("snippet", ""), max_length=220)
+            label = highlight.get("highlighter_label") or weight_labels.get(weight, "Highlight")
+            source = highlight.get("transcription_name", "Unknown transcript")
+            comment = highlight.get("comment")
+
+            entry = f"- {label}: \"{snippet}\" (source: {source})"
+            if comment:
+                entry += f" [Note: {comment}]"
+            lines.append(entry)
+
+        if ignore_snippets:
+            lines.append(
+                "Segments the researcher tagged as ignore should be treated as out-of-scope even if fragments surface elsewhere."
+            )
+
+        return "\n".join(lines), ignore_snippets
+
+    @staticmethod
+    def _condense_snippet(snippet: str, max_length: int = 220) -> str:
+        """
+        Normalises whitespace and trims long snippets for prompt readability.
+        """
+        condensed = " ".join(snippet.split())
+        if len(condensed) <= max_length:
+            return condensed
+        return condensed[: max_length - 1].rstrip() + "…"
+
+    @staticmethod
+    def _remove_ignored_snippets(context: str, ignore_snippets: Iterable[str]) -> str:
+        """
+        Removes or masks snippets that the user deliberately marked as 'Ignore'.
+        """
+        if not context or not ignore_snippets:
+            return context
+
+        masked_context = context
+        for snippet in ignore_snippets:
+            if not snippet:
+                continue
+
+            raw = snippet.strip()
+            condensed = " ".join(raw.split())
+            candidates = {raw, condensed}
+
+            for candidate in list(candidates):
+                if not candidate:
+                    continue
+                try:
+                    import re
+
+                    pattern = re.compile(
+                        r"\s+".join(re.escape(token) for token in candidate.split()),
+                        flags=re.IGNORECASE,
+                    )
+                    if pattern.search(masked_context):
+                        masked_context = pattern.sub("[IGNORED SEGMENT]", masked_context)
+                except re.error as regex_error:
+                    print(f"Regex error while masking ignored snippet: {regex_error}")
+
+                masked_context = masked_context.replace(candidate, "[IGNORED SEGMENT]")
+
+        return masked_context
 
     def _get_embeddings_model(self) -> HuggingFaceBgeEmbeddings:
         """Loads the embedding model."""

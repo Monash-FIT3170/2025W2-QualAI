@@ -33,9 +33,12 @@ async def lifespan(app: FastAPI):
     app.state.transcripts_store = Transcription(config.DB_PATH)
     app.state.chat_history_store = ChatHistory(config.DB_PATH)
     app.state.highlighter_store = Highlighter(config.DB_PATH)
+    app.state.highlight_store = Highlight(config.DB_PATH)
 
     # Initialize and ingest data for Qdrant on startup
-    app.state.qdrant_manager = QdrantManager()
+    app.state.qdrant_manager = QdrantManager(
+        highlight_store=app.state.highlight_store
+    )
     app.state.transcriber = Transcriber(model_size="base")
 
     # --- this is just for placeholder data to be filled into vector db ---
