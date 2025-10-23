@@ -154,9 +154,9 @@ const AIAssistant = () => {
                       isHovered ? 'opacity-100' : 'opacity-0'
                     }`}
                   >
-                    <div className="flex items-center gap-2 bg-slate-700 text-white text-[11px] px-2 py-1 rounded shadow-md border border-slate-600">
+                    <div className="flex items-center gap-2 bg-indigo-600 text-white text-[11px] px-2 py-[2px] rounded shadow-md border border-indigo-600">
                       <button
-                        className={`px-2 py-0.5 rounded ${isPending ? 'opacity-60 cursor-not-allowed' : 'hover:bg-slate-600'}`}
+                        className={`px-2 py-[3px] rounded ${isPending ? 'opacity-60 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
                         onClick={() => handleBubbleAction(index, 'summary')}
                         disabled={isPending}
                         aria-label="Summarise this message"
@@ -164,9 +164,9 @@ const AIAssistant = () => {
                       >
                         {isPending && currentAction === 'summary' ? pendingLabel.summary : 'Summarise'}
                       </button>
-                      <span className="text-slate-500">•</span>
+                      <span className="text-white">•</span>
                       <button
-                        className={`px-2 py-0.5 rounded ${isPending ? 'opacity-60 cursor-not-allowed' : 'hover:bg-slate-600'}`}
+                        className={`px-2 py-[3px] rounded ${isPending ? 'opacity-60 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
                         onClick={() => handleBubbleAction(index, 'explain')}
                         disabled={isPending}
                         aria-label="Explain this message"
@@ -174,9 +174,9 @@ const AIAssistant = () => {
                       >
                         {isPending && currentAction === 'explain' ? pendingLabel.explain : 'Explain'}
                       </button>
-                      <span className="text-slate-500">•</span>
+                      <span className="text-white">•</span>
                       <button
-                        className={`px-2 py-0.5 rounded ${isPending ? 'opacity-60 cursor-not-allowed' : 'hover:bg-slate-600'}`}
+                        className={`px-2 py-[3px] rounded ${isPending ? 'opacity-60 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
                         onClick={() => handleBubbleAction(index, 'rewrite')}
                         disabled={isPending}
                         aria-label="Rewrite this message"
