@@ -9,6 +9,8 @@ An AI-driven Virtual Research Assistant. Use our conversartional AI chatbot to a
    - Engage with the data and offer alternative interpretations
    - Summaries, explain and rewrite the transcript or chat
 
+For details on our user guide please visit [here](https://docs.google.com/document/d/1jQlEi8dnG2bbzocHSbcGuCL-hawkmtVE5QyP_P1fepw/edit?usp=sharing)
+
 ## All Team Member
 _*If you have any issues, your main point of contact would be: Yao, Amaan or Farhan._
 
