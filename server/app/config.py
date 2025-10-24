@@ -23,7 +23,7 @@ class Config(BaseSettings):
     DB_CODE_TABLE_NAME: str = "code"
     DB_HIGHLIGHTER_TABLE_NAME: str = "highlighter"
     DB_HIGHLIGHT_TABLE_NAME: str = "highlight"
-
+    DB_THEME_TABLE_NAME: str = "themes"  # Add this line
 
     # Project settings
     DEFAULT_PROJECT: str = "default project"

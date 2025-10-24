@@ -1,3 +1,6 @@
+import json
+
+
 class QDrantTemplates:
     @staticmethod
     def default_template(prompt: str, prompt_context: str) -> str:
@@ -300,3 +303,28 @@ class QDrantTemplates:
 
         <RELEVANT_QUOTES>
         """
+
+    @staticmethod
+    def generate_themes_template(codes_data: dict) -> str:
+        formatted_codes = json.dumps(codes_data, indent=2)
+        return f"""Analyze these codes and generate themes. Return ONLY a JSON object.
+
+CODES:
+{formatted_codes}
+
+OUTPUT FORMAT:
+{{
+    "themes": [
+        {{
+            "name": "Theme Name",
+            "codes": ["Code1", "Code2"]
+        }}
+    ]
+}}
+
+RULES:
+1. Return ONLY the JSON object above
+2. Each theme needs 2+ related codes
+3. Generate 3-5 themes total
+4. Use exact code names from input
+5. No explanatory text - JSON only"""

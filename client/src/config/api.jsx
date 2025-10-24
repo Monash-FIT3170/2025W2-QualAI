@@ -9,6 +9,8 @@ export const API_ENDPOINTS = {
   PROJECT: `${API_BASE}/projects`,
   HIGHLIGHTS: `${API_BASE}/highlights`,
   CODES: `${API_BASE}/codes`,
+  GENERATE_THEMES: `${API_BASE}/generate_themes`,
+  THEMES: `${API_BASE}/themes`,
 
   listProjectTranscriptions: (projectId) => `${API_BASE}/projects/${projectId}/transcriptions`,
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
@@ -22,6 +24,9 @@ export const API_ENDPOINTS = {
   deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   listProjectCodes: (projectId) => `${API_BASE}/projects/${projectId}/codes`,
   deleteCode: (codeId) => `${API_BASE}/codes/${codeId}`, 
+
+  listProjectThemes: (projectId) => `${API_BASE}/projects/${projectId}/themes`,
+  deleteTheme: (themeId) => `${API_BASE}/themes/${themeId}`,
   refreshProjectCodes: (projectId) => `${API_BASE}/projects/${projectId}/codes`,
 
   
