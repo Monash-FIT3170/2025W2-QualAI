@@ -1,6 +1,20 @@
 # 2025W2-QualAI <br>
+## Project Overview
 
-Team Member Names: <br>
+An AI-driven Virtual Research Assistant. Use our conversartional AI chatbot to assist you in analysing your qualitative data derived from audio, text, and video files. This tool contains the following features:
+- Transcribe your uploaded file into text files you can view, edit and download.
+- Customise highlighter to adjust the importance and weight of certain parts of your transcription
+- Conversartional chat bot
+   - Online/offline mode for AI chatbot to accomandate your budget needs
+   - Engage with the data and offer alternative interpretations
+   - Summaries, explain and rewrite the transcript or chat
+
+For details on our user guide please visit [here](https://docs.google.com/document/d/1jQlEi8dnG2bbzocHSbcGuCL-hawkmtVE5QyP_P1fepw/edit?usp=sharing)
+Visit our website [here](https://monash-fit3170.github.io/2025W2-QualAI/)
+
+## All Team Member
+_*If you have any issues, your main point of contact would be: Yao, Amaan or Farhan._
+
 Remy - remydidelis@gmail.com <br>
 Mohid - mohidkhanzada@gmail.com <br>
 Emily - emilysalievski@gmail.com <br>
@@ -16,6 +30,30 @@ Lisa - lisagorman00@gmail.com <br>
 Farhan - farhan.hasan3135@gmail.com <br>
 Gunnraj - gunnraj@hotmail.com <br>
 Eamon - esom181002@gmail.com <br>
+
+## ✨ Completed Epics and tasks
+- **UI**
+  - Homepage
+  - Dialogues
+  - Setting page
+- **Conversational AI chatbot**
+    - Online/offline mode
+    - Conversation template: "Summarise", "Find Themes", "Find Outliners", "Find Quotes"
+    - Bubble action for chat response: "Summarise", "Explain", "Rewrite"
+    - Weight response using highlighter weight (E.g. If a section is highlighted with weight-ignore it wil be ignored by the chatbot)
+- **Transcribe**
+    - Upload and transcribe audio and video files
+    - Upload text files
+    - Display loading status while media is being processed
+- **Text editor**
+    - Display selected transcript
+    - Highlighting contents
+    - Edit, save and delete transcript
+    - Download transcript
+- **Setting page**
+    - Custom highlighters
+    - Update project details
+- **Landing page**
 
 ## 🔗 Project Management
 
@@ -45,16 +83,16 @@ In terms of hardware requirements, we recommend a device with at least 16GB of R
 
 ## ✨ Setting up the Project
 
-Firstly clone the project Git repository locally with commandt:
+Firstly clone the project Git repository locally with the following command:
  `git clone https://github.com/Monash-FIT3170/2025W2-QualAI`
 
-It will have a .env file which contains the following:
+It will have a .env file which contains the following variables:
 ```
-QDRANT_HOST=http://qdrant:6333
-DATABASE_URL=sqlite:///./app/db/qualai.db
+QDRANT_HOST=ENTER_YOUR_QDRANT_HOST_URL
+DATABASE_URL=ENTER_YOUR_DATABASE_URL
 GEMINI_API_KEY=ENTER_YOUR_API_KEY
 ```
-The project will not run properly if the .env file doesn’t contain a valid Gemini API Key. A valid key can be obtained [here](https://aistudio.google.com/welcome?utm_source=google&utm_medium=cpc&utm_campaign=FY25-global-DR-gsem-BKWS-1710442&utm_content=text-ad-none-any-DEV_c-CRE_731129942539-ADGP_Hybrid%20%7C%20BKWS%20-%20EXA%20%7C%20Txt-Gemini-Gemini%20API%20Docs-KWID_43700081668090798-kwd-2088805677811&utm_term=KW_gemini%20api%20documentation-ST_gemini%20api%20documentation&gclsrc=aw.ds&gad_source=1&gad_campaignid=22184668741&gbraid=0AAAAACn9t64GgMjJfg3pYLY4LWrE2kzJu&gclid=CjwKCAjwlOrFBhBaEiwAw4bYDe25lOw-Limmf7HGDgV5QAD6OtU9aiMg3VI_kLUCKwA2Q8MIYlKqLRoC8FgQAvD_BwE)
+NOTE: The project will not run properly if the .env file doesn’t contain a valid Gemini API Key. A valid key can be obtained [here](https://aistudio.google.com/welcome?utm_source=google&utm_medium=cpc&utm_campaign=FY25-global-DR-gsem-BKWS-1710442&utm_content=text-ad-none-any-DEV_c-CRE_731129942539-ADGP_Hybrid%20%7C%20BKWS%20-%20EXA%20%7C%20Txt-Gemini-Gemini%20API%20Docs-KWID_43700081668090798-kwd-2088805677811&utm_term=KW_gemini%20api%20documentation-ST_gemini%20api%20documentation&gclsrc=aw.ds&gad_source=1&gad_campaignid=22184668741&gbraid=0AAAAACn9t64GgMjJfg3pYLY4LWrE2kzJu&gclid=CjwKCAjwlOrFBhBaEiwAw4bYDe25lOw-Limmf7HGDgV5QAD6OtU9aiMg3VI_kLUCKwA2Q8MIYlKqLRoC8FgQAvD_BwE)
 
 After obtaining a valid Gemini API Key replace the ENTER_YOUR_API_KEY in the `.env` file with the actual key.
 
@@ -114,5 +152,14 @@ The colour of the terminal command will be green if Docker has successfully upda
 <details>
 <summary>Offline chatbot is not responding to queries</summary>
 	This is expected, the offline model is much slower so please allow it more time to generate a response
+</details>
+<details>
+<summary>What shall I do if I want to contribute?</summary>
+   You should follow the following steps to contribute to this project:
+	1. Make an issue on this repository. 
+   2. Create a feature branch referencing the issue.
+   3. Create a pull request and fill in all the sections addressed on the template.
+   4. Request at least 2 team member to review your pull request.
+   5. If all two pull request is approved and you have no merge conflict you are free to merge your branch onto develop! :D ✨ 
 </details>
 
