@@ -325,6 +325,6 @@ OUTPUT FORMAT:
 RULES:
 1. Return ONLY the JSON object above
 2. Each theme needs 2+ related codes
-3. Generate 3-5 themes total
+3. Generate 3 themes total
 4. Use exact code names from input
 5. No explanatory text - JSON only"""
