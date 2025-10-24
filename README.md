@@ -10,6 +10,7 @@ An AI-driven Virtual Research Assistant. Use our conversartional AI chatbot to a
    - Summaries, explain and rewrite the transcript or chat
 
 For details on our user guide please visit [here](https://docs.google.com/document/d/1jQlEi8dnG2bbzocHSbcGuCL-hawkmtVE5QyP_P1fepw/edit?usp=sharing)
+Visit our website [here](https://monash-fit3170.github.io/2025W2-QualAI/)
 
 ## All Team Member
 _*If you have any issues, your main point of contact would be: Yao, Amaan or Farhan._
