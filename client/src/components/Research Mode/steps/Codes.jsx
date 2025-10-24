@@ -3,7 +3,7 @@ import { API_ENDPOINTS } from '../../../config/api';
 import { useProject } from '../../../contexts/ProjectContext';
 
 
-function CodesToolBar({ codes, setCodes, setPhase, researchQuestion }) {
+function CodesToolBar({ codes, setCodes, setPhase, researchQuestion, setResearchQuestion, handleRefreshCode}) {
   return (
     <div className="text-white">
       <div className="relative mb-2 flex items-center justify-center">
@@ -17,13 +17,13 @@ function CodesToolBar({ codes, setCodes, setPhase, researchQuestion }) {
       </div>
 
       <p className="text-sm text-center mb-2 rounded-xl p-1 px-4 py-1 italic">'{researchQuestion}'</p>
-      <div className="flex justify-left gap-2">
-        <button className="bg-slate-900 px-4 py-1 rounded-xl text-sm">
-          Add Code
-        </button>
-        <button className="bg-slate-900 px-4 py-1 rounded-xl text-sm">
-          Refresh
-        </button>   
+      <div className="flex justify-start gap-2">
+        <button 
+        onClick={handleRefreshCode}
+        className="bg-indigo-600 hover:bg-indigo-700 px-4 py-1 rounded-xl text-sm transition-colors"
+      >
+        Refresh
+      </button>  
       </div>
     </div>
   );
@@ -88,7 +88,7 @@ function CodeCard({codeId, codeName, quotes, handleDeleteCode}) {
   );
 }
 
-export default function Codes({ codes, setCodes, setPhase, researchQuestion, onNext}) {
+export default function Codes({ codes, setCodes, setPhase, researchQuestion, setResearchQuestion, onNext}) {
   const { activeProjectId } = useProject();
 
   const handleDeleteCode = async (codeId) => {
@@ -100,28 +100,26 @@ export default function Codes({ codes, setCodes, setPhase, researchQuestion, onN
     }
   };
 
-  useEffect(() => {
-    const fetchCodes = async () => {
-        try {
-          const response = await fetch(API_ENDPOINTS.listProjectCodes(activeProjectId), {
-          method: "GET", // explicitly specify GET (optional; default is GET)
-          headers: {
-            "Content-Type": "application/json", // optional for GET
-          },
-        });
+    const handleRefreshCode = async (projectID) => {
+      try {
+        setResearchQuestion(""); 
+        setCodes([])
+        setPhase("Landing")
 
-          if (!response.ok) throw new Error("Failed to fetch codes");
-    
-          const data = await response.json();
-          setCodes(data.codes || []); // expect [{ id, code, quotes }]
+        const response = await fetch(API_ENDPOINTS.refreshProjectCodes(projectID), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
+ 
+        if (!response.ok) throw new Error("Failed to refresh codes");
+
+        const data = await response.json();
+        setCodes(data.codes || []);
       } catch (error) {
         console.error(error);
       }
     };
-
-    fetchCodes();
-      
-    }, [setCodes, researchQuestion]);
 
   return (
     <div className='flex flex-col h-full'>
@@ -129,7 +127,9 @@ export default function Codes({ codes, setCodes, setPhase, researchQuestion, onN
         codes={codes}
         setCodes={setCodes}
         setPhase={setPhase}
+        setResearchQuestion={setResearchQuestion}
         researchQuestion={researchQuestion}
+        handleRefreshCode={() => handleRefreshCode(activeProjectId)}          
       />
       <CodesList 
         codes={codes}

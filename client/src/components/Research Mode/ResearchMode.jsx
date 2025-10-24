@@ -7,10 +7,32 @@ import Themes from './steps/Themes';
 import { API_ENDPOINTS } from "../../config/api";
 import { useProject } from '../../contexts/ProjectContext';
 
-export default function ResearchMode() {
-  const [phase, setPhase] = useState("Landing");
-  const [researchQuestion, setResearchQuestion] = useState("");
-  const [codes, setCodes] = useState([]);
+export default function ResearchMode({ phase, setPhase, researchQuestion, setResearchQuestion, codes, setCodes }) {
+  const { activeProjectId } = useProject();
+  
+
+  useEffect(() => {
+      const fetchCodes = async () => {
+          try {
+            const response = await fetch(API_ENDPOINTS.listProjectCodes(activeProjectId), {
+            method: "GET", // explicitly specify GET (optional; default is GET)
+            headers: {
+              "Content-Type": "application/json", // optional for GET
+            },
+          });
+  
+            if (!response.ok) throw new Error("Failed to fetch codes");
+      
+            const data = await response.json();
+            setCodes(data.codes || []); // expect [{ id, code, quotes }]
+        } catch (error) {
+          console.error(error);
+        }
+      };
+  
+      fetchCodes();
+        
+      }, [activeProjectId]);
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-sm p-4 h-full flex flex-col">
@@ -27,6 +49,7 @@ export default function ResearchMode() {
           researchQuestion={researchQuestion}
           setCodes={setCodes}
           setPhase={setPhase}
+          setResearchQuestion={setResearchQuestion}
           onNext = {() => setPhase("Themes")}
         />
       }

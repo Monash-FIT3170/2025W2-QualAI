@@ -54,25 +54,31 @@ export default function Landing({ onNext, setResearchQuestion}) {
         Enter a research question to get started!
       </p>
 
-      <input
-        type="text"
-        value={input}
-        onChange={handleChange}
-        placeholder="Enter your research question!"
-        className="px-3 py-2 rounded bg-slate-600 text-white w-full max-w-md mb-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 mt-auto"
-      />
+      <form 
+      onSubmit={(e) => {
+      e.preventDefault(); // VERY important
+      handleNext();
+      }} className="w-full max-w-md flex flex-col gap-2 mt-auto">
+        <input
+          type="text"
+          value={input}
+          onChange={handleChange}
+          placeholder="Enter your research question!"
+          className="px-3 py-2 rounded bg-slate-600 text-white w-full max-w-md mb-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 mt-auto"
+        />
 
-      <button
-        disabled={input.trim() === ""}
-        onClick={handleNext}
-        className={`mt-0 px-4 py-2 rounded text-white w-full transition-colors
-          ${input.trim() 
-            ? "bg-indigo-600 hover:bg-indigo-700"        // enabled
-            : "bg-indigo-600 opacity-50 cursor-not-allowed" // disabled
-          } max-w-md`}
-        >
-        Next
-      </button>
+        <button
+          disabled={input.trim() === ""}
+          onClick={handleNext}
+          className={`mt-0 px-4 py-2 rounded text-white w-full transition-colors
+            ${input.trim() 
+              ? "bg-indigo-600 hover:bg-indigo-700"        // enabled
+              : "bg-indigo-600 opacity-50 cursor-not-allowed" // disabled
+            } max-w-md`}
+          >
+          Next
+        </button>
+      </form>
     </div>
   );
 }

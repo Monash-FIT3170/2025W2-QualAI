@@ -13,8 +13,6 @@ export const API_ENDPOINTS = {
   listProjectTranscriptions: (projectId) => `${API_BASE}/projects/${projectId}/transcriptions`,
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   updateProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
-  deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
-
   // Chat endpoints
   getProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
   postProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
@@ -24,4 +22,7 @@ export const API_ENDPOINTS = {
   deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   listProjectCodes: (projectId) => `${API_BASE}/projects/${projectId}/codes`,
   deleteCode: (codeId) => `${API_BASE}/codes/${codeId}`, 
+  refreshProjectCodes: (projectId) => `${API_BASE}/projects/${projectId}/codes`,
+
+  
 };

@@ -5,6 +5,11 @@ import ResearchMode from "./Research Mode/ResearchMode";
 export default function AssistantContainer() {
   const [activeMode, setActiveMode] = useState("chat");
 
+  const [phase, setPhase] = useState("Landing");
+  const [researchQuestion, setResearchQuestion] = useState("");
+  const [codes, setCodes] = useState([]);
+
+
   return (
     <div className="h-full bg-slate-900 rounded-xl p-1 flex flex-col w-full">
       {/* Tab Bar */}
@@ -29,7 +34,16 @@ export default function AssistantContainer() {
 
       {/* Shared content area */}
       <div className="flex-1">
-        {activeMode === "chat" ? <AIAssistant /> : <ResearchMode />}
+        {activeMode === "chat" 
+        ? <AIAssistant /> 
+        : <ResearchMode 
+              phase={phase}
+              setPhase={setPhase}
+              researchQuestion={researchQuestion}
+              setResearchQuestion={setResearchQuestion}
+              codes={codes}
+              setCodes={setCodes}
+            />}
       </div>
     </div>
   );
