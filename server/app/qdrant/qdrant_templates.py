@@ -254,3 +254,49 @@ class QDrantTemplates:
 
         <REWRITE>
         """
+
+    @staticmethod
+    def generate_code_template(prompt: str, prompt_context: str) -> str:
+        print("reachtemplate")
+        """Returns the generate code mode metaprompt template."""
+        return f"""
+        <INSTRUCTIONS>
+            <ROLE>
+                You are an expert research assistant specializing in generating research codes for analysis from qualitative data.
+            </ROLE>
+            <TASK>
+                Based on the user's query about a specific research question they provide, do the following
+                1. Generate between 5 and 15 codes based on identifiable trends in the qualitative data
+                2. Find all relevant quotes associated with these codes within the data.
+
+                After doing this return results using the specified format below
+                
+                For each code:
+                2. Indicate the code with surrounding ~ like so: ~CODE~
+
+                For each quote:
+                1. Include the exact text from the context
+                2. Note the speaker if available
+                3. Associate it with an identified code from above
+                3. list it underneath the associated ~CODE~ value with surrounding % like so: %quote%
+
+                Return the codes and quotes sorted as above
+            </TASK>
+            <RULES>
+                <RULE id="1">Only use information from the provided <CONTEXT>.</RULE>
+                <RULE id="2">Include exact quotes, do not paraphrase.</RULE>
+                <RULE id="3">If no relevant quotes are found for a code, delete the code from the result"</RULE>
+            </RULES>
+        </INSTRUCTIONS>
+
+        <DATA>
+            <USER_QUERY>
+                {prompt.strip()}
+            </USER_QUERY>
+            <CONTEXT>
+                {prompt_context.strip()}
+            </CONTEXT>
+        </DATA>
+
+        <RELEVANT_QUOTES>
+        """
