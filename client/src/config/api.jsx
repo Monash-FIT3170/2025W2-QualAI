@@ -5,18 +5,29 @@ export const API_ENDPOINTS = {
   TRANSCRIBE: `${API_BASE}/transcribe/`,
   DOWNLOAD: `${API_BASE}/download/`,
   GENERATE: `${API_BASE}/generate/`,
+  GENERATE_CODE: `${API_BASE}/generate_code/`,
   PROJECT: `${API_BASE}/projects`,
   HIGHLIGHTS: `${API_BASE}/highlights`,
+  CODES: `${API_BASE}/codes`,
+  GENERATE_THEMES: `${API_BASE}/generate_themes`,
+  THEMES: `${API_BASE}/themes`,
 
   listProjectTranscriptions: (projectId) => `${API_BASE}/projects/${projectId}/transcriptions`,
   getProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
   updateProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
-  deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
-
   // Chat endpoints
   getProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
   postProjectChat: (projectId) => `${API_BASE}/projects/${projectId}/chat`,
 
   getHighlights: (transcriptionId) => `${API_BASE}/highlights/${transcriptionId}`,
   getHighlighters: (projectId) => `${API_BASE}/projects/${projectId}/highlighters/`,
+  deleteProjectTranscription: (projectId, transcriptionId) => `${API_BASE}/projects/${projectId}/transcriptions/${transcriptionId}`,
+  listProjectCodes: (projectId) => `${API_BASE}/projects/${projectId}/codes`,
+  deleteCode: (codeId) => `${API_BASE}/codes/${codeId}`, 
+
+  listProjectThemes: (projectId) => `${API_BASE}/projects/${projectId}/themes`,
+  deleteTheme: (themeId) => `${API_BASE}/themes/${themeId}`,
+  refreshProjectCodes: (projectId) => `${API_BASE}/projects/${projectId}/codes`,
+
+  
 };

@@ -81,8 +81,25 @@ const AIAssistant = () => {
   return (
     <div className="bg-slate-800 rounded-xl shadow-sm p-4 h-full flex flex-col">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+      <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+      <div className="flex justify-between items-center mb-2">
+
+        {/* Mode toggle */}
+        <div className="flex items-center gap-3 text-sm text-white">
+          <span className="text-slate-300">{mode}</span>
+          <button
+            onClick={() => setMode(mode === "offline" ? "online" : "offline")}
+            className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+              mode === "online" ? "bg-green-500" : "bg-slate-600"
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                mode === "online" ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
 
         <div className="flex items-center gap-6">
           {/* Template select (for normal prompts) */}
@@ -94,34 +111,17 @@ const AIAssistant = () => {
               className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white"
             >
               <option value="default">None</option>
-              <option value="summary">Summarise (RAG)</option>
+              <option value="summary">Summarise</option>
               <option value="code_theme">Find Themes</option>
               <option value="outlier">Find Outliers</option>
               <option value="quote">Find Quotes</option>
             </select>
           </div>
-
-          {/* Mode toggle */}
-          <div className="flex items-center gap-3 text-sm text-white">
-            <span className="text-slate-300">{mode}</span>
-            <button
-              onClick={() => setMode(mode === "offline" ? "online" : "offline")}
-              className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
-                mode === "online" ? "bg-green-500" : "bg-slate-600"
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                  mode === "online" ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden max-h-[45vh] border border-slate-700 rounded-lg bg-slate-900 p-4 mb-4">
         <div className="space-y-4">
           {messages.map((message, index) => {
             const isAI = message.sender === 'ai';
@@ -196,11 +196,11 @@ const AIAssistant = () => {
       </div>
 
       {/* Composer */}
-      <form className="mt-4 flex gap-3" onSubmit={handleSendMessage}>
+      <form className="mt-4 flex" onSubmit={handleSendMessage}>
         <input
           type="text"
-          className="flex-1 px-3 py-3 border border-slate-700 bg-slate-900 text-white rounded-lg focus:outline-none focus:border-indigo-600"
-          placeholder="Type your question here..."
+          className="flex-1 min-w-0 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg focus:outline-none focus:border-indigo-600"
+          placeholder="Ask a question..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           aria-label="Type your message"
@@ -210,10 +210,11 @@ const AIAssistant = () => {
           className="flex-shrink-0 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           aria-label="Send message"
         >
-          <i className="bi bi-send mr-2"></i> Send
+          <i className="bi bi-send mr-2"></i>
         </button>
       </form>
     </div>
+    
   );
 };
 

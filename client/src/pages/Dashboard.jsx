@@ -3,6 +3,7 @@ import UploadAudioCard from '../components/UploadAudioCard';
 import AnalysisSteps from '../components/AnalysisSteps';
 import TranscriptionSection from '../components/TranscriptionSection';
 import AIAssistant from '../components/AIAssistant';
+import AssistantContainer from '../components/AssistantContainer';
 
 /**
  * Dashboard Component
@@ -52,8 +53,8 @@ const Dashboard = () => {
           Right Sidebar (1fr width)
           AI Assistant chat interface 
         */}
-        <div className="flex flex-col h-full min-h-0 min-w-0">
-          <AIAssistant />
+        <div className="flex flex-col h-full min-h-0">
+          <AssistantContainer />
         </div>
       </div>
     </div>

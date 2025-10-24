@@ -86,6 +86,8 @@ class QdrantManager:
                 return QDrantTemplates.explain_template(prompt)
             case "rewrite":
                 return QDrantTemplates.rewrite_template(prompt)
+            case "research":
+                return QDrantTemplates.generate_code_template(prompt, prompt_context)
             case _:
                 print(f"Warning: Unknown analysis mode '{analysis_mode}'. Using default template.")
                 return QDrantTemplates.default_template(prompt, prompt_context)
